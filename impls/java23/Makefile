@@ -10,5 +10,4 @@ build/classes/java/main/mal/step%.class:
 	./gradlew build
 
 clean:
-	./gradlew clean
 	rm -f mal.jar
