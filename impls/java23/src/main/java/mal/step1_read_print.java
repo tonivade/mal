@@ -5,18 +5,18 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-public class step0_repl {
+public class step1_read_print {
   
-  static String read(String input) {
-    return input;
+  static Mal read(String input) {
+    return Reader.parse(input);
   }
 
-  static String eval(String ast) {
+  static Mal eval(Mal ast) {
     return ast;
   }
 
-  static String print(String exp) {
-    return exp;
+  static String print(Mal ast) {
+    return Printer.print(ast);
   }
 
   static String repl(String input) {
