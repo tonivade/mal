@@ -1,2 +1,5 @@
 #!/bin/bash
-exec java -jar mal.jar $@
+
+source $HOME/.sdkman/bin/sdkman-init.sh
+
+exec java -jar mal.jar ${STEP:-stepA_mal} $@
