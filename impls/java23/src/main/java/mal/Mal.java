@@ -44,6 +44,8 @@ public sealed interface Mal {
   
   record MalString(String value) implements Mal {}
 
+  record MalKeyword(String value) implements Mal {}
+
   record MalList(List<Mal> values) implements Mal {
     
     public Stream<Mal> stream() {
@@ -131,6 +133,10 @@ public sealed interface Mal {
 
   static MalString string(String value) {
     return new MalString(value);
+  }
+
+  static MalKeyword keyword(String value) {
+    return new MalKeyword(value);
   }
 
   static MalSymbol symbol(String name) {

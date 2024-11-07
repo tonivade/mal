@@ -1,5 +1,21 @@
 package mal;
 
+import static mal.Mal.DEREF;
+import static mal.Mal.FALSE;
+import static mal.Mal.NIL;
+import static mal.Mal.QUASIQUOTE;
+import static mal.Mal.QUOTE;
+import static mal.Mal.SPLICE_UNQUOTE;
+import static mal.Mal.TRUE;
+import static mal.Mal.UNQUOTE;
+import static mal.Mal.WITH_META;
+import static mal.Mal.keyword;
+import static mal.Mal.list;
+import static mal.Mal.map;
+import static mal.Mal.number;
+import static mal.Mal.string;
+import static mal.Mal.symbol;
+import static mal.Mal.vector;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
 import java.util.ArrayList;
@@ -45,31 +61,31 @@ public class Reader {
 
       case '\'' -> {
         reader.next();
-        yield Mal.list(Mal.QUOTE, parse(reader));
+        yield list(QUOTE, parse(reader));
       }
 
       case '`' -> {
         reader.next();
-        yield Mal.list(Mal.QUASIQUOTE, parse(reader));
+        yield list(QUASIQUOTE, parse(reader));
       }
 
       case '~' -> {
         reader.next();
         if (token.equals("~")) {
-          yield Mal.list(Mal.UNQUOTE, parse(reader));
+          yield list(UNQUOTE, parse(reader));
         }
-        yield Mal.list(Mal.SPLICE_UNQUOTE, parse(reader));
+        yield list(SPLICE_UNQUOTE, parse(reader));
       }
 
       case '^' -> {
         reader.next();
         var meta = parse(reader);
-        yield Mal.list(Mal.WITH_META, parse(reader), meta);
+        yield list(WITH_META, parse(reader), meta);
       }
 
       case '@' -> {
         reader.next();
-        yield Mal.list(Mal.DEREF, parse(reader));
+        yield list(DEREF, parse(reader));
       }
 
       case '(' -> readList(reader);
@@ -85,15 +101,15 @@ public class Reader {
   }
 
   private static Mal readList(Reader reader) {
-    return Mal.list(readList(reader, '(', ')'));
+    return list(readList(reader, '(', ')'));
   }
 
   private static Mal readVector(Reader reader) {
-    return Mal.vector(readList(reader, '[', ']'));
+    return vector(readList(reader, '[', ']'));
   }
 
   private static Mal readMap(Reader reader) {
-    return Mal.map(readList(reader, '{', '}'));
+    return map(readList(reader, '{', '}'));
   }
 
   private static List<Mal> readList(Reader reader, char start, char end) {
@@ -123,28 +139,28 @@ public class Reader {
       throw new IllegalStateException("unrecognized token '" + token + "'");
     }
     if (matcher.group(1) != null) {
-      return Mal.number(Integer.parseInt(matcher.group(1)));
+      return number(Integer.parseInt(matcher.group(1)));
     } else if (matcher.group(3) != null) {
-      return Mal.NIL;
+      return NIL;
     } else if (matcher.group(4) != null) {
-      return Mal.TRUE;
+      return TRUE;
     } else if (matcher.group(5) != null) {
-      return Mal.FALSE;
+      return FALSE;
     } else if (matcher.group(6) != null) {
-      return Mal.string(unescapeJava(matcher.group(6)));
+      return string(unescapeJava(matcher.group(6)));
     } else if (matcher.group(7) != null) {
       throw new IllegalStateException("expected '\"', got EOF");
     } else if (matcher.group(8) != null) {
-      return Mal.string("\u029e" + matcher.group(8));
+      return keyword(matcher.group(8));
     } else if (matcher.group(9) != null) {
-      return Mal.symbol(matcher.group(9));
+      return symbol(matcher.group(9));
     }
     throw new IllegalStateException("unrecognized '" + matcher.group(0) + "'");
   }
 
   private static Reader tokenize(String input) {
     var tokens = new ArrayList<String>();
-    var pattern = Pattern.compile("[\\s ,]*(~@|[\\[\\]{}()'`~@]|\"(?:[\\\\].|[^\\\\\"])*\"?|;.*|[^\\s \\[\\]{}()'\"`~@,;]*)");
+    var pattern = Pattern.compile("[\\s,]*(~@|[\\[\\]{}()'`~^@]|\"(?:\\\\.|[^\\\\\"])*\"?|;.*|[^\\s\\[\\]{}('\"`,;)]*)");
     var matcher = pattern.matcher(input);
     while (matcher.find()) {
       var token = matcher.group(1);
