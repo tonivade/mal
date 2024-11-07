@@ -1,22 +1,16 @@
 package mal;
 
+import static mal.Printer.print;
+import static mal.Reader.read;
+
 import org.jline.reader.EndOfFileException;
-import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
 public class step1_read_print {
-  
-  static Mal read(String input) {
-    return Reader.parse(input);
-  }
 
   static Mal eval(Mal ast) {
     return ast;
-  }
-
-  static String print(Mal ast) {
-    return Printer.print(ast);
   }
 
   static String repl(String input) {
@@ -26,7 +20,7 @@ public class step1_read_print {
   public static void main(String[] args) {
     String prompt = "user> ";
 
-    LineReader reader = LineReaderBuilder.builder().build();
+    var reader = LineReaderBuilder.builder().build();
     while (true) {
       String line = null;
       try {
@@ -36,7 +30,11 @@ public class step1_read_print {
       } catch (EndOfFileException e) {
         return;
       }
-      System.out.println(repl(line));
+      try {
+        System.out.println(repl(line));
+      } catch (IllegalStateException | UnsupportedOperationException e) {
+        System.err.println(e.getMessage());
+      }
     }
   }
 }
