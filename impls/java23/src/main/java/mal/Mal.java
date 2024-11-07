@@ -1,6 +1,6 @@
 package mal;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -41,13 +41,13 @@ public sealed interface Mal {
       return new MalNumber(this.value / other.value);
     }
   }
-  
+
   record MalString(String value) implements Mal {}
 
   record MalKeyword(String value) implements Mal {}
 
   record MalList(List<Mal> values) implements Mal {
-    
+
     public Stream<Mal> stream() {
       return values.stream();
     }
@@ -62,7 +62,7 @@ public sealed interface Mal {
   }
 
   record MalVector(List<Mal> values) implements Mal {
-    
+
     public Stream<Mal> stream() {
       return values.stream();
     }
@@ -144,14 +144,15 @@ public sealed interface Mal {
   }
 
   private static Map<String, Mal> toMap(List<Mal> tokens) {
-    Map<String, Mal> map = new HashMap<>();
+    Map<String, Mal> map = new LinkedHashMap<>();
     var iterator = tokens.iterator();
     while (iterator.hasNext()) {
       var key = iterator.next();
       var value = iterator.next();
       map.put(switch (key) {
         case MalSymbol(var name) -> name;
-        case MalString(var name) -> name;
+        case MalString(var name) -> "\"" + name + "\"";
+        case MalKeyword(var name) -> ":" + name;
         default -> throw new IllegalStateException();
       }, value);
     }
