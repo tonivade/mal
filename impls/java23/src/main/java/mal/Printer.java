@@ -2,15 +2,7 @@ package mal;
 
 import static java.util.stream.Collectors.joining;
 
-import mal.Mal.MalConstant;
-import mal.Mal.MalFunction;
-import mal.Mal.MalKeyword;
-import mal.Mal.MalList;
-import mal.Mal.MalMap;
-import mal.Mal.MalNumber;
-import mal.Mal.MalString;
-import mal.Mal.MalSymbol;
-import mal.Mal.MalVector;
+import mal.Mal.*;
 
 public class Printer {
 
@@ -33,7 +25,7 @@ public class Printer {
       }
       case MalMap(var map) -> {
         yield map.entrySet().stream()
-          .map(entry -> entry.getKey() + print(entry.getValue()))
+          .map(entry -> entry.getKey() + " " + print(entry.getValue()))
           .collect(joining(" ", "{", "}"));
       }
       case MalFunction _ -> null;
