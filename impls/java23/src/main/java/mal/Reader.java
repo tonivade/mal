@@ -26,39 +26,51 @@ public class Reader {
     return tokens.get(position);
   }
 
-  public static Mal parse(String input) {
-    return read(tokenize(input));
+  public boolean isEmpty() {
+    return tokens.isEmpty();
   }
 
-  private static Mal read(Reader reader) {
+  public static Mal read(String input) {
+    return parse(tokenize(input));
+  }
+
+  private static Mal parse(Reader reader) {
     String token = reader.peek();
+
+    if (token == null) {
+      return Mal.NIL;
+    }
 
     return switch (token.charAt(0)) {
 
       case '\'' -> {
         reader.next();
-        yield Mal.list(Mal.QUOTE, read(reader));
+        yield Mal.list(Mal.QUOTE, parse(reader));
       }
 
       case '`' -> {
         reader.next();
-        yield Mal.list(Mal.QUASIQUOTE, read(reader));
+        yield Mal.list(Mal.QUASIQUOTE, parse(reader));
       }
 
       case '~' -> {
         reader.next();
         if (token.equals("~")) {
-          yield Mal.list(Mal.UNQUOTE, read(reader));
+          yield Mal.list(Mal.UNQUOTE, parse(reader));
         }
-        yield Mal.list(Mal.SPLICE_UNQUOTE, read(reader));
+        yield Mal.list(Mal.SPLICE_UNQUOTE, parse(reader));
       }
 
       case '^' -> {
-        var meta = read(reader);
-        yield Mal.list(Mal.WITH_META, read(reader), meta);
+        reader.next();
+        var meta = parse(reader);
+        yield Mal.list(Mal.WITH_META, parse(reader), meta);
       }
 
-      case '@' -> Mal.list(Mal.DEREF, read(reader));
+      case '@' -> {
+        reader.next();
+        yield Mal.list(Mal.DEREF, parse(reader));
+      }
 
       case '(' -> readList(reader);
       case '[' -> readVector(reader);
@@ -92,7 +104,7 @@ public class Reader {
     }
 
     while ((token = reader.peek()) != null && token.charAt(0) != end) {
-        list.add(read(reader));
+        list.add(parse(reader));
     }
 
     if (token == null) {

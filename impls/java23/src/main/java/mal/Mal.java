@@ -3,33 +3,99 @@ package mal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public sealed interface Mal {
 
-  Mal QUOTE = new MalSymbol("quote");
-  Mal QUASIQUOTE = new MalSymbol("quasiquote");
-  Mal UNQUOTE = new MalSymbol("unquote");
-  Mal SPLICE_UNQUOTE = new MalSymbol("splice-unquote");
-  Mal WITH_META = new MalSymbol("with-meta");
-  Mal DEREF = new MalSymbol("deref");
+  MalSymbol QUOTE = new MalSymbol("quote");
+  MalSymbol QUASIQUOTE = new MalSymbol("quasiquote");
+  MalSymbol UNQUOTE = new MalSymbol("unquote");
+  MalSymbol SPLICE_UNQUOTE = new MalSymbol("splice-unquote");
+  MalSymbol WITH_META = new MalSymbol("with-meta");
+  MalSymbol DEREF = new MalSymbol("deref");
 
-  Mal NIL = new MalConstant("nil");
-  Mal TRUE = new MalConstant("true");
-  Mal FALSE = new MalConstant("false");
+  MalConstant NIL = new MalConstant("nil");
+  MalConstant TRUE = new MalConstant("true");
+  MalConstant FALSE = new MalConstant("false");
+
+  MalNumber ZERO = new MalNumber(0);
+  MalNumber ONE = new MalNumber(1);
 
   record MalConstant(String name) implements Mal {}
 
-  record MalNumber(Integer value) implements Mal {}
+  record MalNumber(Integer value) implements Mal {
+
+    public MalNumber sum(MalNumber other) {
+      return new MalNumber(this.value + other.value);
+    }
+
+    public MalNumber subs(MalNumber other) {
+      return new MalNumber(this.value - other.value);
+    }
+
+    public MalNumber mul(MalNumber other) {
+      return new MalNumber(this.value * other.value);
+    }
+
+    public MalNumber div(MalNumber other) {
+      return new MalNumber(this.value / other.value);
+    }
+  }
   
   record MalString(String value) implements Mal {}
 
-  record MalList(List<Mal> value) implements Mal {}
+  record MalList(List<Mal> values) implements Mal {
+    
+    public Stream<Mal> stream() {
+      return values.stream();
+    }
 
-  record MalVector(List<Mal> value) implements Mal {}
+    public boolean isEmpty() {
+      return values.isEmpty();
+    }
 
-  record MalMap(Map<String, Mal> value) implements Mal {}
+    public int size() {
+      return values.size();
+    }
+  }
+
+  record MalVector(List<Mal> values) implements Mal {
+    
+    public Stream<Mal> stream() {
+      return values.stream();
+    }
+
+    public boolean isEmpty() {
+      return values.isEmpty();
+    }
+
+    public int size() {
+      return values.size();
+    }
+  }
+
+  record MalMap(Map<String, Mal> map) implements Mal {
+
+    public Stream<String> keys() {
+      return map.keySet().stream();
+    }
+
+    public Stream<Mal> getMap() {
+      return map.values().stream();
+    }
+
+    public Stream<Map.Entry<String, Mal>> entries() {
+      return map.entrySet().stream();
+    }
+  }
 
   record MalSymbol(String name) implements Mal {}
+
+  @FunctionalInterface
+  non-sealed interface MalFunction extends Mal {
+
+    Mal apply(MalList args);
+  }
 
   static MalMap map(Mal...tokens) {
     return map(List.of(tokens));
