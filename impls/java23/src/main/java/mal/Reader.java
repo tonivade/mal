@@ -22,28 +22,31 @@ import static mal.Mal.vector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.regex.Pattern;
 
 public class Reader {
 
+  record Token(String value) { }
+
   private static final Pattern PATTERN = 
     Pattern.compile("[\\s,]*(~@|[\\[\\]{}()'`~^@]|\"(?:\\\\.|[^\\\\\"])*\"?|;.*|[^\\s\\[\\]{}('\"`,;)]*)");
 
-  private final List<String> tokens;
+  private final List<Token> tokens;
   private int position;
 
-  public Reader(List<String> tokens) {
+  public Reader(List<Token> tokens) {
     this.tokens = tokens;
   }
 
-  public String next() {
+  public Token next() {
     if (position >= tokens.size()) {
       return null;
     }
     return tokens.get(position++);
   }
 
-  public String peek() {
+  public Token peek() {
     if (position >= tokens.size()) {
       return null;
     }
@@ -59,50 +62,47 @@ public class Reader {
   }
 
   private static Mal parse(Reader reader) {
-    String token = reader.peek();
+    return switch (reader.peek()) {
+      case null -> Mal.NIL;
 
-    if (token == null || token.isBlank()) {
-      return Mal.NIL;
-    }
-
-    return switch (token.charAt(0)) {
-
-      case '\'' -> {
+      case Token(var value) when value.charAt(0) == '\'' -> {
         reader.next();
         yield list(QUOTE, parse(reader));
       }
 
-      case '`' -> {
+      case Token(var value) when value.charAt(0) == '`' -> {
         reader.next();
         yield list(QUASIQUOTE, parse(reader));
       }
 
-      case '~' -> {
+      case Token(var value) when value.equals("~") -> {
         reader.next();
-        if (token.equals("~")) {
-          yield list(UNQUOTE, parse(reader));
-        }
+        yield list(UNQUOTE, parse(reader));
+      }
+
+      case Token(var value) when value.charAt(0) == '~' -> {
+        reader.next();
         yield list(SPLICE_UNQUOTE, parse(reader));
       }
 
-      case '^' -> {
+      case Token(var value) when value.charAt(0) == '^' -> {
         reader.next();
         var meta = parse(reader);
         yield list(WITH_META, parse(reader), meta);
       }
 
-      case '@' -> {
+      case Token(var value) when value.charAt(0) == '@' -> {
         reader.next();
         yield list(DEREF, parse(reader));
       }
 
-      case '(' -> readList(reader);
-      case '[' -> readVector(reader);
-      case '{' -> readMap(reader);
+      case Token(var value) when value.charAt(0) == '(' -> readList(reader);
+      case Token(var value) when value.charAt(0) == '[' -> readVector(reader);
+      case Token(var value) when value.charAt(0) == '{' -> readMap(reader);
 
-      case ')' -> throw new IllegalArgumentException("unexpected token");
-      case ']' -> throw new IllegalArgumentException("unexpected token");
-      case '}' -> throw new IllegalArgumentException("unexpected token");
+      case Token(var value) when value.charAt(0) == ')' -> throw new IllegalArgumentException("unexpected token");
+      case Token(var value) when value.charAt(0) == ']' -> throw new IllegalArgumentException("unexpected token");
+      case Token(var value) when value.charAt(0) == '}' -> throw new IllegalArgumentException("unexpected token");
 
       default -> readAtom(reader);
     };
@@ -122,17 +122,17 @@ public class Reader {
 
   private static List<Mal> readList(Reader reader, char start, char end) {
     var list = new ArrayList<Mal>();
-    String token = reader.next();
-    if (token.charAt(0) != start) {
-        throw new IllegalStateException("expected '" + start + "'");
+    var token = reader.next();
+    if (token.value().charAt(0) != start) {
+      throw new IllegalStateException("expected '" + start + "'");
     }
 
-    while ((token = reader.peek()) != null && token.charAt(0) != end) {
-        list.add(parse(reader));
+    while ((token = reader.peek()) != null && token.value().charAt(0) != end) {
+      list.add(parse(reader));
     }
 
     if (token == null) {
-        throw new IllegalStateException("EOF");
+      throw new IllegalStateException("EOF");
     }
     reader.next();
 
@@ -141,37 +141,29 @@ public class Reader {
 
   private static Mal readAtom(Reader reader) {
     var token = reader.next();
-    if (token == null) {
-      return NIL;
-    }
-    if (Character.isDigit(token.charAt(0))) {
-      return number(Integer.parseInt(token));
-    }
-    if (token.length() > 1 && token.charAt(0) == '-' && Character.isDigit(token.charAt(1))) {
-      return number(Integer.parseInt(token));
-    }
-    if (token.equals("nil")) {
-      return NIL;
-    } 
-    if (token.equals("true")) {
-      return TRUE;
-    } 
-    if (token.equals("false")) {
-      return FALSE;
-    } 
-    if (token.equals("\"")) {
-      throw new IllegalStateException("EOF");
-    } 
-    if (token.startsWith("\"") && !token.endsWith("\"")) {
-      throw new IllegalStateException("EOF");
-    } 
-    if (token.startsWith("\"") && token.endsWith("\"")) {
-      return string(token.substring(1, token.length() - 1));
-    } 
-    if (token.charAt(0) == ':') {
-      return keyword(token.substring(1));
-    } 
-    return symbol(token);
+
+    return switch (token) {
+      case null -> NIL;
+      case Token(var value) when value.equals("nil") -> NIL;
+      case Token(var value) when value.equals("true") -> TRUE;
+      case Token(var value) when value.equals("false") -> FALSE;
+      case Token(var value) when Character.isDigit(value.charAt(0)) -> {
+        yield number(Integer.parseInt(value));
+      }
+      case Token(var value) when value.length() > 1 && value.charAt(0) == '-' && Character.isDigit(value.charAt(1)) -> {
+        yield number(Integer.parseInt(value));
+      }
+      // TODO: unbalanced strings
+      case Token(var value) when value.equals("\"") -> throw new IllegalStateException("EOF");
+      case Token(var value) when value.startsWith("\"") && value.endsWith("\"") -> {
+        yield string(value.substring(1, value.length() - 1));
+      }
+      case Token(var value) when value.startsWith(":") -> {
+        yield keyword(value.substring(1));
+      }
+      case Token(var value) -> symbol(value);
+      default -> null;
+    };
   }
 
   private static Reader tokenize(String input) {
@@ -179,6 +171,7 @@ public class Reader {
       .map(r -> r.group(1))
       .filter(not(Reader::isEmpty))
       .filter(not(Reader::isComment))
+      .map(Token::new)
       .collect(collectingAndThen(toUnmodifiableList(), Reader::new));
   }
 
