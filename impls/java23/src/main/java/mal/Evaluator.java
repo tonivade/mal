@@ -12,6 +12,7 @@ import static mal.Printer.print;
 import java.util.Map;
 
 import mal.Mal.MalFunction;
+import mal.Mal.MalIterable;
 import mal.Mal.MalList;
 import mal.Mal.MalMap;
 import mal.Mal.MalSymbol;
@@ -46,8 +47,7 @@ public class Evaluator {
 
           case MalSymbol(var name) when name.equals("let*") -> {
             var newEnv = new Env(env);
-            @SuppressWarnings("unchecked")
-            var bindings = (Iterable<Mal>) values.get(1);
+            var bindings = (MalIterable) values.get(1);
             for (var iterator = bindings.iterator(); iterator.hasNext();) {
               var key = (MalSymbol) iterator.next();
               var value = eval(iterator.next(), newEnv);
@@ -71,14 +71,15 @@ public class Evaluator {
 
           case MalSymbol(var name) when name.equals("fn*") -> {
             yield function(args -> {
-              @SuppressWarnings("unchecked")
-              var newEnv = new Env(env, (Iterable<Mal>) values.get(1), args);
+              var newEnv = new Env(env, (MalIterable) values.get(1), args);
               return eval(values.get(2), newEnv);
             });
           }
+
           case MalFunction function -> {
             yield function.apply(list(values.stream().skip(1).toList()));
           }
+
           default -> {
             yield eval(list(values.stream().map(m -> eval(m, env)).toList()), env);
           }
