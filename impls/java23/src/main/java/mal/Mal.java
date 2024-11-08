@@ -1,11 +1,11 @@
 package mal;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public sealed interface Mal {
 
@@ -42,18 +42,45 @@ public sealed interface Mal {
     public MalNumber div(MalNumber other) {
       return new MalNumber(this.value / other.value);
     }
+
+    public boolean gt(MalNumber other) {
+      return this.value > other.value;
+    }
+
+    public boolean gte(MalNumber other) {
+      return this.value >= other.value;
+    }
+
+    public boolean lt(MalNumber other) {
+      return this.value < other.value;
+    }
+
+    public boolean lte(MalNumber other) {
+      return this.value <= other.value;
+    }
   }
 
   record MalString(String value) implements Mal {}
 
   record MalKeyword(String value) implements Mal {}
 
-  record MalList(List<Mal> values) implements Mal, Iterable<Mal> {
+  sealed interface MalIterable extends Iterable<Mal> {
 
-    public MalList append(MalList other) {
-      List<Mal> result = new ArrayList<>(values);
-      result.addAll(other.values);
-      return new MalList(result);
+    int size();
+
+    default Stream<Mal> stream() {
+      return StreamSupport.stream(spliterator(), false);
+    }
+
+    default boolean isEmpty() {
+      return size() == 0;
+    }
+  }
+
+  record MalList(List<Mal> values) implements Mal, MalIterable {
+
+    public Mal get(int i) {
+      return values.get(i);
     }
 
     @Override
@@ -61,34 +88,20 @@ public sealed interface Mal {
       return values.iterator();
     }
 
-    public Stream<Mal> stream() {
-      return values.stream();
-    }
-
-    public boolean isEmpty() {
-      return values.isEmpty();
-    }
-
+    @Override
     public int size() {
       return values.size();
     }
   }
 
-  record MalVector(List<Mal> values) implements Mal, Iterable<Mal> {
+  record MalVector(List<Mal> values) implements Mal, MalIterable {
 
     @Override
     public Iterator<Mal> iterator() {
       return values.iterator();
     }
 
-    public Stream<Mal> stream() {
-      return values.stream();
-    }
-
-    public boolean isEmpty() {
-      return values.isEmpty();
-    }
-
+    @Override
     public int size() {
       return values.size();
     }
@@ -102,7 +115,7 @@ public sealed interface Mal {
     }
 
     public boolean isEmpty() {
-      return map.isEmpty();
+      return size() == 0;
     }
 
     public int size() {

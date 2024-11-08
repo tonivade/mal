@@ -1,7 +1,9 @@
 package mal;
 
 import static java.util.stream.Collectors.toUnmodifiableMap;
+import static mal.Mal.FALSE;
 import static mal.Mal.NIL;
+import static mal.Mal.function;
 import static mal.Mal.list;
 import static mal.Mal.map;
 import static mal.Mal.vector;
@@ -34,12 +36,14 @@ public class Evaluator {
 
       case MalList(var values) when !values.isEmpty() -> {
         yield switch (values.getFirst()) {
+
           case MalSymbol(var name) when name.equals("def!") -> {
             var key = (MalSymbol) values.get(1);
             var value = eval(values.get(2), env);
             env.set(key, value);
             yield value;
           }
+
           case MalSymbol(var name) when name.equals("let*") -> {
             var newEnv = new Env(env);
             @SuppressWarnings("unchecked")
@@ -50,6 +54,27 @@ public class Evaluator {
               newEnv.set(key, value);
             }
             yield eval(values.get(2), newEnv);
+          }
+
+          case MalSymbol(var name) when name.equals("do") -> {
+            var evaluated = values.stream().map(m -> eval(m, env)).toList();
+            yield evaluated.getLast();
+          }
+
+          case MalSymbol(var name) when name.equals("if") -> {
+            var result = eval(values.get(1), env);
+            if (result != NIL && result != FALSE) {
+              yield eval(values.get(2), env);
+            }
+            yield eval(values.getLast(), env);
+          }
+
+          case MalSymbol(var name) when name.equals("fn*") -> {
+            yield function(args -> {
+              @SuppressWarnings("unchecked")
+              var newEnv = new Env(env, (Iterable<Mal>) values.get(1), args);
+              return eval(values.get(2), newEnv);
+            });
           }
           case MalFunction function -> {
             yield function.apply(list(values.stream().skip(1).toList()));
