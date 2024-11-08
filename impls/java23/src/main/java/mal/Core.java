@@ -54,7 +54,7 @@ public interface Core {
   };
 
   MalFunction EQ = args -> {
-    return equals(args.get(0), args.get(1)) ? TRUE : FALSE;
+    return Mal.equals(args.get(0), args.get(1)) ? TRUE : FALSE;
   };
 
   MalFunction GT = args -> {
@@ -125,18 +125,4 @@ public interface Core {
     entry("<=", LTE),
     entry("pr-str", PR_STR),
     entry("str", STR));
-
-  private static boolean equals(Mal first, Mal second) {
-    if (first instanceof MalIterable a && second instanceof MalIterable b) {
-      var i = a.iterator();
-      var j = b.iterator();
-      while (i.hasNext() && j.hasNext()) {
-        if (!equals(i.next(), j.next())) {
-          return false;
-        }
-      }
-      return !(i.hasNext() || j.hasNext());
-    }
-    return first.equals(second);
-  }
 }

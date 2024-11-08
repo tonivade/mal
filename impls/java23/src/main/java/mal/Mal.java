@@ -182,6 +182,20 @@ public sealed interface Mal {
     return function;
   }
 
+  static boolean equals(Mal first, Mal second) {
+    if (first instanceof MalIterable a && second instanceof MalIterable b) {
+      var i = a.iterator();
+      var j = b.iterator();
+      while (i.hasNext() && j.hasNext()) {
+        if (!equals(i.next(), j.next())) {
+          return false;
+        }
+      }
+      return !(i.hasNext() || j.hasNext());
+    }
+    return first.equals(second);
+  }
+
   private static Map<String, Mal> toMap(List<Mal> tokens) {
     Map<String, Mal> map = new LinkedHashMap<>();
     for (var iterator = tokens.iterator(); iterator.hasNext();) {
