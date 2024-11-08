@@ -1,5 +1,6 @@
 package mal;
 
+import static mal.Mal.FALSE;
 import static mal.Mal.NIL;
 import static mal.Mal.ZERO;
 import static mal.Mal.function;
@@ -11,6 +12,8 @@ import mal.Mal.MalNumber;
 import mal.Mal.MalSymbol;
 
 public class Env {
+
+  private static final String DEBUG_EVAL = "DEBUG-EVAL";
 
   public static final Env DEFAULT = new Env(Map.of(
       "+", function(args -> args.stream().map(MalNumber.class::cast).reduce(MalNumber::sum).orElse(ZERO)),
@@ -37,6 +40,11 @@ public class Env {
   public Env(Env outer, Map<String, Mal> map) {
     this.outer = outer;
     this.map = map;
+  }
+
+  public boolean isDebugEval() {
+    var debugEval = map.get(DEBUG_EVAL);
+    return debugEval != null && debugEval != FALSE;
   }
 
   public Mal get(String key) {
