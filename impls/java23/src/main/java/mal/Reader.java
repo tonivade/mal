@@ -1,5 +1,8 @@
 package mal;
 
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static mal.Mal.DEREF;
 import static mal.Mal.FALSE;
 import static mal.Mal.NIL;
@@ -16,13 +19,15 @@ import static mal.Mal.number;
 import static mal.Mal.string;
 import static mal.Mal.symbol;
 import static mal.Mal.vector;
-import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class Reader {
+
+  private static final Pattern PATTERN = 
+    Pattern.compile("[\\s,]*(~@|[\\[\\]{}()'`~^@]|\"(?:\\\\.|[^\\\\\"])*\"?|;.*|[^\\s\\[\\]{}('\"`,;)]*)");
 
   private final List<String> tokens;
   private int position;
@@ -32,6 +37,9 @@ public class Reader {
   }
 
   public String next() {
+    if (position >= tokens.size()) {
+      return null;
+    }
     return tokens.get(position++);
   }
 
@@ -53,7 +61,7 @@ public class Reader {
   private static Mal parse(Reader reader) {
     String token = reader.peek();
 
-    if (token == null) {
+    if (token == null || token.isBlank()) {
       return Mal.NIL;
     }
 
@@ -124,7 +132,7 @@ public class Reader {
     }
 
     if (token == null) {
-        throw new IllegalStateException("expected '" + end + "', got EOF");
+        throw new IllegalStateException("EOF");
     }
     reader.next();
 
@@ -133,42 +141,45 @@ public class Reader {
 
   private static Mal readAtom(Reader reader) {
     var token = reader.next();
-    var pattern = Pattern.compile("(^-?[0-9]+$)|(^-?[0-9][0-9.]*$)|(^nil$)|(^true$)|(^false$)|^\"((?:[\\\\].|[^\\\\\"])*)\"$|^\"(.*)$|:(.*)|(^[^\"]*$)");
-    var matcher = pattern.matcher(token);
-    if (!matcher.find()) {
-      throw new IllegalStateException("unrecognized token '" + token + "'");
-    }
-    if (matcher.group(1) != null) {
-      return number(Integer.parseInt(matcher.group(1)));
-    } else if (matcher.group(3) != null) {
+    if (token == null) {
       return NIL;
-    } else if (matcher.group(4) != null) {
-      return TRUE;
-    } else if (matcher.group(5) != null) {
-      return FALSE;
-    } else if (matcher.group(6) != null) {
-      return string(unescapeJava(matcher.group(6)));
-    } else if (matcher.group(7) != null) {
-      throw new IllegalStateException("expected '\"', got EOF");
-    } else if (matcher.group(8) != null) {
-      return keyword(matcher.group(8));
-    } else if (matcher.group(9) != null) {
-      return symbol(matcher.group(9));
     }
-    throw new IllegalStateException("unrecognized '" + matcher.group(0) + "'");
+    if (Character.isDigit(token.charAt(0))) {
+      return number(Integer.parseInt(token));
+    }
+    if (token.length() > 1 && token.charAt(0) == '-' && Character.isDigit(token.charAt(1))) {
+      return number(Integer.parseInt(token));
+    }
+    if (token.equals("nil")) {
+      return NIL;
+    } 
+    if (token.equals("true")) {
+      return TRUE;
+    } 
+    if (token.equals("false")) {
+      return FALSE;
+    } 
+    if (token.equals("\"")) {
+      throw new IllegalStateException("EOF");
+    } 
+    if (token.startsWith("\"") && !token.endsWith("\"")) {
+      throw new IllegalStateException("EOF");
+    } 
+    if (token.startsWith("\"") && token.endsWith("\"")) {
+      return string(token.substring(1, token.length() - 1));
+    } 
+    if (token.charAt(0) == ':') {
+      return keyword(token.substring(1));
+    } 
+    return symbol(token);
   }
 
   private static Reader tokenize(String input) {
-    var tokens = new ArrayList<String>();
-    var pattern = Pattern.compile("[\\s,]*(~@|[\\[\\]{}()'`~^@]|\"(?:\\\\.|[^\\\\\"])*\"?|;.*|[^\\s\\[\\]{}('\"`,;)]*)");
-    var matcher = pattern.matcher(input);
-    while (matcher.find()) {
-      var token = matcher.group(1);
-      if (!isEmpty(token) && !isComment(token)) {
-        tokens.add(token);
-      }
-    }
-    return new Reader(tokens);
+    return PATTERN.matcher(input).results()
+      .map(r -> r.group(1))
+      .filter(not(Reader::isEmpty))
+      .filter(not(Reader::isComment))
+      .collect(collectingAndThen(toUnmodifiableList(), Reader::new));
   }
 
   private static boolean isEmpty(String token) {
