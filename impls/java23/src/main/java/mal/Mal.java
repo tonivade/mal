@@ -1,5 +1,6 @@
 package mal;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,6 +49,12 @@ public sealed interface Mal {
   record MalKeyword(String value) implements Mal {}
 
   record MalList(List<Mal> values) implements Mal, Iterable<Mal> {
+
+    public MalList append(MalList other) {
+      List<Mal> result = new ArrayList<>(values);
+      result.addAll(other.values);
+      return new MalList(result);
+    }
 
     @Override
     public Iterator<Mal> iterator() {

@@ -36,7 +36,7 @@ public class Printer {
           .map(entry -> entry.getKey() + " " + print(entry.getValue()))
           .collect(joining(" ", "{", "}"));
       }
-      case MalFunction _ -> null;
+      case MalFunction _ -> "#function";
     };
   }
 }
