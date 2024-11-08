@@ -22,7 +22,6 @@ import static mal.Mal.vector;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.regex.Pattern;
 
 public class Reader {
@@ -140,27 +139,19 @@ public class Reader {
   }
 
   private static Mal readAtom(Reader reader) {
-    var token = reader.next();
-
-    return switch (token) {
+    return switch (reader.next()) {
       case null -> NIL;
       case Token(var value) when value.equals("nil") -> NIL;
       case Token(var value) when value.equals("true") -> TRUE;
       case Token(var value) when value.equals("false") -> FALSE;
-      case Token(var value) when Character.isDigit(value.charAt(0)) -> {
-        yield number(Integer.parseInt(value));
-      }
-      case Token(var value) when value.length() > 1 && value.charAt(0) == '-' && Character.isDigit(value.charAt(1)) -> {
-        yield number(Integer.parseInt(value));
-      }
-      // TODO: unbalanced strings
-      case Token(var value) when value.equals("\"") -> throw new IllegalStateException("EOF");
-      case Token(var value) when value.startsWith("\"") && value.endsWith("\"") -> {
-        yield string(value.substring(1, value.length() - 1));
-      }
-      case Token(var value) when value.startsWith(":") -> {
-        yield keyword(value.substring(1));
-      }
+      case Token(var value) when value.matches("-?\\d+") -> 
+        number(Integer.parseInt(value));
+      case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*") -> 
+        throw new IllegalStateException("EOF");
+      case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*\"") -> 
+        string(value.substring(1, value.length() - 1));
+      case Token(var value) when value.startsWith(":") ->
+        keyword(value.substring(1));
       case Token(var value) -> symbol(value);
       default -> null;
     };
