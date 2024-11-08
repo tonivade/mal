@@ -80,6 +80,9 @@ public sealed interface Mal {
   record MalList(List<Mal> values) implements Mal, MalIterable {
 
     public Mal get(int i) {
+      if (i < 0 || i >= values.size()) {
+        return NIL;
+      }
       return values.get(i);
     }
 

@@ -71,10 +71,11 @@ public class Env {
       var bind = (MalSymbol) i.next();
 
       if (bind.name().equals("&")) {
+        bind = (MalSymbol) i.next();
         List<Mal> list = new ArrayList<>();
-        while (j.hasNext()) {
+        do {
           list.add(j.next());
-        }
+        } while (j.hasNext());
         result.put(bind.name(), list(list));
       } else {
         var expr = j.next();

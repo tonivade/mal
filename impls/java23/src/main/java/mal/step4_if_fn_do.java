@@ -13,12 +13,15 @@ public class step4_if_fn_do {
 
   private static final Env ENV = new Env();
 
-  static String repl(String input) {
+  static String rep(String input) {
     return print(eval(read(input), ENV));
   }
 
   public static void main(String[] args) {
     String prompt = "user> ";
+
+    // NOT function
+    rep("(def! not (fn* (a) (if a false true)))");
 
     var reader = LineReaderBuilder.builder()
       .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
@@ -33,7 +36,7 @@ public class step4_if_fn_do {
         return;
       }
       try {
-        System.out.println(repl(line));
+        System.out.println(rep(line));
       } catch (IllegalStateException | UnsupportedOperationException e) {
         System.err.println(e.getMessage());
       }

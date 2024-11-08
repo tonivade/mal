@@ -11,7 +11,7 @@ import org.jline.reader.UserInterruptException;
 
 public class step2_eval {
 
-  static String repl(String input) {
+  static String rep(String input) {
     return print(eval(read(input), new Env()));
   }
 
@@ -31,7 +31,7 @@ public class step2_eval {
         return;
       }
       try {
-        System.out.println(repl(line));
+        System.out.println(rep(line));
       } catch (IllegalStateException | UnsupportedOperationException e) {
         System.err.println(e.getMessage());
       }
