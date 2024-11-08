@@ -51,12 +51,11 @@ public class Evaluator {
             }
             yield eval(values.get(2), newEnv);
           }
+          case MalFunction function -> {
+            yield function.apply(list(values.stream().skip(1).toList()));
+          }
           default -> {
-            var first = eval(values.getFirst(), env);
-            yield switch (first) {
-              case MalFunction function -> function.apply(list(values.stream().skip(1).map(m -> eval(m, env)).toList()));
-              default -> throw new UnsupportedOperationException();
-            };
+            yield eval(list(values.stream().map(m -> eval(m, env)).toList()), env);
           }
         };
       }
