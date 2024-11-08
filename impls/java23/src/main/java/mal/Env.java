@@ -1,7 +1,6 @@
 package mal;
 
 import static mal.Mal.FALSE;
-import static mal.Mal.NIL;
 import static mal.Mal.list;
 
 import java.util.ArrayList;
@@ -67,15 +66,15 @@ public class Env {
 
     Map<String, Mal> result = new HashMap<>();
 
-    while (i.hasNext() && j.hasNext()) {
+    while (i.hasNext()) {
       var bind = (MalSymbol) i.next();
 
       if (bind.name().equals("&")) {
         bind = (MalSymbol) i.next();
         List<Mal> list = new ArrayList<>();
-        do {
+        while (j.hasNext()) {
           list.add(j.next());
-        } while (j.hasNext());
+        }
         result.put(bind.name(), list(list));
       } else {
         var expr = j.next();
