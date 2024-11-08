@@ -17,6 +17,9 @@ public class App {
       case "step2_eval" -> {
         step2_eval.main(Arrays.copyOfRange(args, 1, args.length));
       }
+      case "step3_env" -> {
+        step3_env.main(Arrays.copyOfRange(args, 1, args.length));
+      }
       default -> throw new IllegalArgumentException("invalid step: " + args[0]);
     }
   }

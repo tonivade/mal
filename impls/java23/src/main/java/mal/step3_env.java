@@ -9,10 +9,12 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-public class step2_eval {
+public class step3_env {
+
+  private static final Env ENV = new Env();
 
   static String repl(String input) {
-    return print(eval(read(input), new Env()));
+    return print(eval(read(input), ENV));
   }
 
   public static void main(String[] args) {
