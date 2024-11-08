@@ -1,5 +1,6 @@
 package mal;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,12 @@ public sealed interface Mal {
 
   record MalKeyword(String value) implements Mal {}
 
-  record MalList(List<Mal> values) implements Mal {
+  record MalList(List<Mal> values) implements Mal, Iterable<Mal> {
+
+    @Override
+    public Iterator<Mal> iterator() {
+      return values.iterator();
+    }
 
     public Stream<Mal> stream() {
       return values.stream();
@@ -61,7 +67,12 @@ public sealed interface Mal {
     }
   }
 
-  record MalVector(List<Mal> values) implements Mal {
+  record MalVector(List<Mal> values) implements Mal, Iterable<Mal> {
+
+    @Override
+    public Iterator<Mal> iterator() {
+      return values.iterator();
+    }
 
     public Stream<Mal> stream() {
       return values.stream();
@@ -76,18 +87,19 @@ public sealed interface Mal {
     }
   }
 
-  record MalMap(Map<String, Mal> map) implements Mal {
+  record MalMap(Map<String, Mal> map) implements Mal, Iterable<Map.Entry<String, Mal>> {
 
-    public Stream<String> keys() {
-      return map.keySet().stream();
+    @Override
+    public Iterator<Map.Entry<String, Mal>> iterator() {
+      return map.entrySet().iterator();
     }
 
-    public Stream<Mal> getMap() {
-      return map.values().stream();
+    public boolean isEmpty() {
+      return map.isEmpty();
     }
 
-    public Stream<Map.Entry<String, Mal>> entries() {
-      return map.entrySet().stream();
+    public int size() {
+      return map.size();
     }
   }
 
@@ -143,6 +155,10 @@ public sealed interface Mal {
     return new MalSymbol(name);
   }
 
+  static MalFunction function(MalFunction function) {
+    return function;
+  }
+
   private static Map<String, Mal> toMap(List<Mal> tokens) {
     Map<String, Mal> map = new LinkedHashMap<>();
     var iterator = tokens.iterator();
@@ -153,7 +169,7 @@ public sealed interface Mal {
         case MalSymbol(var name) -> name;
         case MalString(var name) -> "\"" + name + "\"";
         case MalKeyword(var name) -> ":" + name;
-        default -> throw new IllegalStateException();
+        default -> throw new IllegalStateException("not supported key: " + key);
       }, value);
     }
     return map;
