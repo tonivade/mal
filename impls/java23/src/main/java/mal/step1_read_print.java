@@ -14,7 +14,7 @@ public class step1_read_print {
     return ast;
   }
 
-  static String repl(String input) {
+  static String rep(String input) {
     return print(eval(read(input)));
   }
 
@@ -34,7 +34,7 @@ public class step1_read_print {
         return;
       }
       try {
-        System.out.println(repl(line));
+        System.out.println(rep(line));
       } catch (IllegalStateException | UnsupportedOperationException e) {
         System.err.println(e.getMessage());
       }

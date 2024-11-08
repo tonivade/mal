@@ -13,7 +13,7 @@ public class step3_env {
 
   private static final Env ENV = new Env();
 
-  static String repl(String input) {
+  static String rep(String input) {
     return print(eval(read(input), ENV));
   }
 
@@ -33,7 +33,7 @@ public class step3_env {
         return;
       }
       try {
-        System.out.println(repl(line));
+        System.out.println(rep(line));
       } catch (IllegalStateException | UnsupportedOperationException e) {
         System.err.println(e.getMessage());
       }

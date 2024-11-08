@@ -57,7 +57,7 @@ public class Evaluator {
           }
 
           case MalSymbol(var name) when name.equals("do") -> {
-            var evaluated = values.stream().map(m -> eval(m, env)).toList();
+            var evaluated = values.stream().skip(1).map(m -> eval(m, env)).toList();
             yield evaluated.getLast();
           }
 
@@ -66,7 +66,7 @@ public class Evaluator {
             if (result != NIL && result != FALSE) {
               yield eval(values.get(2), env);
             }
-            yield eval(values.getLast(), env);
+            yield values.size() > 3 ? eval(values.get(3), env) : NIL;
           }
 
           case MalSymbol(var name) when name.equals("fn*") -> {

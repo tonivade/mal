@@ -19,7 +19,7 @@ public class step0_repl {
     return exp;
   }
 
-  static String repl(String input) {
+  static String rep(String input) {
     return print(eval(read(input)));
   }
 
@@ -38,7 +38,7 @@ public class step0_repl {
       } catch (EndOfFileException e) {
         return;
       }
-      System.out.println(repl(line));
+      System.out.println(rep(line));
     }
   }
 }

@@ -1,13 +1,14 @@
 package mal;
 
 import static java.util.Map.entry;
+import static java.util.stream.Collectors.joining;
 import static mal.Mal.FALSE;
 import static mal.Mal.NIL;
 import static mal.Mal.TRUE;
 import static mal.Mal.ZERO;
 import static mal.Mal.list;
 import static mal.Mal.number;
-import static mal.Printer.print;
+import static mal.Mal.string;
 
 import java.util.Map;
 
@@ -19,12 +20,19 @@ import mal.Mal.MalNumber;
 public interface Core {
 
   MalFunction PRN = args -> {
-    System.out.println(print(args));
+    var result = args.stream().map(Printer::print).collect(joining(" "));
+    System.out.println(result);
+    return NIL;
+  };
+
+  MalFunction PRINTLN = args -> {
+    var result = args.stream().map(Printer::print).collect(joining(""));
+    System.out.println(result);
     return NIL;
   };
 
   MalFunction LIST = args -> {
-    return list(args);
+    return list(args.values());
   };
 
   MalFunction LIST_Q = args -> {
@@ -39,15 +47,13 @@ public interface Core {
   MalFunction COUNT = args -> {
     var first = args.get(0);
     if (first == NIL) {
-      return number(1);
+      return number(0);
     }
     return number(((MalIterable) first).size());
   };
 
   MalFunction EQ = args -> {
-    var first = args.get(0);
-    var second = args.get(1);
-    return first.equals(second) ? TRUE : FALSE;
+    return equals(args.get(0), args.get(1)) ? TRUE : FALSE;
   };
 
   MalFunction GT = args -> {
@@ -89,9 +95,20 @@ public interface Core {
   MalFunction DIV = args -> {
     return args.stream().map(MalNumber.class::cast).reduce(MalNumber::div).orElse(ZERO);
   };
+
+  MalFunction PR_STR = args -> {
+    var result = args.stream().map(Printer::print).collect(joining(" "));
+    return string(result);
+  };
+
+  MalFunction STR = args -> {
+    var result = args.stream().map(Printer::print).collect(joining(""));
+    return string(result);
+  };
   
   Map<String, Mal> NS = Map.ofEntries(
     entry("prn", PRN),
+    entry("println", PRINTLN),
     entry("list", LIST),
     entry("list?", LIST_Q),
     entry("empty?", EMPTY_Q),
@@ -104,5 +121,21 @@ public interface Core {
     entry(">", GT),
     entry(">=", GTE),
     entry("<", LT),
-    entry("<=", LTE));
+    entry("<=", LTE),
+    entry("pr-str", PR_STR),
+    entry("str", STR));
+
+  private static boolean equals(Mal first, Mal second) {
+    if (first instanceof MalIterable a && second instanceof MalIterable b) {
+      var i = a.iterator();
+      var j = b.iterator();
+      while (i.hasNext() && j.hasNext()) {
+        if (!equals(i.next(), j.next())) {
+          return false;
+        }
+      }
+      return !(i.hasNext() || j.hasNext());
+    }
+    return first.equals(second);
+  }
 }
