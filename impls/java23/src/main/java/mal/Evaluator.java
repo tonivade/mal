@@ -5,6 +5,7 @@ import static mal.Mal.NIL;
 import static mal.Mal.list;
 import static mal.Mal.map;
 import static mal.Mal.vector;
+import static mal.Printer.print;
 
 import java.util.Map;
 
@@ -17,6 +18,10 @@ import mal.Mal.MalVector;
 public class Evaluator {
 
   static Mal eval(Mal ast, Env env) {
+    if (env.isDebugEval()) {
+      System.out.println("EVAL: " + print(ast));
+    }
+
     return switch (ast) {
 
       case MalSymbol(var name) -> {
@@ -39,9 +44,9 @@ public class Evaluator {
             var newEnv = new Env(env);
             @SuppressWarnings("unchecked")
             var bindings = (Iterable<Mal>) values.get(1);
-            for (var i = bindings.iterator(); i.hasNext();) {
-              var key = (MalSymbol) i.next();
-              var value = eval(i.next(), newEnv);
+            for (var iterator = bindings.iterator(); iterator.hasNext();) {
+              var key = (MalSymbol) iterator.next();
+              var value = eval(iterator.next(), newEnv);
               newEnv.set(key, value);
             }
             yield eval(values.get(2), newEnv);

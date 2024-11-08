@@ -161,8 +161,7 @@ public sealed interface Mal {
 
   private static Map<String, Mal> toMap(List<Mal> tokens) {
     Map<String, Mal> map = new LinkedHashMap<>();
-    var iterator = tokens.iterator();
-    while (iterator.hasNext()) {
+    for (var iterator = tokens.iterator(); iterator.hasNext();) {
       var key = iterator.next();
       var value = iterator.next();
       map.put(switch (key) {
