@@ -15,7 +15,7 @@ public class step1_read_print {
   }
 
   static String rep(String input) {
-    return print(eval(read(input)));
+    return print(eval(read(input)), true);
   }
 
   public static void main(String[] args) {

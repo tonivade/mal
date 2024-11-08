@@ -21,14 +21,14 @@ public class Evaluator {
 
   static Mal eval(Mal ast, Env env) {
     if (env.isDebugEval()) {
-      System.out.println("EVAL: " + print(ast));
+      System.out.println("EVAL: " + print(ast, true));
     }
 
     return switch (ast) {
 
       case MalSymbol(var name) -> {
         var value = env.get(name);
-        if (value == NIL) {
+        if (value == null) {
           throw new IllegalStateException(name + " not found");
         }
         yield value;
