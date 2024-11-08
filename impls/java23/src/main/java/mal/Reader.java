@@ -19,6 +19,7 @@ import static mal.Mal.number;
 import static mal.Mal.string;
 import static mal.Mal.symbol;
 import static mal.Mal.vector;
+import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -149,7 +150,7 @@ public class Reader {
       case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*") -> 
         throw new IllegalStateException("EOF");
       case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*\"") -> 
-        string(value.substring(1, value.length() - 1));
+        string(unescapeJava(value.substring(1, value.length() - 1)));
       case Token(var value) when value.startsWith(":") ->
         keyword(value.substring(1));
       case Token(var value) -> symbol(value);

@@ -14,7 +14,7 @@ public class step3_env {
   private static final Env ENV = new Env();
 
   static String rep(String input) {
-    return print(eval(read(input), ENV));
+    return print(eval(read(input), ENV), true);
   }
 
   public static void main(String[] args) {

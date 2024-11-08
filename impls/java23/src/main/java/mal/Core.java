@@ -9,6 +9,7 @@ import static mal.Mal.ZERO;
 import static mal.Mal.list;
 import static mal.Mal.number;
 import static mal.Mal.string;
+import static mal.Printer.print;
 
 import java.util.Map;
 
@@ -20,13 +21,13 @@ import mal.Mal.MalNumber;
 public interface Core {
 
   MalFunction PRN = args -> {
-    var result = args.stream().map(Printer::print).collect(joining(" "));
+    var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
     System.out.println(result);
     return NIL;
   };
 
   MalFunction PRINTLN = args -> {
-    var result = args.stream().map(Printer::print).collect(joining(""));
+    var result = args.stream().map(m -> print(m, false)).collect(joining(" "));
     System.out.println(result);
     return NIL;
   };
@@ -97,12 +98,12 @@ public interface Core {
   };
 
   MalFunction PR_STR = args -> {
-    var result = args.stream().map(Printer::print).collect(joining(" "));
+    var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
     return string(result);
   };
 
   MalFunction STR = args -> {
-    var result = args.stream().map(Printer::print).collect(joining(""));
+    var result = args.stream().map(m -> print(m, false)).collect(joining(""));
     return string(result);
   };
   

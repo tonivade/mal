@@ -54,7 +54,7 @@ public class Env {
     if (outer != null) {
       return outer.get(key);
     }
-    return NIL;
+    return null;
   }
 
   public void set(MalSymbol key, Mal value) {

@@ -12,7 +12,7 @@ import org.jline.reader.UserInterruptException;
 public class step2_eval {
 
   static String rep(String input) {
-    return print(eval(read(input), new Env()));
+    return print(eval(read(input), new Env()), true);
   }
 
   public static void main(String[] args) {
