@@ -1,6 +1,9 @@
 package mal;
 
 import static java.util.stream.Collectors.joining;
+import static mal.Trampoline.done;
+import static mal.Trampoline.map2;
+import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import mal.Mal.MalConstant;
@@ -16,29 +19,34 @@ import mal.Mal.MalVector;
 public class Printer {
 
   public static String print(Mal val, boolean pretty) {
-    return switch (val) {
-      case MalConstant(var name) -> name;
-      case MalSymbol(var name) -> name;
-      case MalString(var value) when !pretty -> value;
-      case MalString(var value) -> "\"" + escapeJava(value) + "\"";
-      case MalKeyword(var value) -> ":" + value;
-      case MalNumber(var value) -> Integer.toString(value);
-      case MalList(var list) -> {
-        yield list.stream()
-          .map(m -> print(m, pretty))
-          .collect(joining(" ", "(", ")"));
-      }
-      case MalVector(var list) -> {
-        yield list.stream()
-          .map(m -> print(m, pretty))
-          .collect(joining(" ", "[", "]"));
-      }
-      case MalMap(var map) -> {
-        yield map.entrySet().stream()
-          .map(entry -> entry.getKey() + " " + print(entry.getValue(), pretty))
-          .collect(joining(" ", "{", "}"));
-      }
-      case MalFunction _ -> "#function";
-    };
+    return doPrint(val, pretty).run();
+  }
+
+  public static Trampoline<String> doPrint(Mal val, boolean pretty) {
+    return Trampoline.more(() -> {
+      return switch (val) {
+        case MalConstant(var name) -> done(name);
+        case MalSymbol(var name) -> done(name);
+        case MalString(var value) when !pretty -> done(value);
+        case MalString(var value) -> done("\"" + escapeJava(value) + "\"");
+        case MalKeyword(var value) -> done(":" + value);
+        case MalNumber(var value) -> done(Integer.toString(value));
+        case MalList(var list) -> {
+          yield traverse(list.stream().map(m -> doPrint(m, pretty)).toList())
+            .map(l -> l.stream().collect(joining(" ", "(", ")")));
+        }
+        case MalVector(var list) -> {
+          yield traverse(list.stream().map(m -> doPrint(m, pretty)).toList())
+            .map(l -> l.stream().collect(joining(" ", "[", "]")));
+        }
+        case MalMap(var map) -> {
+          yield traverse(map.entrySet().stream()
+            .map(entry -> map2(done(entry.getKey() + " "), doPrint(entry.getValue(), pretty), String::concat))
+            .toList())
+            .map(l -> l.stream().collect(joining(" ", "{", "}")));
+        }
+        case MalFunction _ -> done("#function");
+      };
+    });
   }
 }

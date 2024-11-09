@@ -5,10 +5,12 @@ import static mal.Mal.FALSE;
 import static mal.Mal.NIL;
 import static mal.Mal.function;
 import static mal.Mal.list;
-import static mal.Mal.map;
-import static mal.Mal.vector;
 import static mal.Printer.print;
+import static mal.Trampoline.done;
+import static mal.Trampoline.traverse;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import mal.Mal.MalFunction;
@@ -21,83 +23,98 @@ import mal.Mal.MalVector;
 public class Evaluator {
 
   static Mal eval(Mal ast, Env env) {
-    if (env.isDebugEval()) {
-      System.out.println("EVAL: " + print(ast, true));
-    }
+    return doEval(ast, env).run();
+  }
 
-    return switch (ast) {
+  static Trampoline<Mal> doEval(Mal ast, Env env) {
+    return Trampoline.more(() -> {
+      if (env.isDebugEval()) {
+        System.out.println("EVAL: " + print(ast, true));
+      }
 
-      case MalSymbol(var name) -> {
-        var value = env.get(name);
-        if (value == null) {
-          throw new IllegalStateException(name + " not found");
+      return switch (ast) {
+
+        case MalSymbol(var name) -> {
+          var value = env.get(name);
+          if (value == null) {
+            throw new IllegalStateException(name + " not found");
+          }
+          yield done(value);
         }
-        yield value;
-      }
 
-      case MalList(var values) when !values.isEmpty() -> {
-        yield switch (values.getFirst()) {
+        case MalList(var values) when !values.isEmpty() -> {
+          yield switch (values.getFirst()) {
 
-          case MalSymbol(var name) when name.equals("def!") -> {
-            var key = (MalSymbol) values.get(1);
-            var value = eval(values.get(2), env);
-            env.set(key, value);
-            yield value;
-          }
-
-          case MalSymbol(var name) when name.equals("let*") -> {
-            var newEnv = new Env(env);
-            var bindings = (MalIterable) values.get(1);
-            for (var iterator = bindings.iterator(); iterator.hasNext();) {
-              var key = (MalSymbol) iterator.next();
-              var value = eval(iterator.next(), newEnv);
-              newEnv.set(key, value);
+            case MalSymbol(var name) when name.equals("def!") -> {
+              var key = (MalSymbol) values.get(1);
+              yield doEval(values.get(2), env).map(value -> {
+                env.set(key, value);
+                return value;
+              });
             }
-            yield eval(values.get(2), newEnv);
-          }
 
-          case MalSymbol(var name) when name.equals("do") -> {
-            var evaluated = values.stream().skip(1).map(m -> eval(m, env)).toList();
-            yield evaluated.getLast();
-          }
-
-          case MalSymbol(var name) when name.equals("if") -> {
-            var result = eval(values.get(1), env);
-            if (result != NIL && result != FALSE) {
-              yield eval(values.get(2), env);
+            case MalSymbol(var name) when name.equals("let*") -> {
+              var newEnv = new Env(env);
+              var bindings = (MalIterable) values.get(1);
+              List<Trampoline<Mal>> later = new ArrayList<>();
+              for (var iterator = bindings.iterator(); iterator.hasNext();) {
+                var key = (MalSymbol) iterator.next();
+                later.add(doEval(iterator.next(), newEnv).map(value -> {
+                  newEnv.set(key, value);
+                  return value;
+                }));
+              }
+              yield traverse(later).andThen(doEval(values.get(2), newEnv));
             }
-            yield values.size() > 3 ? eval(values.get(3), env) : NIL;
-          }
 
-          case MalSymbol(var name) when name.equals("fn*") -> {
-            yield function(args -> {
-              var newEnv = new Env(env, (MalIterable) values.get(1), args);
-              return eval(values.get(2), newEnv);
-            });
-          }
+            case MalSymbol(var name) when name.equals("do") -> {
+              var later = values.stream().skip(1).map(m -> doEval(m, env)).toList();
+              yield traverse(later).map(list -> list.getLast());
+            }
 
-          case MalFunction function -> {
-            yield function.apply(list(values.stream().skip(1).toList()));
-          }
+            case MalSymbol(var name) when name.equals("if") -> {
+              yield doEval(values.get(1), env).flatMap(result -> {
+                if (result != NIL && result != FALSE) {
+                  return doEval(values.get(2), env);
+                }
+                return values.size() > 3 ? doEval(values.get(3), env) : done(NIL);
+              });
+            }
 
-          default -> {
-            yield eval(list(values.stream().map(m -> eval(m, env)).toList()), env);
-          }
-        };
-      }
+            case MalSymbol(var name) when name.equals("fn*") -> {
+              yield done(function(args -> {
+                var newEnv = new Env(env, (MalIterable) values.get(1), args);
+                return doEval(values.get(2), newEnv);
+              }));
+            }
 
-      case MalVector(var values) when !values.isEmpty() -> {
-        var evaluated = values.stream().map(m -> eval(m, env)).toList();
-        yield vector(evaluated);
-      }
+            case MalFunction function -> {
+              yield function.apply(list(values.stream().skip(1).toList()));
+            }
 
-      case MalMap(var map) when !map.isEmpty() -> {
-        var evaluated = map.entrySet().stream()
-          .collect(toUnmodifiableMap(Map.Entry::getKey, entry -> eval(entry.getValue(), env)));
-        yield map(evaluated);
-      }
+            default -> {
+              var later = values.stream().map(m -> doEval(m, env)).toList();
+              yield traverse(later).flatMap(list -> doEval(list(list), env));
+            }
+          };
+        }
 
-      default -> ast;
-    };
+        case MalVector(var values) when !values.isEmpty() -> {
+          var later = values.stream().map(m -> doEval(m, env)).toList();
+          yield traverse(later).map(Mal::vector);
+        }
+
+        case MalMap(var map) when !map.isEmpty() -> {
+          var later = map.entrySet().stream()
+            .map(entry -> doEval(entry.getValue(), env).map(value -> Map.entry(entry.getKey(), value)))
+            .toList();
+          yield traverse(later)
+            .map(list -> list.stream().collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
+            .map(Mal::map);
+        }
+
+        default -> done(ast);
+      };
+    });
   }
 }

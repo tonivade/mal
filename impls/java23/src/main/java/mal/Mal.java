@@ -131,7 +131,7 @@ public sealed interface Mal {
   @FunctionalInterface
   non-sealed interface MalFunction extends Mal {
 
-    Mal apply(MalList args);
+    Trampoline<Mal> apply(MalList args);
   }
 
   static MalMap map(Mal...tokens) {
