@@ -7,6 +7,7 @@ import static mal.Mal.function;
 import static mal.Mal.list;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
+import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
 
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ public class Evaluator {
   }
 
   static Trampoline<Mal> doEval(Mal ast, Env env) {
-    return Trampoline.more(() -> {
+    return more(() -> {
       if (env.isDebugEval()) {
         System.out.println("EVAL: " + print(ast, true));
       }
