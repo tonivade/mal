@@ -3,6 +3,7 @@ package mal;
 import static java.util.stream.Collectors.joining;
 import static mal.Trampoline.done;
 import static mal.Trampoline.map2;
+import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
@@ -23,7 +24,7 @@ public class Printer {
   }
 
   public static Trampoline<String> doPrint(Mal val, boolean pretty) {
-    return Trampoline.more(() -> {
+    return more(() -> {
       return switch (val) {
         case MalConstant(var name) -> done(name);
         case MalSymbol(var name) -> done(name);
