@@ -7,6 +7,7 @@ import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
+import mal.Mal.MalAtom;
 import mal.Mal.MalConstant;
 import mal.Mal.MalFunction;
 import mal.Mal.MalKeyword;
@@ -49,6 +50,7 @@ public class Printer {
           .toList())
           .map(l -> l.stream().collect(joining(" ", "{", "}")));
       }
+      case MalAtom atom -> doPrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
       case MalFunction _ -> done("#function");
     };
   }
