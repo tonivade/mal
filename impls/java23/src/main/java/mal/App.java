@@ -26,6 +26,9 @@ public class App {
       case "step5_tco" -> {
         step5_tco.main(Arrays.copyOfRange(args, 1, args.length));
       }
+      case "step6_file" -> {
+        step6_file.main(Arrays.copyOfRange(args, 1, args.length));
+      }
       default -> throw new IllegalArgumentException("invalid step: " + args[0]);
     }
   }

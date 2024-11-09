@@ -12,12 +12,19 @@ import static mal.Mal.string;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Map;
 
+import mal.Mal.MalAtom;
 import mal.Mal.MalFunction;
 import mal.Mal.MalIterable;
 import mal.Mal.MalList;
 import mal.Mal.MalNumber;
+import mal.Mal.MalString;
 
 public interface Core {
 
@@ -108,6 +115,53 @@ public interface Core {
     return done(string(result));
   };
 
+  MalFunction READ_STRING = args -> {
+    var string = (MalString) args.get(0);
+    return done(Reader.read(string.value()));
+  };
+
+  MalFunction SLURP = args -> {
+    try {
+      var fileName = (MalString) args.get(0);
+      var content = Files.readString(Path.of(fileName.value()));
+      return done(string(content));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  };
+
+  MalFunction ATOM = args -> {
+    return done(Mal.atom(args.get(0)));
+  };
+
+  MalFunction ATOM_Q = args -> {
+    return args.get(0) instanceof MalAtom ? done(TRUE) : done(FALSE);
+  };
+
+  MalFunction DEREF = args -> {
+    var atom = (MalAtom) args.get(0);
+    return done(atom.getValue());
+  };
+
+  MalFunction RESET = args -> {
+    var atom = (MalAtom) args.get(0);
+    var newValue = args.get(1);
+    atom.setValue(newValue);
+    return done(newValue);
+  };
+
+  MalFunction SWAP = args -> {
+    var atom = (MalAtom) args.get(0);
+    var function = (MalFunction) args.get(1);
+    var newArgs = new ArrayList<Mal>();
+    newArgs.add(atom.getValue());
+    newArgs.addAll(args.values().stream().skip(2).toList());
+    return function.apply(list(newArgs)).map(newValue -> {
+      atom.setValue(newValue);
+      return newValue;
+    });
+  };
+
   Map<String, Mal> NS = Map.ofEntries(
     entry("prn", PRN),
     entry("println", PRINTLN),
@@ -125,5 +179,13 @@ public interface Core {
     entry("<", LT),
     entry("<=", LTE),
     entry("pr-str", PR_STR),
-    entry("str", STR));
+    entry("str", STR),
+    entry("read-string", READ_STRING),
+    entry("slurp", SLURP),
+    entry("atom", ATOM),
+    entry("atom?", ATOM_Q),
+    entry("deref", DEREF),
+    entry("reset!", RESET),
+    entry("swap!", SWAP)
+  );
 }

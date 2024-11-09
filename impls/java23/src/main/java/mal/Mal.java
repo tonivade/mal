@@ -25,6 +25,28 @@ public sealed interface Mal {
 
   record MalConstant(String name) implements Mal {}
 
+  final class MalAtom implements Mal {
+
+    private Mal value;
+
+    public MalAtom(Mal value) {
+      this.value = value;
+    }
+
+    public Mal getValue() {
+      return value;
+    }
+
+    public void setValue(Mal value) {
+      this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return "MalAtom[" + value + "]";
+    }
+  }
+
   record MalNumber(Integer value) implements Mal {
 
     public MalNumber sum(MalNumber other) {
@@ -176,6 +198,10 @@ public sealed interface Mal {
 
   static MalSymbol symbol(String name) {
     return new MalSymbol(name);
+  }
+
+  static MalAtom atom(Mal value) {
+    return new MalAtom(value);
   }
 
   static MalFunction function(MalFunction function) {

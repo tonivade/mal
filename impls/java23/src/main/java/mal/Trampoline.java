@@ -60,18 +60,18 @@ public sealed interface Trampoline<T> {
     return list.stream().reduce(done(List.<T>of()), Trampoline::add, Trampoline::merge);
   }
 
-  private static <T> Trampoline<List<T>> add(Trampoline<List<T>> tlist, Trampoline<T> tnext) {
-    return map2(tlist, tnext, (list, next) -> {
+  private static <T> Trampoline<List<T>> add(Trampoline<List<T>> tlist, Trampoline<T> titem) {
+    return map2(tlist, titem, (list, item) -> {
       List<T> newList = new ArrayList<>(list);
-      newList.add(next);
+      newList.add(item);
       return List.copyOf(newList);
     });
   }
 
-  private static <T> Trampoline<List<T>> merge(Trampoline<List<T>> tlist, Trampoline<List<T>> tnext) {
-    return map2(tlist, tnext, (list, next) -> {
-      List<T> newList = new ArrayList<>(list);
-      newList.addAll(next);
+  private static <T> Trampoline<List<T>> merge(Trampoline<List<T>> tlist1, Trampoline<List<T>> tlist2) {
+    return map2(tlist1, tlist2, (list1, list2) -> {
+      List<T> newList = new ArrayList<>(list1);
+      newList.addAll(list2);
       return List.copyOf(newList);
     });
   }
