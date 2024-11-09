@@ -10,6 +10,7 @@ import static mal.Mal.list;
 import static mal.Mal.number;
 import static mal.Mal.string;
 import static mal.Printer.print;
+import static mal.Trampoline.done;
 
 import java.util.Map;
 
@@ -23,90 +24,90 @@ public interface Core {
   MalFunction PRN = args -> {
     var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
     System.out.println(result);
-    return NIL;
+    return done(NIL);
   };
 
   MalFunction PRINTLN = args -> {
     var result = args.stream().map(m -> print(m, false)).collect(joining(" "));
     System.out.println(result);
-    return NIL;
+    return done(NIL);
   };
 
   MalFunction LIST = args -> {
-    return list(args.values());
+    return done(list(args.values()));
   };
 
   MalFunction LIST_Q = args -> {
-    return args.get(0) instanceof MalList ? TRUE : FALSE;
+    return args.get(0) instanceof MalList ? done(TRUE) : done(FALSE);
   };
 
   MalFunction EMPTY_Q = args -> {
     var list = (MalIterable) args.get(0);
-    return list.isEmpty() ? TRUE : FALSE;
+    return list.isEmpty() ? done(TRUE) : done(FALSE);
   };
 
   MalFunction COUNT = args -> {
     var first = args.get(0);
     if (first == NIL) {
-      return number(0);
+      return done(number(0));
     }
-    return number(((MalIterable) first).size());
+    return done(number(((MalIterable) first).size()));
   };
 
   MalFunction EQ = args -> {
-    return Mal.equals(args.get(0), args.get(1)) ? TRUE : FALSE;
+    return Mal.equals(args.get(0), args.get(1)) ? done(TRUE) : done(FALSE);
   };
 
   MalFunction GT = args -> {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
-    return first.gt(second) ? TRUE : FALSE;
+    return first.gt(second) ? done(TRUE) : done(FALSE);
   };
 
   MalFunction GTE = args -> {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
-    return first.gte(second) ? TRUE : FALSE;
+    return first.gte(second) ? done(TRUE) : done(FALSE);
   };
 
   MalFunction LT = args -> {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
-    return first.lt(second) ? TRUE : FALSE;
+    return first.lt(second) ? done(TRUE) : done(FALSE);
   };
 
   MalFunction LTE = args -> {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
-    return first.lte(second) ? TRUE : FALSE;
+    return first.lte(second) ? done(TRUE) : done(FALSE);
   };
-      
+
   MalFunction SUM = args -> {
-    return args.stream().map(MalNumber.class::cast).reduce(MalNumber::sum).orElse(ZERO);
+    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::sum).orElse(ZERO));
   };
 
   MalFunction SUBS = args -> {
-    return args.stream().map(MalNumber.class::cast).reduce(MalNumber::subs).orElse(ZERO);
+    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::subs).orElse(ZERO));
   };
-  
+
   MalFunction MUL = args -> {
-    return args.stream().map(MalNumber.class::cast).reduce(MalNumber::mul).orElse(ZERO);
+    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::mul).orElse(ZERO));
   };
 
   MalFunction DIV = args -> {
-    return args.stream().map(MalNumber.class::cast).reduce(MalNumber::div).orElse(ZERO);
+    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::div).orElse(ZERO));
   };
 
   MalFunction PR_STR = args -> {
     var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
-    return string(result);
+    return done(string(result));
   };
 
   MalFunction STR = args -> {
     var result = args.stream().map(m -> print(m, false)).collect(joining(""));
-    return string(result);
+    return done(string(result));
   };
-  
+
   Map<String, Mal> NS = Map.ofEntries(
     entry("prn", PRN),
     entry("println", PRINTLN),

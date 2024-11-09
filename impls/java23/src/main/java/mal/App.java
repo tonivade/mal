@@ -23,6 +23,9 @@ public class App {
       case "step4_if_fn_do" -> {
         step4_if_fn_do.main(Arrays.copyOfRange(args, 1, args.length));
       }
+      case "step5_tco" -> {
+        step5_tco.main(Arrays.copyOfRange(args, 1, args.length));
+      }
       default -> throw new IllegalArgumentException("invalid step: " + args[0]);
     }
   }
