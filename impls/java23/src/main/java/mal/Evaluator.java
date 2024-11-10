@@ -1,6 +1,8 @@
 package mal;
 
 import static java.util.stream.Collectors.toUnmodifiableMap;
+import static mal.Mal.CONCAT;
+import static mal.Mal.CONS;
 import static mal.Mal.FALSE;
 import static mal.Mal.NIL;
 import static mal.Mal.QUOTE;
@@ -143,28 +145,20 @@ public class Evaluator {
       case MalMap _ -> list(QUOTE, value);
       case MalList(var values) when values.isEmpty() -> value;
       case MalList(var values) when values.getFirst().equals(UNQUOTE) -> values.get(1);
-      case MalList(var values) -> list(getResult(values));
-      case MalVector(var values) -> list(symbol("vec"), list(getResult(values)));
+      case MalList(var values) -> getResult(values);
+      case MalVector(var values) -> list(symbol("vec"), getResult(values));
       default -> value;
     }; 
   }
 
-  private static List<Mal> getResult(List<Mal> values) {
-    List<Mal> result = new ArrayList<>();
-    for (var element : values.reversed()) {
-      var current = list(result);
-      if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
-        result = new ArrayList<>();
-        result.add(Mal.CONCAT);
-        result.add(list.get(1));
-        result.add(current);
-      } else {
-        result = new ArrayList<>();
-        result.add(Mal.CONS);
-        result.add(evalQuasiquote(element));
-        result.add(current);
-      }
+  private static MalList getResult(List<Mal> values) {
+    if (values.isEmpty()) {
+      return list(values);
     }
-    return result;
+    var element = values.get(0);
+    if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
+      return list(CONCAT, list.get(1), getResult(values.stream().skip(1).toList()));
+    }
+    return list(CONS, evalQuasiquote(element), getResult(values.stream().skip(1).toList()));
   }
 }
