@@ -3,6 +3,7 @@ package mal;
 import static java.util.function.Function.identity;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -56,7 +57,7 @@ public sealed interface Trampoline<T> {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
-  static <T> Trampoline<List<T>> traverse(List<Trampoline<T>> list) {
+  static <T> Trampoline<List<T>> traverse(Collection<Trampoline<T>> list) {
     return list.stream().reduce(done(List.<T>of()), Trampoline::add, Trampoline::merge);
   }
 

@@ -21,9 +21,11 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import mal.Mal.MalAtom;
+import mal.Mal.MalConstant;
 import mal.Mal.MalFunction;
 import mal.Mal.MalIterable;
 import mal.Mal.MalList;
+import mal.Mal.MalMacro;
 import mal.Mal.MalNumber;
 import mal.Mal.MalString;
 
@@ -178,8 +180,44 @@ public interface Core {
   };
 
   MalFunction VEC = args -> {
-    MalIterable list = (MalIterable) args.get(0);
+    var list = (MalIterable) args.get(0);
     return done(vector(list.stream()));
+  };
+
+  MalFunction MACRO_Q = args -> {
+    var first = args.get(0);
+    return first instanceof MalMacro ? done(TRUE) : done(FALSE);
+  };
+
+  MalFunction NTH = args -> {
+    var list = (MalIterable) args.get(0);
+    var index = (MalNumber) args.get(1);
+    if (index.value() < 0 || index.value() >= list.size()) {
+      throw new IllegalArgumentException();
+    }
+    return done(list.get(index.value()));
+  };
+
+  MalFunction FIRST = args -> {
+    if (args.get(0) instanceof MalConstant(var name) && name.equals("nil")) {
+      return done(NIL);
+    }
+    var list = (MalIterable) args.get(0);
+    if (list.isEmpty()) {
+      return done(NIL);
+    }
+    return done(list.get(0));
+  };
+
+  MalFunction REST = args -> {
+    if (args.get(0) instanceof MalConstant(var name) && name.equals("nil")) {
+      return done(list());
+    }
+    var list = (MalIterable) args.get(0);
+    if (list.isEmpty()) {
+      return done(list());
+    }
+    return done(list(list.stream().skip(1).toList()));
   };
 
   Map<String, Mal> NS = Map.ofEntries(
@@ -209,6 +247,10 @@ public interface Core {
     entry("swap!", SWAP),
     entry("cons", CONS),
     entry("concat", CONCAT),
-    entry("vec", VEC)
+    entry("vec", VEC),
+    entry("macro?", MACRO_Q),
+    entry("nth", NTH),
+    entry("first", FIRST),
+    entry("rest", REST)
   );
 }
