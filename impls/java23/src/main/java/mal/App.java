@@ -32,6 +32,9 @@ public class App {
       case "step7_quote" -> {
         step7_quote.main(Arrays.copyOfRange(args, 1, args.length));
       }
+      case "step8_macros" -> {
+        step8_macros.main(Arrays.copyOfRange(args, 1, args.length));
+      }
       default -> throw new IllegalArgumentException("invalid step: " + args[0]);
     }
   }

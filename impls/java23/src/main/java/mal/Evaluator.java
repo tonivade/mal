@@ -69,6 +69,15 @@ public class Evaluator {
         });
       }
 
+      case MalSymbol(var name) when name.equals("defmacro!") -> {
+        var key = (MalSymbol) values.get(1);
+        yield safeEval(values.get(2), env).map(value -> {
+          var function = (MalFunction) value;
+          env.set(key, function.toMacro());
+          return value;
+        });
+      }
+
       case MalSymbol(var name) when name.equals("let*") -> {
         var newEnv = new Env(env);
         var bindings = (MalIterable) values.get(1);
