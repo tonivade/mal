@@ -35,11 +35,11 @@ test {
 }
 
 application {
-    mainClass = 'mal.App'
+  mainClass = 'mal.App'
 }
 
 shadowJar {
   manifest {
-    attributes 'Main-Class': 'pq.App'
+    attributes 'Main-Class': 'mal.App'
   }
 }

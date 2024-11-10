@@ -26,6 +26,10 @@ public sealed interface Mal {
   MalNumber ZERO = new MalNumber(0);
   MalNumber ONE = new MalNumber(1);
 
+  MalList EMPTY_LIST = new MalList(List.of());
+  MalVector EMPTY_VECTOR = new MalVector(List.of());
+  MalMap EMPTY_MAP = new MalMap(Map.of());
+
   record MalConstant(String name) implements Mal {}
 
   final class MalAtom implements Mal {
@@ -168,6 +172,9 @@ public sealed interface Mal {
   }
 
   static MalMap map(Map<String, Mal> map) {
+    if (map.isEmpty()) {
+      return EMPTY_MAP;
+    }
     return new MalMap(map);
   }
 
@@ -176,10 +183,13 @@ public sealed interface Mal {
   }
 
   static MalVector vector(Stream<Mal> tokens) {
-    return new MalVector(tokens.toList());
+    return vector(tokens.toList());
   }
 
   static MalVector vector(List<Mal> tokens) {
+    if (tokens.isEmpty()) {
+      return EMPTY_VECTOR;
+    }
     return new MalVector(tokens);
   }
 
@@ -188,10 +198,13 @@ public sealed interface Mal {
   }
 
   static MalList list(Stream<Mal> tokens) {
-    return new MalList(tokens.toList());
+    return list(tokens.toList());
   }
 
   static MalList list(List<Mal> tokens) {
+    if (tokens.isEmpty()) {
+      return EMPTY_LIST;
+    }
     return new MalList(tokens);
   }
 
