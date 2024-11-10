@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public sealed interface Mal {
 
@@ -95,49 +94,35 @@ public sealed interface Mal {
 
   sealed interface MalIterable extends Iterable<Mal> {
 
-    int size();
+    List<Mal> values();
+
+    default Iterator<Mal> iterator() {
+      return values().iterator();
+    }
+
+    default Mal get(int i) {
+      if (i < 0 || i >= values().size()) {
+        return NIL;
+      }
+      return values().get(i);
+    }
 
     default Stream<Mal> stream() {
-      return StreamSupport.stream(spliterator(), false);
+      return values().stream();
     }
 
     default boolean isEmpty() {
       return size() == 0;
     }
-  }
 
-  record MalList(List<Mal> values) implements Mal, MalIterable {
-
-    public Mal get(int i) {
-      if (i < 0 || i >= values.size()) {
-        return NIL;
-      }
-      return values.get(i);
-    }
-
-    @Override
-    public Iterator<Mal> iterator() {
-      return values.iterator();
-    }
-
-    @Override
-    public int size() {
-      return values.size();
+    default int size() {
+      return values().size();
     }
   }
 
-  record MalVector(List<Mal> values) implements Mal, MalIterable {
+  record MalList(List<Mal> values) implements Mal, MalIterable {}
 
-    @Override
-    public Iterator<Mal> iterator() {
-      return values.iterator();
-    }
-
-    @Override
-    public int size() {
-      return values.size();
-    }
-  }
+  record MalVector(List<Mal> values) implements Mal, MalIterable {}
 
   record MalMap(Map<String, Mal> map) implements Mal, Iterable<Map.Entry<String, Mal>> {
 

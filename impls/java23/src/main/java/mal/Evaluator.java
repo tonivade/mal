@@ -24,6 +24,7 @@ import java.util.Map;
 import mal.Mal.MalFunction;
 import mal.Mal.MalIterable;
 import mal.Mal.MalList;
+import mal.Mal.MalMacro;
 import mal.Mal.MalMap;
 import mal.Mal.MalSymbol;
 import mal.Mal.MalVector;
@@ -72,9 +73,9 @@ public class Evaluator {
       case MalSymbol(var name) when name.equals("defmacro!") -> {
         var key = (MalSymbol) values.get(1);
         yield safeEval(values.get(2), env).map(value -> {
-          var function = (MalFunction) value;
-          env.set(key, function.toMacro());
-          return value;
+          var macro = ((MalFunction) value).toMacro();
+          env.set(key, macro);
+          return macro;
         });
       }
 
@@ -94,7 +95,7 @@ public class Evaluator {
 
       case MalSymbol(var name) when name.equals("do") -> {
         var later = values.stream().skip(1).map(m -> safeEval(m, env)).toList();
-        yield traverse(later).map(list -> list.getLast());
+        yield traverse(later).map(List::getLast);
       }
 
       case MalSymbol(var name) when name.equals("if") -> {
@@ -121,13 +122,23 @@ public class Evaluator {
         yield evalQuasiquote(values.get(1)).flatMap(result -> safeEval(result, env));
       }
 
+      case MalMacro macro -> {
+        yield macro.apply(list(skipFirst(values)))
+          .flatMap(next -> safeEval(next, env));
+      }
+
       case MalFunction function -> {
-        yield function.apply(list(skipFirst(values)));
+        yield traverse(skipFirst(values).stream().map(m -> safeEval(m, env)).toList())
+          .flatMap(args -> function.apply(list(args)));
       }
 
       default -> {
-        var later = values.stream().map(m -> safeEval(m, env)).toList();
-        yield traverse(later).flatMap(list -> safeEval(list(list), env));
+        yield safeEval(values.getFirst(), env).<Mal>map(callable -> {
+          List<Mal> next = new ArrayList<>();
+          next.add(callable);
+          next.addAll(skipFirst(values));
+          return list(next);
+        }).flatMap(list -> safeEval(list, env));
       }
     };
   }
