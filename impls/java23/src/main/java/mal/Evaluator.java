@@ -13,6 +13,7 @@ import static mal.Mal.list;
 import static mal.Mal.symbol;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
+import static mal.Trampoline.map2;
 import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
 
@@ -110,8 +111,7 @@ public class Evaluator {
       }
 
       case MalSymbol(var name) when name.equals("quasiquote") -> {
-        var result = evalQuasiquote(values.get(1));
-        yield safeEval(result, env);
+        yield evalQuasiquote(values.get(1)).flatMap(result -> safeEval(result, env));
       }
 
       case MalFunction function -> {
@@ -139,26 +139,30 @@ public class Evaluator {
       .map(Mal::map);
   }
 
-  private static Mal evalQuasiquote(Mal value) {
+  private static Trampoline<Mal> evalQuasiquote(Mal value) {
     return switch (value) {
-      case MalSymbol _ -> list(QUOTE, value);
-      case MalMap _ -> list(QUOTE, value);
-      case MalList(var values) when values.isEmpty() -> value;
-      case MalList(var values) when values.getFirst().equals(UNQUOTE) -> values.get(1);
-      case MalList(var values) -> getResult(values);
-      case MalVector(var values) -> list(symbol("vec"), getResult(values));
-      default -> value;
+      case MalSymbol _ -> done(list(QUOTE, value));
+      case MalMap _ -> done(list(QUOTE, value));
+      case MalList(var values) when values.isEmpty() -> done(value);
+      case MalList(var values) when values.getFirst().equals(UNQUOTE) -> done(values.get(1));
+      case MalList(var values) -> recursiveQuasiquote(values);
+      case MalVector(var values) -> recursiveQuasiquote(values).map(next -> list(symbol("vec"), next));
+      default -> done(value);
     }; 
   }
 
-  private static MalList getResult(List<Mal> values) {
+  private static Trampoline<Mal> recursiveQuasiquote(List<Mal> values) {
     if (values.isEmpty()) {
-      return list(values);
+      return done(list());
     }
-    var element = values.get(0);
-    if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
-      return list(CONCAT, list.get(1), getResult(values.stream().skip(1).toList()));
-    }
-    return list(CONS, evalQuasiquote(element), getResult(values.stream().skip(1).toList()));
+    var element = values.getFirst();
+    return Trampoline.more(() -> {
+      if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
+        return recursiveQuasiquote(values.stream().skip(1).toList())
+          .map(result -> list(CONCAT, list.get(1), result));
+      }
+      return map2(recursiveQuasiquote(values.stream().skip(1).toList()), evalQuasiquote(element), 
+        (next, eval) -> list(CONS, eval, next));
+    });
   }
 }
