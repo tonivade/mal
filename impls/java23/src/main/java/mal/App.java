@@ -29,6 +29,9 @@ public class App {
       case "step6_file" -> {
         step6_file.main(Arrays.copyOfRange(args, 1, args.length));
       }
+      case "step7_quote" -> {
+        step7_quote.main(Arrays.copyOfRange(args, 1, args.length));
+      }
       default -> throw new IllegalArgumentException("invalid step: " + args[0]);
     }
   }

@@ -3,8 +3,12 @@ package mal;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static mal.Mal.FALSE;
 import static mal.Mal.NIL;
+import static mal.Mal.QUOTE;
+import static mal.Mal.SPLICE_UNQUOTE;
+import static mal.Mal.UNQUOTE;
 import static mal.Mal.function;
 import static mal.Mal.list;
+import static mal.Mal.symbol;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
 import static mal.Trampoline.more;
@@ -37,15 +41,10 @@ public class Evaluator {
     }
 
     return switch (ast) {
-      
       case MalSymbol(var name) -> evalSymbol(env,name);
-
       case MalList(var values) when !values.isEmpty() -> evalList(env, values);
-
       case MalVector(var values) when !values.isEmpty() -> evalVector(env,values);
-
       case MalMap(var map) when !map.isEmpty() -> evalMap(env,map);
-
       default -> done(ast);
     };
   }
@@ -104,6 +103,15 @@ public class Evaluator {
         }));
       }
 
+      case MalSymbol(var name) when name.equals("quote") -> {
+        yield done(values.get(1));
+      }
+
+      case MalSymbol(var name) when name.equals("quasiquote") -> {
+        var result = evalQuasiquote(values.get(1));
+        yield safeEval(result, env);
+      }
+
       case MalFunction function -> {
         yield function.apply(list(values.stream().skip(1).toList()));
       }
@@ -127,5 +135,36 @@ public class Evaluator {
     return traverse(later)
       .map(list -> list.stream().collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
       .map(Mal::map);
+  }
+
+  private static Mal evalQuasiquote(Mal value) {
+    return switch (value) {
+      case MalSymbol _ -> list(QUOTE, value);
+      case MalMap _ -> list(QUOTE, value);
+      case MalList(var values) when values.isEmpty() -> value;
+      case MalList(var values) when values.getFirst().equals(UNQUOTE) -> values.get(1);
+      case MalList(var values) -> list(getResult(values));
+      case MalVector(var values) -> list(symbol("vec"), list(getResult(values)));
+      default -> value;
+    }; 
+  }
+
+  private static List<Mal> getResult(List<Mal> values) {
+    List<Mal> result = new ArrayList<>();
+    for (var element : values.reversed()) {
+      var current = list(result);
+      if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
+        result = new ArrayList<>();
+        result.add(Mal.CONCAT);
+        result.add(list.get(1));
+        result.add(current);
+      } else {
+        result = new ArrayList<>();
+        result.add(Mal.CONS);
+        result.add(evalQuasiquote(element));
+        result.add(current);
+      }
+    }
+    return result;
   }
 }
