@@ -161,6 +161,14 @@ public sealed interface Mal {
   non-sealed interface MalFunction extends Mal {
 
     Trampoline<Mal> apply(MalList args);
+
+    default MalMacro toMacro() {
+      return this::apply;
+    }
+  }
+
+  interface MalMacro extends MalFunction {
+
   }
 
   static MalMap map(Mal...tokens) {
