@@ -9,6 +9,7 @@ import static mal.Mal.ZERO;
 import static mal.Mal.list;
 import static mal.Mal.number;
 import static mal.Mal.string;
+import static mal.Mal.vector;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
 
@@ -162,6 +163,25 @@ public interface Core {
     });
   };
 
+  MalFunction CONS = args -> {
+    var item = args.get(0);
+    var list = (MalIterable) args.get(1);
+    var result = new ArrayList<Mal>();
+    result.add(item);
+    result.addAll(list.stream().toList());
+    return done(list(result));
+  };
+
+  MalFunction CONCAT = args -> {
+    var result = args.stream().map(MalIterable.class::cast).flatMap(MalIterable::stream).toList();
+    return done(list(result));
+  };
+
+  MalFunction VEC = args -> {
+    MalIterable list = (MalIterable) args.get(0);
+    return done(vector(list.stream()));
+  };
+
   Map<String, Mal> NS = Map.ofEntries(
     entry("prn", PRN),
     entry("println", PRINTLN),
@@ -186,6 +206,9 @@ public interface Core {
     entry("atom?", ATOM_Q),
     entry("deref", DEREF),
     entry("reset!", RESET),
-    entry("swap!", SWAP)
+    entry("swap!", SWAP),
+    entry("cons", CONS),
+    entry("concat", CONCAT),
+    entry("vec", VEC)
   );
 }

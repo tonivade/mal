@@ -15,6 +15,9 @@ public sealed interface Mal {
   MalSymbol SPLICE_UNQUOTE = new MalSymbol("splice-unquote");
   MalSymbol WITH_META = new MalSymbol("with-meta");
   MalSymbol DEREF = new MalSymbol("deref");
+  
+  MalSymbol CONCAT = new MalSymbol("concat");
+  MalSymbol CONS = new MalSymbol("cons");
 
   MalConstant NIL = new MalConstant("nil");
   MalConstant TRUE = new MalConstant("true");
@@ -172,12 +175,20 @@ public sealed interface Mal {
     return vector(List.of(tokens));
   }
 
+  static MalVector vector(Stream<Mal> tokens) {
+    return new MalVector(tokens.toList());
+  }
+
   static MalVector vector(List<Mal> tokens) {
     return new MalVector(tokens);
   }
 
   static MalList list(Mal...tokens) {
     return list(List.of(tokens));
+  }
+
+  static MalList list(Stream<Mal> tokens) {
+    return new MalList(tokens.toList());
   }
 
   static MalList list(List<Mal> tokens) {
