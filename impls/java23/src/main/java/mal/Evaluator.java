@@ -35,21 +35,19 @@ public class Evaluator {
   }
 
   static Trampoline<Mal> safeEval(Mal ast, Env env) {
-    return more(() -> doEval(ast, env));
-  }
+    return more(() -> {
+      if (env.isDebugEval()) {
+        System.out.println("EVAL: " + print(ast, true));
+      }
 
-  private static Trampoline<Mal> doEval(Mal ast, Env env) {
-    if (env.isDebugEval()) {
-      System.out.println("EVAL: " + print(ast, true));
-    }
-
-    return switch (ast) {
-      case MalSymbol(var name) -> evalSymbol(env,name);
-      case MalList(var values) when !values.isEmpty() -> evalList(env, values);
-      case MalVector(var values) when !values.isEmpty() -> evalVector(env,values);
-      case MalMap(var map) when !map.isEmpty() -> evalMap(env,map);
-      default -> done(ast);
-    };
+      return switch (ast) {
+        case MalSymbol(var name) -> evalSymbol(env,name);
+        case MalList(var values) when !values.isEmpty() -> evalList(env, values);
+        case MalVector(var values) when !values.isEmpty() -> evalVector(env,values);
+        case MalMap(var map) when !map.isEmpty() -> evalMap(env,map);
+        default -> done(ast);
+      };
+    });
   }
 
   private static Trampoline<Mal> evalSymbol(Env env, String name) {
@@ -115,7 +113,7 @@ public class Evaluator {
       }
 
       case MalFunction function -> {
-        yield function.apply(list(values.stream().skip(1).toList()));
+        yield function.apply(list(skipFirst(values)));
       }
 
       default -> {
@@ -155,14 +153,18 @@ public class Evaluator {
     if (values.isEmpty()) {
       return done(list());
     }
-    var element = values.getFirst();
     return Trampoline.more(() -> {
+      var element = values.getFirst();
       if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
-        return recursiveQuasiquote(values.stream().skip(1).toList())
+        return recursiveQuasiquote(skipFirst(values))
           .map(result -> list(CONCAT, list.get(1), result));
       }
-      return map2(recursiveQuasiquote(values.stream().skip(1).toList()), evalQuasiquote(element), 
+      return map2(recursiveQuasiquote(skipFirst(values)), evalQuasiquote(element), 
         (next, eval) -> list(CONS, eval, next));
     });
+  }
+
+  private static List<Mal> skipFirst(List<Mal> values) {
+    return values.stream().skip(1).toList();
   }
 }
