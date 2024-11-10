@@ -37,7 +37,7 @@ public class step6_file {
     ENV.set(symbol("*ARGV*"), argv(arguments));
 
     if (arguments.length > 0) {
-      rep("(load-file \")" + arguments[0] + "\")");
+      rep("(load-file \"" + arguments[0] + "\")");
       return;
     }
     

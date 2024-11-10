@@ -15,7 +15,7 @@ import static mal.Trampoline.done;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -123,7 +123,7 @@ public interface Core {
   MalFunction SLURP = args -> {
     try {
       var fileName = (MalString) args.get(0);
-      var content = Files.readString(Path.of(fileName.value()));
+      var content = Files.readString(Paths.get(fileName.value()));
       return done(string(content));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
