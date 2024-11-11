@@ -173,7 +173,7 @@ public class Evaluator {
     if (values.isEmpty()) {
       return done(list());
     }
-    return Trampoline.more(() -> {
+    return more(() -> {
       var element = values.getFirst();
       if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
         return recursiveQuasiquote(skipFirst(values))
