@@ -14,11 +14,11 @@ import static mal.Mal.UNQUOTE;
 import static mal.Mal.WITH_META;
 import static mal.Mal.keyword;
 import static mal.Mal.list;
-import static mal.Mal.map;
 import static mal.Mal.number;
 import static mal.Mal.string;
 import static mal.Mal.symbol;
-import static mal.Mal.vector;
+import static mal.Trampoline.done;
+import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
 import java.util.ArrayList;
@@ -58,42 +58,43 @@ public class Reader {
   }
 
   public static Mal read(String input) {
-    return parse(tokenize(input));
+    return parse(tokenize(input)).run();
   }
 
-  private static Mal parse(Reader reader) {
+  private static Trampoline<Mal> parse(Reader reader) {
     return switch (reader.peek()) {
-      case null -> Mal.NIL;
+      case null -> Trampoline.done(Mal.NIL);
 
       case Token(var value) when value.charAt(0) == '\'' -> {
         reader.next();
-        yield list(QUOTE, parse(reader));
+        yield parse(reader).map(next -> list(QUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '`' -> {
         reader.next();
-        yield list(QUASIQUOTE, parse(reader));
+        yield parse(reader).map(next -> list(QUASIQUOTE, next));
       }
 
       case Token(var value) when value.equals("~") -> {
         reader.next();
-        yield list(UNQUOTE, parse(reader));
+        yield parse(reader).map(next -> list(UNQUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '~' -> {
         reader.next();
-        yield list(SPLICE_UNQUOTE, parse(reader));
+        yield parse(reader).map(next -> list(SPLICE_UNQUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '^' -> {
         reader.next();
-        var meta = parse(reader);
-        yield list(WITH_META, parse(reader), meta);
+        yield Trampoline.map2(parse(reader), parse(reader), (meta, next) -> {
+          return list(WITH_META, next, meta);
+        });
       }
 
       case Token(var value) when value.charAt(0) == '@' -> {
         reader.next();
-        yield list(DEREF, parse(reader));
+        yield parse(reader).map(next -> list(DEREF, next));
       }
 
       case Token(var value) when value.charAt(0) == '(' -> readList(reader);
@@ -104,24 +105,24 @@ public class Reader {
       case Token(var value) when value.charAt(0) == ']' -> throw new IllegalArgumentException("unexpected token");
       case Token(var value) when value.charAt(0) == '}' -> throw new IllegalArgumentException("unexpected token");
 
-      default -> readAtom(reader);
+      default -> done(readAtom(reader));
     };
   }
 
-  private static Mal readList(Reader reader) {
-    return list(readList(reader, '(', ')'));
+  private static Trampoline<Mal> readList(Reader reader) {
+    return readList(reader, '(', ')').map(Mal::list);
   }
 
-  private static Mal readVector(Reader reader) {
-    return vector(readList(reader, '[', ']'));
+  private static Trampoline<Mal> readVector(Reader reader) {
+    return readList(reader, '[', ']').map(Mal::vector);
   }
 
-  private static Mal readMap(Reader reader) {
-    return map(readList(reader, '{', '}'));
+  private static Trampoline<Mal> readMap(Reader reader) {
+    return readList(reader, '{', '}').map(Mal::map);
   }
 
-  private static List<Mal> readList(Reader reader, char start, char end) {
-    var list = new ArrayList<Mal>();
+  private static Trampoline<List<Mal>> readList(Reader reader, char start, char end) {
+    var list = new ArrayList<Trampoline<Mal>>();
     var token = reader.next();
     if (token.value().charAt(0) != start) {
       throw new IllegalStateException("expected '" + start + "'");
@@ -136,7 +137,7 @@ public class Reader {
     }
     reader.next();
 
-    return list;
+    return traverse(list);
   }
 
   private static Mal readAtom(Reader reader) {

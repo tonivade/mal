@@ -11,6 +11,7 @@ import static mal.Mal.number;
 import static mal.Mal.string;
 import static mal.Mal.vector;
 import static mal.Printer.print;
+import static mal.Reader.read;
 import static mal.Trampoline.done;
 
 import java.io.IOException;
@@ -120,7 +121,7 @@ public interface Core {
 
   MalFunction READ_STRING = args -> {
     var string = (MalString) args.get(0);
-    return done(Reader.read(string.value()));
+    return done(read(string.value()));
   };
 
   MalFunction SLURP = args -> {
