@@ -18,6 +18,7 @@ import static mal.Mal.number;
 import static mal.Mal.string;
 import static mal.Mal.symbol;
 import static mal.Trampoline.done;
+import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
@@ -63,7 +64,7 @@ public class Reader {
 
   private static Trampoline<Mal> parse(Reader reader) {
     return switch (reader.peek()) {
-      case null -> Trampoline.done(Mal.NIL);
+      case null -> done(NIL);
 
       case Token(var value) when value.charAt(0) == '\'' -> {
         reader.next();
@@ -122,22 +123,24 @@ public class Reader {
   }
 
   private static Trampoline<List<Mal>> readList(Reader reader, char start, char end) {
-    var list = new ArrayList<Trampoline<Mal>>();
-    var token = reader.next();
-    if (token.value().charAt(0) != start) {
-      throw new IllegalStateException("expected '" + start + "'");
-    }
+    return more(() -> {
+      var list = new ArrayList<Trampoline<Mal>>();
+      var token = reader.next();
+      if (token.value().charAt(0) != start) {
+        throw new IllegalStateException("expected '" + start + "'");
+      }
 
-    while ((token = reader.peek()) != null && token.value().charAt(0) != end) {
-      list.add(parse(reader));
-    }
+      while ((token = reader.peek()) != null && token.value().charAt(0) != end) {
+        list.add(parse(reader));
+      }
 
-    if (token == null) {
-      throw new IllegalStateException("EOF");
-    }
-    reader.next();
+      if (token == null) {
+        throw new IllegalStateException("EOF");
+      }
+      reader.next();
 
-    return traverse(list);
+      return traverse(list);
+    });
   }
 
   private static Mal readAtom(Reader reader) {
