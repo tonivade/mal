@@ -57,7 +57,7 @@ public class step9_try {
       try {
         System.out.println(rep(line));
       } catch (RuntimeException e) {
-        System.err.println(e.getMessage());
+        System.err.println("ERROR: " + e.getMessage());
       }
     }
   }

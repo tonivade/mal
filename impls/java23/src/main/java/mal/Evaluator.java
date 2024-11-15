@@ -8,6 +8,7 @@ import static mal.Mal.NIL;
 import static mal.Mal.QUOTE;
 import static mal.Mal.SPLICE_UNQUOTE;
 import static mal.Mal.UNQUOTE;
+import static mal.Mal.error;
 import static mal.Mal.function;
 import static mal.Mal.list;
 import static mal.Mal.symbol;
@@ -21,8 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import mal.Mal.MalError;
 import mal.Mal.MalFunction;
-import mal.Mal.MalIterable;
+import mal.Mal.MalKey;
+import mal.Mal.MalSequence;
 import mal.Mal.MalList;
 import mal.Mal.MalMacro;
 import mal.Mal.MalMap;
@@ -35,6 +38,14 @@ public class Evaluator {
     return safeEval(ast, env).run();
   }
 
+  static Mal tryEval(Mal ast, Env env) {
+    try {
+      return eval(ast, env);
+    } catch (RuntimeException e) {
+      return error(e);
+    }
+  }
+
   static Trampoline<Mal> safeEval(Mal ast, Env env) {
     return more(() -> {
       if (env.isDebugEval()) {
@@ -45,7 +56,7 @@ public class Evaluator {
         case MalSymbol(var name) -> evalSymbol(env,name);
         case MalList(var values) when !values.isEmpty() -> evalList(env, values);
         case MalVector(var values) when !values.isEmpty() -> evalVector(env,values);
-        case MalMap(var map) when !map.isEmpty() -> evalMap(env,map);
+        case MalMap(var map) when !map.isEmpty() -> evalMap(env, map);
         default -> done(ast);
       };
     });
@@ -81,7 +92,7 @@ public class Evaluator {
 
       case MalSymbol(var name) when name.equals("let*") -> {
         var newEnv = new Env(env);
-        var bindings = (MalIterable) values.get(1);
+        var bindings = (MalSequence) values.get(1);
         List<Trampoline<Mal>> later = new ArrayList<>();
         for (var iterator = bindings.iterator(); iterator.hasNext();) {
           var key = (MalSymbol) iterator.next();
@@ -98,6 +109,21 @@ public class Evaluator {
         yield traverse(later).map(List::getLast);
       }
 
+      case MalSymbol(var name) when name.equals("try*") -> {
+        var body = values.get(1);
+        var result = tryEval(body, env);
+        var catch_ = (MalList) values.get(2);
+        yield switch (result) {
+          case MalError error -> {
+            var symbol = (MalSymbol) catch_.get(1);
+            var recover = catch_.get(2);
+            var newEnv = new Env(env, Map.of(symbol.name(), error));
+            yield safeEval(recover, newEnv);
+          }
+          default -> done(result);
+        };
+      }
+
       case MalSymbol(var name) when name.equals("if") -> {
         yield safeEval(values.get(1), env).flatMap(result -> {
           if (result != NIL && result != FALSE) {
@@ -109,7 +135,7 @@ public class Evaluator {
 
       case MalSymbol(var name) when name.equals("fn*") -> {
         yield done(function(args -> {
-          var newEnv = new Env(env, (MalIterable) values.get(1), args);
+          var newEnv = new Env(env, (MalSequence) values.get(1), args);
           return safeEval(values.get(2), newEnv);
         }));
       }
@@ -148,7 +174,7 @@ public class Evaluator {
     return traverse(later).map(Mal::vector);
   }
 
-  private static Trampoline<Mal> evalMap(Env env, Map<String, Mal> map) {
+  private static Trampoline<Mal> evalMap(Env env, Map<MalKey, Mal> map) {
     var later = map.entrySet().stream()
       .map(entry -> safeEval(entry.getValue(), env).map(value -> Map.entry(entry.getKey(), value)))
       .toList();

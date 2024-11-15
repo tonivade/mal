@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import mal.Mal.MalIterable;
+import mal.Mal.MalSequence;
 import mal.Mal.MalSymbol;
 
 public class Env {
@@ -32,7 +32,7 @@ public class Env {
     this(outer, new HashMap<>());
   }
 
-  public Env(Env outer, MalIterable binds, MalIterable exprs) {
+  public Env(Env outer, MalSequence binds, MalSequence exprs) {
     this(outer, toMap(binds, exprs));
   }
 
@@ -61,7 +61,7 @@ public class Env {
     map.put(key.name(), value);
   }
     
-  private static Map<String, Mal> toMap(MalIterable binds, MalIterable exprs) {
+  private static Map<String, Mal> toMap(MalSequence binds, MalSequence exprs) {
     var i = binds.iterator();
     var j = exprs.iterator();
 
