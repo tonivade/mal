@@ -9,6 +9,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import mal.Mal.MalAtom;
 import mal.Mal.MalConstant;
+import mal.Mal.MalError;
 import mal.Mal.MalFunction;
 import mal.Mal.MalKeyword;
 import mal.Mal.MalList;
@@ -43,12 +44,13 @@ public class Printer {
         }
         case MalMap(var map) -> {
           yield traverse(map.entrySet().stream()
-            .map(entry -> map2(done(entry.getKey() + " "), safePrint(entry.getValue(), pretty), String::concat))
+            .map(entry -> map2(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), (a, b) -> a + " " + b))
             .toList())
             .map(l -> l.stream().collect(joining(" ", "{", "}")));
         }
         case MalAtom atom -> safePrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
         case MalFunction _ -> done("#function");
+        case MalError(var exception) -> done("ERROR: " + exception.getMessage());
       };
     });
   }

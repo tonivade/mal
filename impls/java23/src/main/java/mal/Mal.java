@@ -1,5 +1,6 @@
 package mal;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -88,11 +89,15 @@ public sealed interface Mal {
     }
   }
 
-  record MalString(String value) implements Mal {}
+  sealed interface MalKey extends Mal {
 
-  record MalKeyword(String value) implements Mal {}
+  }
 
-  sealed interface MalIterable extends Iterable<Mal> {
+  record MalString(String value) implements MalKey {}
+
+  record MalKeyword(String value) implements MalKey {}
+
+  sealed interface MalSequence extends Mal, Iterable<Mal> {
 
     List<Mal> values();
 
@@ -120,14 +125,14 @@ public sealed interface Mal {
     }
   }
 
-  record MalList(List<Mal> values) implements Mal, MalIterable {}
+  record MalList(List<Mal> values) implements MalSequence {}
 
-  record MalVector(List<Mal> values) implements Mal, MalIterable {}
+  record MalVector(List<Mal> values) implements MalSequence {}
 
-  record MalMap(Map<String, Mal> map) implements Mal, Iterable<Map.Entry<String, Mal>> {
+  record MalMap(Map<MalKey, Mal> map) implements Mal, Iterable<Map.Entry<MalKey, Mal>> {
 
     @Override
-    public Iterator<Map.Entry<String, Mal>> iterator() {
+    public Iterator<Map.Entry<MalKey, Mal>> iterator() {
       return map.entrySet().iterator();
     }
 
@@ -138,9 +143,27 @@ public sealed interface Mal {
     public int size() {
       return map.size();
     }
+
+    public Mal get(MalKey key) {
+      return map.getOrDefault(key, NIL);
+    }
+
+    public Collection<MalKey> keys() {
+      return map.keySet();
+    }
+
+    public Collection<Mal> values() {
+      return map.values();
+    }
+
+    public boolean contains(MalKey key) {
+      return map.containsKey(key);
+    }
   }
 
-  record MalSymbol(String name) implements Mal {}
+  record MalSymbol(String name) implements MalKey {}
+
+  record MalError(Exception exception) implements Mal {}
 
   @FunctionalInterface
   non-sealed interface MalFunction extends Mal {
@@ -156,6 +179,10 @@ public sealed interface Mal {
 
   }
 
+  static MalError error(Exception exception) {
+    return new MalError(exception);
+  }
+
   static MalMap map(Mal...tokens) {
     return map(List.of(tokens));
   }
@@ -164,7 +191,7 @@ public sealed interface Mal {
     return map(toMap(tokens));
   }
 
-  static MalMap map(Map<String, Mal> map) {
+  static MalMap map(Map<MalKey, Mal> map) {
     if (map.isEmpty()) {
       return EMPTY_MAP;
     }
@@ -175,30 +202,30 @@ public sealed interface Mal {
     return vector(List.of(tokens));
   }
 
-  static MalVector vector(Stream<Mal> tokens) {
+  static MalVector vector(Stream<? extends Mal> tokens) {
     return vector(tokens.toList());
   }
 
-  static MalVector vector(List<Mal> tokens) {
+  static MalVector vector(Collection<? extends Mal> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_VECTOR;
     }
-    return new MalVector(tokens);
+    return new MalVector(List.copyOf(tokens));
   }
 
   static MalList list(Mal...tokens) {
     return list(List.of(tokens));
   }
 
-  static MalList list(Stream<Mal> tokens) {
+  static MalList list(Stream<? extends Mal> tokens) {
     return list(tokens.toList());
   }
 
-  static MalList list(List<Mal> tokens) {
+  static MalList list(Collection<? extends Mal> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_LIST;
     }
-    return new MalList(tokens);
+    return new MalList(List.copyOf(tokens));
   }
 
   static MalNumber number(Integer value) {
@@ -226,7 +253,7 @@ public sealed interface Mal {
   }
 
   static boolean equals(Mal first, Mal second) {
-    if (first instanceof MalIterable a && second instanceof MalIterable b) {
+    if (first instanceof MalSequence a && second instanceof MalSequence b) {
       var i = a.iterator();
       var j = b.iterator();
       while (i.hasNext() && j.hasNext()) {
@@ -239,17 +266,12 @@ public sealed interface Mal {
     return first.equals(second);
   }
 
-  private static Map<String, Mal> toMap(List<Mal> tokens) {
-    Map<String, Mal> map = new LinkedHashMap<>();
+  private static Map<MalKey, Mal> toMap(List<Mal> tokens) {
+    Map<MalKey, Mal> map = new LinkedHashMap<>();
     for (var iterator = tokens.iterator(); iterator.hasNext();) {
-      var key = iterator.next();
+      var key = (MalKey) iterator.next();
       var value = iterator.next();
-      map.put(switch (key) {
-        case MalSymbol(var name) -> name;
-        case MalString(var name) -> "\"" + name + "\"";
-        case MalKeyword(var name) -> ":" + name;
-        default -> throw new IllegalStateException("not supported key: " + key);
-      }, value);
+      map.put(key, value);
     }
     return map;
   }
