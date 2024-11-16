@@ -1,6 +1,7 @@
 package mal;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,7 +61,7 @@ public sealed interface Mal {
       return new MalNumber(this.value + other.value);
     }
 
-    public MalNumber subs(MalNumber other) {
+    public MalNumber sub(MalNumber other) {
       return new MalNumber(this.value - other.value);
     }
 
@@ -89,9 +90,7 @@ public sealed interface Mal {
     }
   }
 
-  sealed interface MalKey extends Mal {
-
-  }
+  sealed interface MalKey extends Mal {}
 
   record MalString(String value) implements MalKey {}
 
@@ -154,6 +153,18 @@ public sealed interface Mal {
 
     public Collection<Mal> values() {
       return map.values();
+    }
+
+    public MalMap addAll(Map<MalKey, Mal> entries) {
+      var copy = new HashMap<>(map);
+      copy.putAll(entries);
+      return new MalMap(copy);
+    }
+
+    public MalMap removeAll(Collection<? extends MalKey> keys) {
+      var copy = new HashMap<>(map);
+      keys.forEach(copy::remove);
+      return new MalMap(copy);
     }
 
     public boolean contains(MalKey key) {

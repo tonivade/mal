@@ -8,6 +8,7 @@ import static mal.Mal.TRUE;
 import static mal.Mal.ZERO;
 import static mal.Mal.keyword;
 import static mal.Mal.list;
+import static mal.Mal.map;
 import static mal.Mal.number;
 import static mal.Mal.string;
 import static mal.Mal.symbol;
@@ -106,8 +107,8 @@ public interface Core {
     return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::sum).orElse(ZERO));
   };
 
-  MalFunction SUBS = args -> {
-    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::subs).orElse(ZERO));
+  MalFunction SUB = args -> {
+    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::sub).orElse(ZERO));
   };
 
   MalFunction MUL = args -> {
@@ -283,6 +284,9 @@ public interface Core {
   };
 
   MalFunction GET = args -> {
+    if (args.get(0).equals(NIL)) {
+      return done(NIL);
+    }
     var map = (MalMap) args.get(0);
     var key = (MalKey) args.get(1);
     return done(map.get(key));
@@ -310,11 +314,12 @@ public interface Core {
   };
 
   MalFunction KEYWORD = args -> {
-    var name = args.get(0);
-    if (name instanceof MalKeyword keyword) {
+    var param = args.get(0);
+    if (param instanceof MalKeyword keyword) {
       return done(keyword);
     }
-    return done(keyword(((MalString) name).value()));
+    var name = (MalString) param;
+    return done(keyword(name.value()));
   };
 
   MalFunction VECTOR = args -> {
@@ -322,7 +327,19 @@ public interface Core {
   };
 
   MalFunction HASH_MAP = args -> {
-    return done(vector(args.values()));
+    return done(map(args.values()));
+  };
+
+  MalFunction ASSOC = args -> {
+    var map = (MalMap) args.get(0);
+    var entries = map(args.stream().skip(1).toList());
+    return done(map.addAll(entries.map()));
+  };
+
+  MalFunction DISSOC = args -> {
+    var map = (MalMap) args.get(0);
+    var keys = args.stream().skip(1).map(MalKey.class::cast).toList();
+    return done(map.removeAll(keys));
   };
 
   Map<String, Mal> NS = Map.ofEntries(
@@ -333,7 +350,7 @@ public interface Core {
     entry("empty?", EMPTY_Q),
     entry("count", COUNT),
     entry("+", SUM),
-    entry("-", SUBS),
+    entry("-", SUB),
     entry("*", MUL),
     entry("/", DIV),
     entry("=", EQ),
@@ -373,6 +390,9 @@ public interface Core {
     entry("keyword", KEYWORD),
     entry("get", GET),
     entry("keys", KEYS),
-    entry("vals", VALS)
+    entry("vals", VALS),
+    entry("hash-map", HASH_MAP),
+    entry("assoc", ASSOC),
+    entry("dissoc", DISSOC)
   );
 }
