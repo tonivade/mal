@@ -50,7 +50,7 @@ public class Printer {
         }
         case MalAtom atom -> safePrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
         case MalFunction _ -> done("#function");
-        case MalError(var exception) -> done("ERROR: " + exception.getMessage());
+        case MalError(var exception) -> done(exception.getMessage());
       };
     });
   }
