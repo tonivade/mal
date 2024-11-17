@@ -62,7 +62,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalNumber(Integer value) implements MalNode {
+  record MalNumber(long value) implements MalNode {
 
     public MalNumber {
       requireNonNull(value);
@@ -99,13 +99,31 @@ public sealed interface MalNode {
     public boolean lte(MalNumber other) {
       return this.value <= other.value;
     }
+
+    public long asLong() {
+      return value;
+    }
+
+    public int asInt() {
+      return (int) value;
+    }
   }
 
   sealed interface MalKey extends MalNode {}
 
-  record MalString(String value) implements MalKey {}
+  record MalString(String value) implements MalKey {
 
-  record MalKeyword(String value) implements MalKey {}
+    public MalString {
+      requireNonNull(value);
+    }
+  }
+
+  record MalKeyword(String value) implements MalKey {
+
+    public MalKeyword {
+      requireNonNull(value);
+    }
+  }
 
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
@@ -273,7 +291,7 @@ public sealed interface MalNode {
     return new MalList(List.copyOf(tokens));
   }
 
-  static MalNumber number(Integer value) {
+  static MalNumber number(long value) {
     return new MalNumber(value);
   }
 
