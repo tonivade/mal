@@ -1,16 +1,15 @@
 package mal;
 
+import static java.util.Objects.requireNonNull;
 import static mal.MalNode.string;
 import static mal.Printer.print;
-
-import java.util.Objects;
 
 public class MalException extends RuntimeException {
 
   private final MalNode node;
 
   public MalException(MalNode node) {
-    this.node = Objects.requireNonNull(node);
+    this.node = requireNonNull(node);
   }
 
   public MalException(String message) {

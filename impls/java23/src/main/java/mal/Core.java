@@ -350,6 +350,45 @@ public interface Core {
     return done(map.removeAll(keys));
   };
 
+  MalFunction READ_LINE = args -> {
+    var prompt = (MalString) args.get(0);
+    System.out.print(prompt.value());
+    var line = System.console().readLine();
+    return line != null ? done(string(line)) : done(NIL);
+  };
+
+  MalFunction TIME_MS = args -> {
+    throw new UnsupportedOperationException();
+  };
+
+  MalFunction META = args -> {
+    throw new UnsupportedOperationException();
+  };
+
+  MalFunction WITH_META = args -> {
+    throw new UnsupportedOperationException();
+  };
+
+  MalFunction FN_Q = args -> {
+    throw new UnsupportedOperationException();
+  };
+
+  MalFunction STRING_Q = args -> {
+    throw new UnsupportedOperationException();
+  };
+
+  MalFunction NUMBER_Q = args -> {
+    throw new UnsupportedOperationException();
+  };
+
+  MalFunction SEQ = args -> {
+    throw new UnsupportedOperationException();
+  };
+
+  MalFunction CONJ = args -> {
+    throw new UnsupportedOperationException();
+  };
+
   Map<String, MalNode> NS = Map.ofEntries(
     entry("prn", PRN),
     entry("println", PRINTLN),
@@ -402,6 +441,15 @@ public interface Core {
     entry("vals", VALS),
     entry("hash-map", HASH_MAP),
     entry("assoc", ASSOC),
-    entry("dissoc", DISSOC)
+    entry("dissoc", DISSOC),
+    entry("readline", READ_LINE),
+    entry("time-ms", TIME_MS),
+    entry("meta", META),
+    entry("with-meta", WITH_META),
+    entry("fn?", FN_Q),
+    entry("string?", STRING_Q),
+    entry("number?", NUMBER_Q),
+    entry("seq", SEQ),
+    entry("conj", CONJ)
   );
 }
