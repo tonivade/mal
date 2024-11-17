@@ -13,6 +13,7 @@ import mal.MalNode.MalError;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKeyword;
 import mal.MalNode.MalList;
+import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
 import mal.MalNode.MalString;
@@ -28,21 +29,21 @@ public class Printer {
   public static Trampoline<String> safePrint(MalNode val, boolean pretty) {
     return more(() -> {
       return switch (val) {
-        case MalConstant(var name) -> done(name);
-        case MalSymbol(var name) -> done(name);
-        case MalString(var value) when !pretty -> done(value);
-        case MalString(var value) -> done("\"" + escapeJava(value) + "\"");
-        case MalKeyword(var value) -> done(":" + value);
-        case MalNumber(var value) -> done(Long.toString(value));
-        case MalList(var list) -> {
+        case MalConstant(var name, var _) -> done(name);
+        case MalSymbol(var name, var _) -> done(name);
+        case MalString(var value, var _) when !pretty -> done(value);
+        case MalString(var value, var _) -> done("\"" + escapeJava(value) + "\"");
+        case MalKeyword(var value, var _) -> done(":" + value);
+        case MalNumber(var value, var _) -> done(Long.toString(value));
+        case MalList(var list, var _) -> {
           yield traverse(list.stream().map(m -> safePrint(m, pretty)).toList())
             .map(l -> l.stream().collect(joining(" ", "(", ")")));
         }
-        case MalVector(var list) -> {
+        case MalVector(var list, var _) -> {
           yield traverse(list.stream().map(m -> safePrint(m, pretty)).toList())
             .map(l -> l.stream().collect(joining(" ", "[", "]")));
         }
-        case MalMap(var map) -> {
+        case MalMap(var map, var _) -> {
           yield traverse(map.entrySet().stream()
             .map(entry -> map2(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), (a, b) -> a + " " + b))
             .toList())
@@ -50,8 +51,9 @@ public class Printer {
         }
         case MalAtom atom -> safePrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
         case MalFunction _ -> done("#function");
-        case MalError(var exception) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
-        case MalError(var exception) -> done(exception.getMessage());
+        case MalMacro _ -> done("#function");
+        case MalError(var exception, var _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
+        case MalError(var exception, var _) -> done(exception.getMessage());
       };
     });
   }
