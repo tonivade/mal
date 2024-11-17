@@ -36,7 +36,7 @@ public class step4_if_fn_do {
       }
       try {
         System.out.println(rep(line));
-      } catch (IllegalStateException | UnsupportedOperationException e) {
+      } catch (RuntimeException e) {
         System.err.println(e.getMessage());
       }
     }

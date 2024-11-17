@@ -35,7 +35,7 @@ public class step1_read_print {
       }
       try {
         System.out.println(rep(line));
-      } catch (IllegalStateException | UnsupportedOperationException e) {
+      } catch (RuntimeException e) {
         System.err.println(e.getMessage());
       }
     }

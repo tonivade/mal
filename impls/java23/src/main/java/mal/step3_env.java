@@ -34,7 +34,7 @@ public class step3_env {
       }
       try {
         System.out.println(rep(line));
-      } catch (IllegalStateException | UnsupportedOperationException e) {
+      } catch (RuntimeException e) {
         System.err.println(e.getMessage());
       }
     }

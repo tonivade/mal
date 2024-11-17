@@ -102,9 +102,9 @@ public class Reader {
       case Token(var value) when value.charAt(0) == '[' -> readVector(reader);
       case Token(var value) when value.charAt(0) == '{' -> readMap(reader);
 
-      case Token(var value) when value.charAt(0) == ')' -> throw new IllegalArgumentException("unexpected token");
-      case Token(var value) when value.charAt(0) == ']' -> throw new IllegalArgumentException("unexpected token");
-      case Token(var value) when value.charAt(0) == '}' -> throw new IllegalArgumentException("unexpected token");
+      case Token(var value) when value.charAt(0) == ')' -> throw new MalException("unexpected token");
+      case Token(var value) when value.charAt(0) == ']' -> throw new MalException("unexpected token");
+      case Token(var value) when value.charAt(0) == '}' -> throw new MalException("unexpected token");
 
       default -> done(readAtom(reader));
     };
@@ -127,7 +127,7 @@ public class Reader {
       var list = new ArrayList<Trampoline<Mal>>();
       var token = reader.next();
       if (token.value().charAt(0) != start) {
-        throw new IllegalStateException("expected '" + start + "'");
+        throw new MalException("expected '" + start + "'");
       }
 
       while ((token = reader.peek()) != null && token.value().charAt(0) != end) {
@@ -135,7 +135,7 @@ public class Reader {
       }
 
       if (token == null) {
-        throw new IllegalStateException("EOF");
+        throw new MalException("EOF");
       }
       reader.next();
 
@@ -152,7 +152,7 @@ public class Reader {
       case Token(var value) when value.matches("-?\\d+") -> 
         number(Integer.parseInt(value));
       case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*") -> 
-        throw new IllegalStateException("EOF");
+        throw new MalException("EOF");
       case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*\"") -> 
         string(unescapeJava(value.substring(1, value.length() - 1)));
       case Token(var value) when value.startsWith(":") ->

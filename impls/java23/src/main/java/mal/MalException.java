@@ -1,8 +1,14 @@
 package mal;
 
+import static mal.Printer.print;
+
 public class MalException extends RuntimeException {
 
   public MalException(Mal value) {
-    super(value.toString());
+    this(print(value, false));
+  }
+
+  public MalException(String message) {
+    super(message);
   }
 }
