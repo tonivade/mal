@@ -65,7 +65,7 @@ public class Evaluator {
   private static Trampoline<Mal> evalSymbol(Env env, String name) {
     var value = env.get(name);
     if (value == null) {
-      throw new IllegalStateException(name + " not found");
+      throw new MalException(name + " not found");
     }
     return done(value);
   }
@@ -112,9 +112,12 @@ public class Evaluator {
       case MalSymbol(var name) when name.equals("try*") -> {
         var body = values.get(1);
         var result = tryEval(body, env);
-        var catch_ = (MalList) values.get(2);
         yield switch (result) {
+          case MalError error when values.size() < 3 -> {
+            throw new MalException(error);
+          }
           case MalError error -> {
+            var catch_ = (MalList) values.get(2);
             var symbol = (MalSymbol) catch_.get(1);
             var recover = catch_.get(2);
             var newEnv = new Env(env, Map.of(symbol.name(), error));

@@ -5,7 +5,7 @@ import static java.util.stream.Collectors.joining;
 import static mal.Mal.FALSE;
 import static mal.Mal.NIL;
 import static mal.Mal.TRUE;
-import static mal.Mal.ZERO;
+import static mal.Mal.atom;
 import static mal.Mal.keyword;
 import static mal.Mal.list;
 import static mal.Mal.map;
@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import mal.Mal.MalAtom;
-import mal.Mal.MalConstant;
 import mal.Mal.MalFunction;
 import mal.Mal.MalKey;
 import mal.Mal.MalSequence;
@@ -104,19 +103,27 @@ public interface Core {
   };
 
   MalFunction SUM = args -> {
-    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::sum).orElse(ZERO));
+    var arg1 = (MalNumber) args.get(0);
+    var arg2 = (MalNumber) args.get(1);
+    return done(arg1.sum(arg2));
   };
 
   MalFunction SUB = args -> {
-    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::sub).orElse(ZERO));
+    var arg1 = (MalNumber) args.get(0);
+    var arg2 = (MalNumber) args.get(1);
+    return done(arg1.sub(arg2));
   };
 
   MalFunction MUL = args -> {
-    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::mul).orElse(ZERO));
+    var arg1 = (MalNumber) args.get(0);
+    var arg2 = (MalNumber) args.get(1);
+    return done(arg1.mul(arg2));
   };
 
   MalFunction DIV = args -> {
-    return done(args.stream().map(MalNumber.class::cast).reduce(MalNumber::div).orElse(ZERO));
+    var arg1 = (MalNumber) args.get(0);
+    var arg2 = (MalNumber) args.get(1);
+    return done(arg1.div(arg2));
   };
 
   MalFunction PR_STR = args -> {
@@ -145,7 +152,7 @@ public interface Core {
   };
 
   MalFunction ATOM = args -> {
-    return done(Mal.atom(args.get(0)));
+    return done(atom(args.get(0)));
   };
 
   MalFunction ATOM_Q = args -> {
@@ -204,13 +211,13 @@ public interface Core {
     var list = (MalSequence) args.get(0);
     var index = (MalNumber) args.get(1);
     if (index.value() < 0 || index.value() >= list.size()) {
-      throw new IllegalArgumentException();
+      throw new MalException("index out of bounds: " + list.size());
     }
     return done(list.get(index.value()));
   };
 
   MalFunction FIRST = args -> {
-    if (args.get(0) instanceof MalConstant(var name) && name.equals("nil")) {
+    if (args.get(0).equals(NIL)) {
       return done(NIL);
     }
     var list = (MalSequence) args.get(0);
@@ -221,7 +228,7 @@ public interface Core {
   };
 
   MalFunction REST = args -> {
-    if (args.get(0) instanceof MalConstant(var name) && name.equals("nil")) {
+    if (args.get(0).equals(NIL)) {
       return done(list());
     }
     var list = (MalSequence) args.get(0);
@@ -231,7 +238,7 @@ public interface Core {
     return done(list(list.stream().skip(1).toList()));
   };
 
-  MalFunction TROW = args -> {
+  MalFunction THROW = args -> {
     throw new MalException(args.get(0));
   };
 
@@ -247,8 +254,9 @@ public interface Core {
 
   MalFunction MAP = args -> {
     var function = (MalFunction) args.get(0);
-    var arguments = args.stream().skip(1).map(m -> function.apply(list(m))).toList();
-    return traverse(arguments).map(Mal::list);
+    var elements = (MalSequence) args.get(1);
+    var result = elements.stream().map(m -> function.apply(list(m))).toList();
+    return traverse(result).map(Mal::list);
   };
 
   MalFunction NIL_Q = args -> {
@@ -374,7 +382,7 @@ public interface Core {
     entry("nth", NTH),
     entry("first", FIRST),
     entry("rest", REST),
-    entry("throw", TROW),
+    entry("throw", THROW),
     entry("apply", APPLY),
     entry("map", MAP),
     entry("nil?", NIL_Q),
@@ -388,6 +396,7 @@ public interface Core {
     entry("contains?", CONTAINS_Q),
     entry("symbol", SYMBOL),
     entry("keyword", KEYWORD),
+    entry("vector", VECTOR),
     entry("get", GET),
     entry("keys", KEYS),
     entry("vals", VALS),
