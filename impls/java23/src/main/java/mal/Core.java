@@ -6,6 +6,7 @@ import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
 import static mal.MalNode.atom;
+import static mal.MalNode.function;
 import static mal.MalNode.keyword;
 import static mal.MalNode.list;
 import static mal.MalNode.map;
@@ -31,6 +32,7 @@ import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalKeyword;
+import mal.MalNode.MalLambda;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
@@ -38,35 +40,36 @@ import mal.MalNode.MalNumber;
 import mal.MalNode.MalString;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
+import mal.MalNode.MalWithLambda;
 
 public interface Core {
 
-  MalFunction PRN = args -> {
+  MalLambda PRN = args -> {
     var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
     System.out.println(result);
     return done(NIL);
   };
 
-  MalFunction PRINTLN = args -> {
+  MalLambda PRINTLN = args -> {
     var result = args.stream().map(m -> print(m, false)).collect(joining(" "));
     System.out.println(result);
     return done(NIL);
   };
 
-  MalFunction LIST = args -> {
+  MalLambda LIST = args -> {
     return done(list(args.values()));
   };
 
-  MalFunction LIST_Q = args -> {
+  MalLambda LIST_Q = args -> {
     return args.get(0) instanceof MalList ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction EMPTY_Q = args -> {
+  MalLambda EMPTY_Q = args -> {
     var list = (MalSequence) args.get(0);
     return list.isEmpty() ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction COUNT = args -> {
+  MalLambda COUNT = args -> {
     var first = args.get(0);
     if (first == NIL) {
       return done(number(0));
@@ -74,74 +77,74 @@ public interface Core {
     return done(number(((MalSequence) first).size()));
   };
 
-  MalFunction EQ = args -> {
+  MalLambda EQ = args -> {
     return MalNode.equals(args.get(0), args.get(1)) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction GT = args -> {
+  MalLambda GT = args -> {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
     return first.gt(second) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction GTE = args -> {
+  MalLambda GTE = args -> {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
     return first.gte(second) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction LT = args -> {
+  MalLambda LT = args -> {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
     return first.lt(second) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction LTE = args -> {
+  MalLambda LTE = args -> {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
     return first.lte(second) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction SUM = args -> {
+  MalLambda SUM = args -> {
     var arg1 = (MalNumber) args.get(0);
     var arg2 = (MalNumber) args.get(1);
     return done(arg1.sum(arg2));
   };
 
-  MalFunction SUB = args -> {
+  MalLambda SUB = args -> {
     var arg1 = (MalNumber) args.get(0);
     var arg2 = (MalNumber) args.get(1);
     return done(arg1.sub(arg2));
   };
 
-  MalFunction MUL = args -> {
+  MalLambda MUL = args -> {
     var arg1 = (MalNumber) args.get(0);
     var arg2 = (MalNumber) args.get(1);
     return done(arg1.mul(arg2));
   };
 
-  MalFunction DIV = args -> {
+  MalLambda DIV = args -> {
     var arg1 = (MalNumber) args.get(0);
     var arg2 = (MalNumber) args.get(1);
     return done(arg1.div(arg2));
   };
 
-  MalFunction PR_STR = args -> {
+  MalLambda PR_STR = args -> {
     var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
     return done(string(result));
   };
 
-  MalFunction STR = args -> {
+  MalLambda STR = args -> {
     var result = args.stream().map(m -> print(m, false)).collect(joining(""));
     return done(string(result));
   };
 
-  MalFunction READ_STRING = args -> {
+  MalLambda READ_STRING = args -> {
     var string = (MalString) args.get(0);
     return done(read(string.value()));
   };
 
-  MalFunction SLURP = args -> {
+  MalLambda SLURP = args -> {
     try {
       var fileName = (MalString) args.get(0);
       var content = Files.readString(Paths.get(fileName.value()));
@@ -151,39 +154,39 @@ public interface Core {
     }
   };
 
-  MalFunction ATOM = args -> {
+  MalLambda ATOM = args -> {
     return done(atom(args.get(0)));
   };
 
-  MalFunction ATOM_Q = args -> {
+  MalLambda ATOM_Q = args -> {
     return args.get(0) instanceof MalAtom ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction DEREF = args -> {
+  MalLambda DEREF = args -> {
     var atom = (MalAtom) args.get(0);
     return done(atom.getValue());
   };
 
-  MalFunction RESET = args -> {
+  MalLambda RESET = args -> {
     var atom = (MalAtom) args.get(0);
     var newValue = args.get(1);
     atom.setValue(newValue);
     return done(newValue);
   };
 
-  MalFunction SWAP = args -> {
+  MalLambda SWAP = args -> {
     var atom = (MalAtom) args.get(0);
-    var function = (MalFunction) args.get(1);
+    var function = (MalWithLambda) args.get(1);
     var newArgs = new ArrayList<MalNode>();
     newArgs.add(atom.getValue());
     newArgs.addAll(args.values().stream().skip(2).toList());
-    return function.apply(list(newArgs)).map(newValue -> {
+    return function.lambda().apply(list(newArgs)).map(newValue -> {
       atom.setValue(newValue);
       return newValue;
     });
   };
 
-  MalFunction CONS = args -> {
+  MalLambda CONS = args -> {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
     var result = new ArrayList<MalNode>();
@@ -192,22 +195,22 @@ public interface Core {
     return done(list(result));
   };
 
-  MalFunction CONCAT = args -> {
+  MalLambda CONCAT = args -> {
     var result = args.stream().map(MalSequence.class::cast).flatMap(MalSequence::stream).toList();
     return done(list(result));
   };
 
-  MalFunction VEC = args -> {
+  MalLambda VEC = args -> {
     var list = (MalSequence) args.get(0);
     return done(vector(list.stream()));
   };
 
-  MalFunction MACRO_Q = args -> {
+  MalLambda MACRO_Q = args -> {
     var first = args.get(0);
     return first instanceof MalMacro ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction NTH = args -> {
+  MalLambda NTH = args -> {
     var list = (MalSequence) args.get(0);
     var index = (MalNumber) args.get(1);
     if (index.value() < 0 || index.value() >= list.size()) {
@@ -216,7 +219,7 @@ public interface Core {
     return done(list.get(index.asInt()));
   };
 
-  MalFunction FIRST = args -> {
+  MalLambda FIRST = args -> {
     if (args.get(0).equals(NIL)) {
       return done(NIL);
     }
@@ -227,7 +230,7 @@ public interface Core {
     return done(list.get(0));
   };
 
-  MalFunction REST = args -> {
+  MalLambda REST = args -> {
     if (args.get(0).equals(NIL)) {
       return done(list());
     }
@@ -238,60 +241,60 @@ public interface Core {
     return done(list(list.stream().skip(1).toList()));
   };
 
-  MalFunction THROW = args -> {
+  MalLambda THROW = args -> {
     throw new MalException(args.get(0));
   };
 
-  MalFunction APPLY = args -> {
-    var function = (MalFunction) args.get(0);
+  MalLambda APPLY = args -> {
+    var function = (MalWithLambda) args.get(0);
     var arguments = list(args.stream().skip(1).flatMap(m -> switch (m) {
-      case MalList(var values) -> values.stream();
-      case MalVector(var values) -> values.stream();
+      case MalList(var values, var _) -> values.stream();
+      case MalVector(var values, var _) -> values.stream();
       default -> Stream.of(m);
     }).toList());
-    return function.apply(arguments);
+    return function.lambda().apply(arguments);
   };
 
-  MalFunction MAP = args -> {
-    var function = (MalFunction) args.get(0);
+  MalLambda MAP = args -> {
+    var function = (MalWithLambda) args.get(0);
     var elements = (MalSequence) args.get(1);
-    var result = elements.stream().map(m -> function.apply(list(m))).toList();
+    var result = elements.stream().map(m -> function.lambda().apply(list(m))).toList();
     return traverse(result).map(MalNode::list);
   };
 
-  MalFunction NIL_Q = args -> {
+  MalLambda NIL_Q = args -> {
     return args.get(0).equals(NIL) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction TRUE_Q = args -> {
+  MalLambda TRUE_Q = args -> {
     return args.get(0).equals(TRUE) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction FALSE_Q = args -> {
+  MalLambda FALSE_Q = args -> {
     return args.get(0).equals(FALSE) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction SYMBOL_Q = args -> {
+  MalLambda SYMBOL_Q = args -> {
     return args.get(0) instanceof MalSymbol ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction KEYWORD_Q = args -> {
+  MalLambda KEYWORD_Q = args -> {
     return args.get(0) instanceof MalKeyword ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction VECTOR_Q = args -> {
+  MalLambda VECTOR_Q = args -> {
     return args.get(0) instanceof MalVector ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction SEQUENTIAL_Q = args -> {
+  MalLambda SEQUENTIAL_Q = args -> {
     return args.get(0) instanceof MalSequence ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction MAP_Q = args -> {
+  MalLambda MAP_Q = args -> {
     return args.get(0) instanceof MalMap ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction GET = args -> {
+  MalLambda GET = args -> {
     if (args.get(0).equals(NIL)) {
       return done(NIL);
     }
@@ -300,28 +303,28 @@ public interface Core {
     return done(map.get(key));
   };
 
-  MalFunction CONTAINS_Q = args -> {
+  MalLambda CONTAINS_Q = args -> {
     var map = (MalMap) args.get(0);
     var key = (MalKey) args.get(1);
     return map.contains(key) ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction KEYS = args -> {
+  MalLambda KEYS = args -> {
     var map = (MalMap) args.get(0);
     return done(list(map.keys()));
   };
 
-  MalFunction VALS = args -> {
+  MalLambda VALS = args -> {
     var map = (MalMap) args.get(0);
     return done(list(map.values()));
   };
 
-  MalFunction SYMBOL = args -> {
+  MalLambda SYMBOL = args -> {
     var name = (MalString) args.get(0);
     return done(symbol(name.value()));
   };
 
-  MalFunction KEYWORD = args -> {
+  MalLambda KEYWORD = args -> {
     var param = args.get(0);
     if (param instanceof MalKeyword keyword) {
       return done(keyword);
@@ -330,141 +333,138 @@ public interface Core {
     return done(keyword(name.value()));
   };
 
-  MalFunction VECTOR = args -> {
+  MalLambda VECTOR = args -> {
     return done(vector(args.values()));
   };
 
-  MalFunction HASH_MAP = args -> {
+  MalLambda HASH_MAP = args -> {
     return done(map(args.values()));
   };
 
-  MalFunction ASSOC = args -> {
+  MalLambda ASSOC = args -> {
     var map = (MalMap) args.get(0);
     var entries = map(args.stream().skip(1).toList());
     return done(map.addAll(entries.map()));
   };
 
-  MalFunction DISSOC = args -> {
+  MalLambda DISSOC = args -> {
     var map = (MalMap) args.get(0);
     var keys = args.stream().skip(1).map(MalKey.class::cast).toList();
     return done(map.removeAll(keys));
   };
 
-  MalFunction READ_LINE = args -> {
+  MalLambda READ_LINE = args -> {
     var prompt = (MalString) args.get(0);
     System.out.print(prompt.value());
     var line = System.console().readLine();
     return line != null ? done(string(line)) : done(NIL);
   };
 
-  MalFunction TIME_MS = _ -> {
+  MalLambda TIME_MS = _ -> {
     return done(number(System.nanoTime()));
   };
 
-  MalFunction META = args -> {
-    throw new UnsupportedOperationException();
+  MalLambda META = args -> {
+    return done(args.get(0).meta());
   };
 
-  MalFunction WITH_META = args -> {
-    throw new UnsupportedOperationException();
+  MalLambda WITH_META = args -> {
+    return done(args.get(0).withMeta(args.get(1)));
   };
 
-  MalFunction FN_Q = args -> {
-    if (args.get(0) instanceof MalMacro) {
-      return done(FALSE);
-    }
+  MalLambda FN_Q = args -> {
     return args.get(0) instanceof MalFunction ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction STRING_Q = args -> {
+  MalLambda STRING_Q = args -> {
     return args.get(0) instanceof MalString ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction NUMBER_Q = args -> {
+  MalLambda NUMBER_Q = args -> {
     return args.get(0) instanceof MalNumber ? done(TRUE) : done(FALSE);
   };
 
-  MalFunction SEQ = args -> {
+  MalLambda SEQ = args -> {
     return switch (args.get(0)) {
-      case MalList(var values) when values.isEmpty() -> done(NIL);
-      case MalList(var values) -> done(list(values));
-      case MalVector(var values) when values.isEmpty() -> done(NIL);
-      case MalVector(var values) -> done(list(values));
-      case MalString(var value) when value.isEmpty() -> done(NIL);
-      case MalString(var value) -> done(asList(value));
+      case MalList(var values, var _) when values.isEmpty() -> done(NIL);
+      case MalList(var values, var _) -> done(list(values));
+      case MalVector(var values, var _) when values.isEmpty() -> done(NIL);
+      case MalVector(var values, var _) -> done(list(values));
+      case MalString(var value, var _) when value.isEmpty() -> done(NIL);
+      case MalString(var value, var _) -> done(asList(value));
       default -> done(args.get(0));
     };
   };
 
-  private static MalList asList(String string) {
-    return list(string.chars().mapToObj(Character::toString).map(MalNode::string).toList());
-  }
-
-  MalFunction CONJ = args -> {
-    throw new UnsupportedOperationException();
+  MalLambda CONJ = args -> {
+    throw new UnsupportedOperationException("conj not supported");
   };
 
   Map<String, MalNode> NS = Map.ofEntries(
-    entry("prn", PRN),
-    entry("println", PRINTLN),
-    entry("list", LIST),
-    entry("list?", LIST_Q),
-    entry("empty?", EMPTY_Q),
-    entry("count", COUNT),
-    entry("+", SUM),
-    entry("-", SUB),
-    entry("*", MUL),
-    entry("/", DIV),
-    entry("=", EQ),
-    entry(">", GT),
-    entry(">=", GTE),
-    entry("<", LT),
-    entry("<=", LTE),
-    entry("pr-str", PR_STR),
-    entry("str", STR),
-    entry("read-string", READ_STRING),
-    entry("slurp", SLURP),
-    entry("atom", ATOM),
-    entry("atom?", ATOM_Q),
-    entry("deref", DEREF),
-    entry("reset!", RESET),
-    entry("swap!", SWAP),
-    entry("cons", CONS),
-    entry("concat", CONCAT),
-    entry("vec", VEC),
-    entry("macro?", MACRO_Q),
-    entry("nth", NTH),
-    entry("first", FIRST),
-    entry("rest", REST),
-    entry("throw", THROW),
-    entry("apply", APPLY),
-    entry("map", MAP),
-    entry("nil?", NIL_Q),
-    entry("true?", TRUE_Q),
-    entry("false?", FALSE_Q),
-    entry("symbol?", SYMBOL_Q),
-    entry("keyword?", KEYWORD_Q),
-    entry("vector?", VECTOR_Q),
-    entry("sequential?", SEQUENTIAL_Q),
-    entry("map?", MAP_Q),
-    entry("contains?", CONTAINS_Q),
-    entry("symbol", SYMBOL),
-    entry("keyword", KEYWORD),
-    entry("vector", VECTOR),
-    entry("get", GET),
-    entry("keys", KEYS),
-    entry("vals", VALS),
-    entry("hash-map", HASH_MAP),
-    entry("assoc", ASSOC),
-    entry("dissoc", DISSOC),
-    entry("readline", READ_LINE),
-    entry("time-ms", TIME_MS),
-    entry("meta", META),
-    entry("with-meta", WITH_META),
-    entry("fn?", FN_Q),
-    entry("string?", STRING_Q),
-    entry("number?", NUMBER_Q),
-    entry("seq", SEQ),
-    entry("conj", CONJ)
+    entry("prn", function(PRN)),
+    entry("println", function(PRINTLN)),
+    entry("list", function(LIST)),
+    entry("list?", function(LIST_Q)),
+    entry("empty?", function(EMPTY_Q)),
+    entry("count", function(COUNT)),
+    entry("+", function(SUM)),
+    entry("-", function(SUB)),
+    entry("*", function(MUL)),
+    entry("/", function(DIV)),
+    entry("=", function(EQ)),
+    entry(">", function(GT)),
+    entry(">=", function(GTE)),
+    entry("<", function(LT)),
+    entry("<=", function(LTE)),
+    entry("pr-str", function(PR_STR)),
+    entry("str", function(STR)),
+    entry("read-string", function(READ_STRING)),
+    entry("slurp", function(SLURP)),
+    entry("atom", function(ATOM)),
+    entry("atom?", function(ATOM_Q)),
+    entry("deref", function(DEREF)),
+    entry("reset!", function(RESET)),
+    entry("swap!", function(SWAP)),
+    entry("cons", function(CONS)),
+    entry("concat", function(CONCAT)),
+    entry("vec", function(VEC)),
+    entry("macro?", function(MACRO_Q)),
+    entry("nth", function(NTH)),
+    entry("first", function(FIRST)),
+    entry("rest", function(REST)),
+    entry("throw", function(THROW)),
+    entry("apply", function(APPLY)),
+    entry("map", function(MAP)),
+    entry("nil?", function(NIL_Q)),
+    entry("true?", function(TRUE_Q)),
+    entry("false?", function(FALSE_Q)),
+    entry("symbol?", function(SYMBOL_Q)),
+    entry("keyword?", function(KEYWORD_Q)),
+    entry("vector?", function(VECTOR_Q)),
+    entry("sequential?", function(SEQUENTIAL_Q)),
+    entry("map?", function(MAP_Q)),
+    entry("contains?", function(CONTAINS_Q)),
+    entry("symbol", function(SYMBOL)),
+    entry("keyword", function(KEYWORD)),
+    entry("vector", function(VECTOR)),
+    entry("get", function(GET)),
+    entry("keys", function(KEYS)),
+    entry("vals", function(VALS)),
+    entry("hash-map", function(HASH_MAP)),
+    entry("assoc", function(ASSOC)),
+    entry("dissoc", function(DISSOC)),
+    entry("readline", function(READ_LINE)),
+    entry("time-ms", function(TIME_MS)),
+    entry("meta", function(META)),
+    entry("with-meta", function(WITH_META)),
+    entry("fn?", function(FN_Q)),
+    entry("string?", function(STRING_Q)),
+    entry("number?", function(NUMBER_Q)),
+    entry("seq", function(SEQ)),
+    entry("conj", function(CONJ))
   );
+
+  private static MalList asList(String string) {
+    return list(string.chars().mapToObj(Character::toString).map(MalNode::string).toList());
+  }
 }

@@ -53,10 +53,10 @@ public class Evaluator {
       }
 
       return switch (ast) {
-        case MalSymbol(var name) -> evalSymbol(env,name);
-        case MalList(var values) when !values.isEmpty() -> evalList(env, values);
-        case MalVector(var values) when !values.isEmpty() -> evalVector(env,values);
-        case MalMap(var map) when !map.isEmpty() -> evalMap(env, map);
+        case MalSymbol(var name, var _) -> evalSymbol(env, name);
+        case MalList(var values, var _) when !values.isEmpty() -> evalList(env, values);
+        case MalVector(var values, var _) when !values.isEmpty() -> evalVector(env,values);
+        case MalMap(var map, var _) when !map.isEmpty() -> evalMap(env, map);
         default -> done(ast);
       };
     });
@@ -73,7 +73,7 @@ public class Evaluator {
   private static Trampoline<MalNode> evalList(Env env, List<MalNode> values) {
     return switch (values.getFirst()) {
 
-      case MalSymbol(var name) when name.equals("def!") -> {
+      case MalSymbol(var name, var _) when name.equals("def!") -> {
         var key = (MalSymbol) values.get(1);
         yield safeEval(values.get(2), env).map(value -> {
           env.set(key, value);
@@ -81,7 +81,7 @@ public class Evaluator {
         });
       }
 
-      case MalSymbol(var name) when name.equals("defmacro!") -> {
+      case MalSymbol(var name, var _) when name.equals("defmacro!") -> {
         var key = (MalSymbol) values.get(1);
         yield safeEval(values.get(2), env).map(value -> {
           var macro = ((MalFunction) value).toMacro();
@@ -90,7 +90,7 @@ public class Evaluator {
         });
       }
 
-      case MalSymbol(var name) when name.equals("let*") -> {
+      case MalSymbol(var name, var _) when name.equals("let*") -> {
         var newEnv = new Env(env);
         var bindings = (MalSequence) values.get(1);
         List<Trampoline<MalNode>> later = new ArrayList<>();
@@ -104,12 +104,12 @@ public class Evaluator {
         yield traverse(later).andThen(safeEval(values.get(2), newEnv));
       }
 
-      case MalSymbol(var name) when name.equals("do") -> {
+      case MalSymbol(var name, var _) when name.equals("do") -> {
         var later = values.stream().skip(1).map(m -> safeEval(m, env)).toList();
         yield traverse(later).map(List::getLast);
       }
 
-      case MalSymbol(var name) when name.equals("try*") -> {
+      case MalSymbol(var name, var _) when name.equals("try*") -> {
         var body = values.get(1);
         var result = tryEval(body, env);
         yield switch (result) {
@@ -127,7 +127,7 @@ public class Evaluator {
         };
       }
 
-      case MalSymbol(var name) when name.equals("if") -> {
+      case MalSymbol(var name, var _) when name.equals("if") -> {
         yield safeEval(values.get(1), env).flatMap(result -> {
           if (result != NIL && result != FALSE) {
             return safeEval(values.get(2), env);
@@ -136,29 +136,29 @@ public class Evaluator {
         });
       }
 
-      case MalSymbol(var name) when name.equals("fn*") -> {
+      case MalSymbol(var name, var _) when name.equals("fn*") -> {
         yield done(function(args -> {
           var newEnv = new Env(env, (MalSequence) values.get(1), args);
           return safeEval(values.get(2), newEnv);
         }));
       }
 
-      case MalSymbol(var name) when name.equals("quote") -> {
+      case MalSymbol(var name, var _) when name.equals("quote") -> {
         yield done(values.get(1));
       }
 
-      case MalSymbol(var name) when name.equals("quasiquote") -> {
+      case MalSymbol(var name, var _) when name.equals("quasiquote") -> {
         yield evalQuasiquote(values.get(1)).flatMap(result -> safeEval(result, env));
       }
 
-      case MalMacro macro -> {
-        yield macro.apply(list(skipFirst(values)))
+      case MalMacro(var lambda, var _) -> {
+        yield lambda.apply(list(skipFirst(values)))
           .flatMap(next -> safeEval(next, env));
       }
 
-      case MalFunction function -> {
+      case MalFunction(var lambda, var _) -> {
         yield traverse(skipFirst(values).stream().map(m -> safeEval(m, env)).toList())
-          .flatMap(args -> function.apply(list(args)));
+          .flatMap(args -> lambda.apply(list(args)));
       }
 
       default -> {
@@ -190,10 +190,10 @@ public class Evaluator {
     return switch (value) {
       case MalSymbol _ -> done(list(QUOTE, value));
       case MalMap _ -> done(list(QUOTE, value));
-      case MalList(var values) when values.isEmpty() -> done(value);
-      case MalList(var values) when values.getFirst().equals(UNQUOTE) -> done(values.get(1));
-      case MalList(var values) -> recursiveQuasiquote(values);
-      case MalVector(var values) -> recursiveQuasiquote(values).map(next -> list(symbol("vec"), next));
+      case MalList(var values, var _) when values.isEmpty() -> done(value);
+      case MalList(var values, var _) when values.getFirst().equals(UNQUOTE) -> done(values.get(1));
+      case MalList(var values, var _) -> recursiveQuasiquote(values);
+      case MalVector(var values, var _) -> recursiveQuasiquote(values).map(next -> list(symbol("vec"), next));
       default -> done(value);
     }; 
   }

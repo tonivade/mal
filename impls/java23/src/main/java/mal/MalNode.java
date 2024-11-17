@@ -12,40 +12,51 @@ import java.util.stream.Stream;
 
 public sealed interface MalNode {
 
-  MalSymbol QUOTE = new MalSymbol("quote");
-  MalSymbol QUASIQUOTE = new MalSymbol("quasiquote");
-  MalSymbol UNQUOTE = new MalSymbol("unquote");
-  MalSymbol SPLICE_UNQUOTE = new MalSymbol("splice-unquote");
-  MalSymbol WITH_META = new MalSymbol("with-meta");
-  MalSymbol DEREF = new MalSymbol("deref");
+  MalNode withMeta(MalNode meta);
+
+  MalNode meta();
+
+  MalSymbol QUOTE = new MalSymbol("quote", null);
+  MalSymbol QUASIQUOTE = new MalSymbol("quasiquote", null);
+  MalSymbol UNQUOTE = new MalSymbol("unquote", null);
+  MalSymbol SPLICE_UNQUOTE = new MalSymbol("splice-unquote", null);
+  MalSymbol WITH_META = new MalSymbol("with-meta", null);
+  MalSymbol DEREF = new MalSymbol("deref", null);
   
-  MalSymbol CONCAT = new MalSymbol("concat");
-  MalSymbol CONS = new MalSymbol("cons");
+  MalSymbol CONCAT = new MalSymbol("concat", null);
+  MalSymbol CONS = new MalSymbol("cons", null);
 
-  MalConstant NIL = new MalConstant("nil");
-  MalConstant TRUE = new MalConstant("true");
-  MalConstant FALSE = new MalConstant("false");
+  MalConstant NIL = new MalConstant("nil", null);
+  MalConstant TRUE = new MalConstant("true", null);
+  MalConstant FALSE = new MalConstant("false", null);
 
-  MalNumber ZERO = new MalNumber(0);
-  MalNumber ONE = new MalNumber(1);
+  MalNumber ZERO = new MalNumber(0, null);
+  MalNumber ONE = new MalNumber(1, null);
 
-  MalList EMPTY_LIST = new MalList(List.of());
-  MalVector EMPTY_VECTOR = new MalVector(List.of());
-  MalMap EMPTY_MAP = new MalMap(Map.of());
+  MalList EMPTY_LIST = new MalList(List.of(), null);
+  MalVector EMPTY_VECTOR = new MalVector(List.of(), null);
+  MalMap EMPTY_MAP = new MalMap(Map.of(), null);
 
-  record MalConstant(String name) implements MalNode {
+  record MalConstant(String name, MalNode meta) implements MalNode {
 
     public MalConstant {
       requireNonNull(name);
+    }
+
+    @Override
+    public MalConstant withMeta(MalNode meta) {
+      return new MalConstant(name, meta);
     }
   }
 
   final class MalAtom implements MalNode {
 
     private MalNode value;
+    private final MalNode meta;
 
-    public MalAtom(MalNode value) {
+    public MalAtom(MalNode value, MalNode meta) {
       this.value = requireNonNull(value);
+      this.meta = meta;
     }
 
     public MalNode getValue() {
@@ -57,31 +68,41 @@ public sealed interface MalNode {
     }
 
     @Override
+    public MalNode meta() {
+      return meta;
+    }
+
+    @Override
+    public MalNode withMeta(MalNode meta) {
+      return new MalAtom(value, meta);
+    }
+
+    @Override
     public String toString() {
       return "MalAtom[" + value + "]";
     }
   }
 
-  record MalNumber(long value) implements MalNode {
+  record MalNumber(long value, MalNode meta) implements MalNode {
 
     public MalNumber {
       requireNonNull(value);
     }
 
     public MalNumber sum(MalNumber other) {
-      return new MalNumber(this.value + other.value);
+      return new MalNumber(this.value + other.value, null);
     }
 
     public MalNumber sub(MalNumber other) {
-      return new MalNumber(this.value - other.value);
+      return new MalNumber(this.value - other.value, null);
     }
 
     public MalNumber mul(MalNumber other) {
-      return new MalNumber(this.value * other.value);
+      return new MalNumber(this.value * other.value, null);
     }
 
     public MalNumber div(MalNumber other) {
-      return new MalNumber(this.value / other.value);
+      return new MalNumber(this.value / other.value, null);
     }
 
     public boolean gt(MalNumber other) {
@@ -107,21 +128,36 @@ public sealed interface MalNode {
     public int asInt() {
       return (int) value;
     }
+
+    @Override
+    public MalNumber withMeta(MalNode meta) {
+      return new MalNumber(value, meta);
+    }
   }
 
   sealed interface MalKey extends MalNode {}
 
-  record MalString(String value) implements MalKey {
+  record MalString(String value, MalNode meta) implements MalKey {
 
     public MalString {
       requireNonNull(value);
     }
+
+    @Override
+    public MalString withMeta(MalNode meta) {
+      return new MalString(value, meta);
+    }
   }
 
-  record MalKeyword(String value) implements MalKey {
+  record MalKeyword(String value, MalNode meta) implements MalKey {
 
     public MalKeyword {
       requireNonNull(value);
+    }
+
+    @Override
+    public MalKeyword withMeta(MalNode meta) {
+      return new MalKeyword(value, meta);
     }
   }
 
@@ -153,20 +189,31 @@ public sealed interface MalNode {
     }
   }
 
-  record MalList(List<MalNode> values) implements MalSequence {
+  record MalList(List<MalNode> values, MalNode meta) implements MalSequence {
     
     public MalList {
       requireNonNull(values);
     }
-  }
 
-  record MalVector(List<MalNode> values) implements MalSequence {
-    public MalVector {
-      requireNonNull(values);
+    @Override
+    public MalList withMeta(MalNode meta) {
+      return new MalList(values, meta);
     }
   }
 
-  record MalMap(Map<MalKey, MalNode> map) implements MalNode, Iterable<Map.Entry<MalKey, MalNode>> {
+  record MalVector(List<MalNode> values, MalNode meta) implements MalSequence {
+
+    public MalVector {
+      requireNonNull(values);
+    }
+
+    @Override
+    public MalVector withMeta(MalNode meta) {
+      return new MalVector(values, meta);
+    }
+  }
+
+  record MalMap(Map<MalKey, MalNode> map, MalNode meta) implements MalNode, Iterable<Map.Entry<MalKey, MalNode>> {
 
     public MalMap {
       requireNonNull(map);
@@ -200,50 +247,82 @@ public sealed interface MalNode {
     public MalMap addAll(Map<MalKey, MalNode> entries) {
       var copy = new HashMap<>(map);
       copy.putAll(entries);
-      return new MalMap(copy);
+      return new MalMap(copy, null);
     }
 
     public MalMap removeAll(Collection<? extends MalKey> keys) {
       var copy = new HashMap<>(map);
       keys.forEach(copy::remove);
-      return new MalMap(copy);
+      return new MalMap(copy, null);
     }
 
     public boolean contains(MalKey key) {
       return map.containsKey(key);
     }
+
+    @Override
+    public MalMap withMeta(MalNode meta) {
+      return new MalMap(map, meta);
+    }
   }
 
-  record MalSymbol(String name) implements MalKey {
+  record MalSymbol(String name, MalNode meta) implements MalKey {
 
     public MalSymbol {
       requireNonNull(name);
     }
+
+    @Override
+    public MalSymbol withMeta(MalNode meta) {
+      return new MalSymbol(name, meta);
+    }
   }
 
-  record MalError(Exception exception) implements MalNode {
+  record MalError(Exception exception, MalNode meta) implements MalNode {
 
     public MalError {
       requireNonNull(exception);
     }
-  }
 
-  @FunctionalInterface
-  non-sealed interface MalFunction extends MalNode {
-
-    Trampoline<MalNode> apply(MalList args);
-
-    default MalMacro toMacro() {
-      return this::apply;
+    @Override
+    public MalError withMeta(MalNode meta) {
+      return new MalError(exception, meta);
     }
   }
 
-  interface MalMacro extends MalFunction {
+  @FunctionalInterface
+  interface MalLambda {
+    
+    Trampoline<MalNode> apply(MalList args);
+  }
 
+  sealed interface MalWithLambda extends MalNode {
+
+    MalLambda lambda();
+  }
+
+  record MalFunction(MalLambda lambda, MalNode meta) implements MalWithLambda {
+
+    public MalMacro toMacro() {
+      return new MalMacro(lambda, null);
+    }
+    
+    @Override
+    public MalNode withMeta(MalNode meta) {
+      return new MalFunction(lambda, meta);
+    }
+  }
+
+  record MalMacro(MalLambda lambda, MalNode meta) implements MalWithLambda {
+
+    @Override
+    public MalNode withMeta(MalNode meta) {
+      return new MalMacro(lambda, meta);
+    }
   }
 
   static MalError error(Exception exception) {
-    return new MalError(exception);
+    return new MalError(exception, null);
   }
 
   static MalMap map(MalNode...tokens) {
@@ -258,7 +337,7 @@ public sealed interface MalNode {
     if (map.isEmpty()) {
       return EMPTY_MAP;
     }
-    return new MalMap(map);
+    return new MalMap(map, null);
   }
 
   static MalVector vector(MalNode...tokens) {
@@ -273,7 +352,7 @@ public sealed interface MalNode {
     if (tokens.isEmpty()) {
       return EMPTY_VECTOR;
     }
-    return new MalVector(List.copyOf(tokens));
+    return new MalVector(List.copyOf(tokens), null);
   }
 
   static MalList list(MalNode...tokens) {
@@ -288,31 +367,31 @@ public sealed interface MalNode {
     if (tokens.isEmpty()) {
       return EMPTY_LIST;
     }
-    return new MalList(List.copyOf(tokens));
+    return new MalList(List.copyOf(tokens), null);
   }
 
   static MalNumber number(long value) {
-    return new MalNumber(value);
+    return new MalNumber(value, null);
   }
 
   static MalString string(String value) {
-    return new MalString(value);
+    return new MalString(value, null);
   }
 
   static MalKeyword keyword(String value) {
-    return new MalKeyword(value);
+    return new MalKeyword(value, null);
   }
 
   static MalSymbol symbol(String name) {
-    return new MalSymbol(name);
+    return new MalSymbol(name, null);
   }
 
   static MalAtom atom(MalNode value) {
-    return new MalAtom(value);
+    return new MalAtom(value, null);
   }
 
-  static MalFunction function(MalFunction function) {
-    return function;
+  static MalFunction function(MalLambda lambda) {
+    return new MalFunction(lambda, null);
   }
 
   static boolean equals(MalNode first, MalNode second) {
