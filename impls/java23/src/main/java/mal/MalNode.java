@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public sealed interface Mal {
+public sealed interface MalNode {
 
   MalSymbol QUOTE = new MalSymbol("quote");
   MalSymbol QUASIQUOTE = new MalSymbol("quasiquote");
@@ -31,21 +31,21 @@ public sealed interface Mal {
   MalVector EMPTY_VECTOR = new MalVector(List.of());
   MalMap EMPTY_MAP = new MalMap(Map.of());
 
-  record MalConstant(String name) implements Mal {}
+  record MalConstant(String name) implements MalNode {}
 
-  final class MalAtom implements Mal {
+  final class MalAtom implements MalNode {
 
-    private Mal value;
+    private MalNode value;
 
-    public MalAtom(Mal value) {
+    public MalAtom(MalNode value) {
       this.value = value;
     }
 
-    public Mal getValue() {
+    public MalNode getValue() {
       return value;
     }
 
-    public void setValue(Mal value) {
+    public void setValue(MalNode value) {
       this.value = value;
     }
 
@@ -55,7 +55,7 @@ public sealed interface Mal {
     }
   }
 
-  record MalNumber(Integer value) implements Mal {
+  record MalNumber(Integer value) implements MalNode {
 
     public MalNumber sum(MalNumber other) {
       return new MalNumber(this.value + other.value);
@@ -90,28 +90,28 @@ public sealed interface Mal {
     }
   }
 
-  sealed interface MalKey extends Mal {}
+  sealed interface MalKey extends MalNode {}
 
   record MalString(String value) implements MalKey {}
 
   record MalKeyword(String value) implements MalKey {}
 
-  sealed interface MalSequence extends Mal, Iterable<Mal> {
+  sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
-    List<Mal> values();
+    List<MalNode> values();
 
-    default Iterator<Mal> iterator() {
+    default Iterator<MalNode> iterator() {
       return values().iterator();
     }
 
-    default Mal get(int i) {
+    default MalNode get(int i) {
       if (i < 0 || i >= values().size()) {
         return NIL;
       }
       return values().get(i);
     }
 
-    default Stream<Mal> stream() {
+    default Stream<MalNode> stream() {
       return values().stream();
     }
 
@@ -124,14 +124,14 @@ public sealed interface Mal {
     }
   }
 
-  record MalList(List<Mal> values) implements MalSequence {}
+  record MalList(List<MalNode> values) implements MalSequence {}
 
-  record MalVector(List<Mal> values) implements MalSequence {}
+  record MalVector(List<MalNode> values) implements MalSequence {}
 
-  record MalMap(Map<MalKey, Mal> map) implements Mal, Iterable<Map.Entry<MalKey, Mal>> {
+  record MalMap(Map<MalKey, MalNode> map) implements MalNode, Iterable<Map.Entry<MalKey, MalNode>> {
 
     @Override
-    public Iterator<Map.Entry<MalKey, Mal>> iterator() {
+    public Iterator<Map.Entry<MalKey, MalNode>> iterator() {
       return map.entrySet().iterator();
     }
 
@@ -143,7 +143,7 @@ public sealed interface Mal {
       return map.size();
     }
 
-    public Mal get(MalKey key) {
+    public MalNode get(MalKey key) {
       return map.getOrDefault(key, NIL);
     }
 
@@ -151,11 +151,11 @@ public sealed interface Mal {
       return map.keySet();
     }
 
-    public Collection<Mal> values() {
+    public Collection<MalNode> values() {
       return map.values();
     }
 
-    public MalMap addAll(Map<MalKey, Mal> entries) {
+    public MalMap addAll(Map<MalKey, MalNode> entries) {
       var copy = new HashMap<>(map);
       copy.putAll(entries);
       return new MalMap(copy);
@@ -174,12 +174,12 @@ public sealed interface Mal {
 
   record MalSymbol(String name) implements MalKey {}
 
-  record MalError(Exception exception) implements Mal {}
+  record MalError(Exception exception) implements MalNode {}
 
   @FunctionalInterface
-  non-sealed interface MalFunction extends Mal {
+  non-sealed interface MalFunction extends MalNode {
 
-    Trampoline<Mal> apply(MalList args);
+    Trampoline<MalNode> apply(MalList args);
 
     default MalMacro toMacro() {
       return this::apply;
@@ -194,45 +194,45 @@ public sealed interface Mal {
     return new MalError(exception);
   }
 
-  static MalMap map(Mal...tokens) {
+  static MalMap map(MalNode...tokens) {
     return map(List.of(tokens));
   }
 
-  static MalMap map(List<Mal> tokens) {
+  static MalMap map(List<MalNode> tokens) {
     return map(toMap(tokens));
   }
 
-  static MalMap map(Map<MalKey, Mal> map) {
+  static MalMap map(Map<MalKey, MalNode> map) {
     if (map.isEmpty()) {
       return EMPTY_MAP;
     }
     return new MalMap(map);
   }
 
-  static MalVector vector(Mal...tokens) {
+  static MalVector vector(MalNode...tokens) {
     return vector(List.of(tokens));
   }
 
-  static MalVector vector(Stream<? extends Mal> tokens) {
+  static MalVector vector(Stream<? extends MalNode> tokens) {
     return vector(tokens.toList());
   }
 
-  static MalVector vector(Collection<? extends Mal> tokens) {
+  static MalVector vector(Collection<? extends MalNode> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_VECTOR;
     }
     return new MalVector(List.copyOf(tokens));
   }
 
-  static MalList list(Mal...tokens) {
+  static MalList list(MalNode...tokens) {
     return list(List.of(tokens));
   }
 
-  static MalList list(Stream<? extends Mal> tokens) {
+  static MalList list(Stream<? extends MalNode> tokens) {
     return list(tokens.toList());
   }
 
-  static MalList list(Collection<? extends Mal> tokens) {
+  static MalList list(Collection<? extends MalNode> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_LIST;
     }
@@ -255,7 +255,7 @@ public sealed interface Mal {
     return new MalSymbol(name);
   }
 
-  static MalAtom atom(Mal value) {
+  static MalAtom atom(MalNode value) {
     return new MalAtom(value);
   }
 
@@ -263,7 +263,7 @@ public sealed interface Mal {
     return function;
   }
 
-  static boolean equals(Mal first, Mal second) {
+  static boolean equals(MalNode first, MalNode second) {
     if (first instanceof MalSequence a && second instanceof MalSequence b) {
       var i = a.iterator();
       var j = b.iterator();
@@ -277,8 +277,8 @@ public sealed interface Mal {
     return first.equals(second);
   }
 
-  private static Map<MalKey, Mal> toMap(List<Mal> tokens) {
-    Map<MalKey, Mal> map = new LinkedHashMap<>();
+  private static Map<MalKey, MalNode> toMap(List<MalNode> tokens) {
+    Map<MalKey, MalNode> map = new LinkedHashMap<>();
     for (var iterator = tokens.iterator(); iterator.hasNext();) {
       var key = (MalKey) iterator.next();
       var value = iterator.next();

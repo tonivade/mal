@@ -3,20 +3,20 @@ package mal;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static mal.Mal.DEREF;
-import static mal.Mal.FALSE;
-import static mal.Mal.NIL;
-import static mal.Mal.QUASIQUOTE;
-import static mal.Mal.QUOTE;
-import static mal.Mal.SPLICE_UNQUOTE;
-import static mal.Mal.TRUE;
-import static mal.Mal.UNQUOTE;
-import static mal.Mal.WITH_META;
-import static mal.Mal.keyword;
-import static mal.Mal.list;
-import static mal.Mal.number;
-import static mal.Mal.string;
-import static mal.Mal.symbol;
+import static mal.MalNode.DEREF;
+import static mal.MalNode.FALSE;
+import static mal.MalNode.NIL;
+import static mal.MalNode.QUASIQUOTE;
+import static mal.MalNode.QUOTE;
+import static mal.MalNode.SPLICE_UNQUOTE;
+import static mal.MalNode.TRUE;
+import static mal.MalNode.UNQUOTE;
+import static mal.MalNode.WITH_META;
+import static mal.MalNode.keyword;
+import static mal.MalNode.list;
+import static mal.MalNode.number;
+import static mal.MalNode.string;
+import static mal.MalNode.symbol;
 import static mal.Trampoline.done;
 import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
@@ -58,11 +58,11 @@ public class Reader {
     return tokens.isEmpty();
   }
 
-  public static Mal read(String input) {
+  public static MalNode read(String input) {
     return parse(tokenize(input)).run();
   }
 
-  private static Trampoline<Mal> parse(Reader reader) {
+  private static Trampoline<MalNode> parse(Reader reader) {
     return switch (reader.peek()) {
       case null -> done(NIL);
 
@@ -110,21 +110,21 @@ public class Reader {
     };
   }
 
-  private static Trampoline<Mal> readList(Reader reader) {
-    return readList(reader, '(', ')').map(Mal::list);
+  private static Trampoline<MalNode> readList(Reader reader) {
+    return readList(reader, '(', ')').map(MalNode::list);
   }
 
-  private static Trampoline<Mal> readVector(Reader reader) {
-    return readList(reader, '[', ']').map(Mal::vector);
+  private static Trampoline<MalNode> readVector(Reader reader) {
+    return readList(reader, '[', ']').map(MalNode::vector);
   }
 
-  private static Trampoline<Mal> readMap(Reader reader) {
-    return readList(reader, '{', '}').map(Mal::map);
+  private static Trampoline<MalNode> readMap(Reader reader) {
+    return readList(reader, '{', '}').map(MalNode::map);
   }
 
-  private static Trampoline<List<Mal>> readList(Reader reader, char start, char end) {
+  private static Trampoline<List<MalNode>> readList(Reader reader, char start, char end) {
     return more(() -> {
-      var list = new ArrayList<Trampoline<Mal>>();
+      var list = new ArrayList<Trampoline<MalNode>>();
       var token = reader.next();
       if (token.value().charAt(0) != start) {
         throw new MalException("expected '" + start + "'");
@@ -143,7 +143,7 @@ public class Reader {
     });
   }
 
-  private static Mal readAtom(Reader reader) {
+  private static MalNode readAtom(Reader reader) {
     return switch (reader.next()) {
       case null -> NIL;
       case Token(var value) when value.equals("nil") -> NIL;

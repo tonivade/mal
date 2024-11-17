@@ -7,25 +7,25 @@ import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
-import mal.Mal.MalAtom;
-import mal.Mal.MalConstant;
-import mal.Mal.MalError;
-import mal.Mal.MalFunction;
-import mal.Mal.MalKeyword;
-import mal.Mal.MalList;
-import mal.Mal.MalMap;
-import mal.Mal.MalNumber;
-import mal.Mal.MalString;
-import mal.Mal.MalSymbol;
-import mal.Mal.MalVector;
+import mal.MalNode.MalAtom;
+import mal.MalNode.MalConstant;
+import mal.MalNode.MalError;
+import mal.MalNode.MalFunction;
+import mal.MalNode.MalKeyword;
+import mal.MalNode.MalList;
+import mal.MalNode.MalMap;
+import mal.MalNode.MalNumber;
+import mal.MalNode.MalString;
+import mal.MalNode.MalSymbol;
+import mal.MalNode.MalVector;
 
 public class Printer {
 
-  public static String print(Mal val, boolean pretty) {
+  public static String print(MalNode val, boolean pretty) {
     return safePrint(val, pretty).run();
   }
 
-  public static Trampoline<String> safePrint(Mal val, boolean pretty) {
+  public static Trampoline<String> safePrint(MalNode val, boolean pretty) {
     return more(() -> {
       return switch (val) {
         case MalConstant(var name) -> done(name);

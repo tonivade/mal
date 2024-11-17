@@ -2,17 +2,17 @@ package mal;
 
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
-import static mal.Mal.FALSE;
-import static mal.Mal.NIL;
-import static mal.Mal.TRUE;
-import static mal.Mal.atom;
-import static mal.Mal.keyword;
-import static mal.Mal.list;
-import static mal.Mal.map;
-import static mal.Mal.number;
-import static mal.Mal.string;
-import static mal.Mal.symbol;
-import static mal.Mal.vector;
+import static mal.MalNode.FALSE;
+import static mal.MalNode.NIL;
+import static mal.MalNode.TRUE;
+import static mal.MalNode.atom;
+import static mal.MalNode.keyword;
+import static mal.MalNode.list;
+import static mal.MalNode.map;
+import static mal.MalNode.number;
+import static mal.MalNode.string;
+import static mal.MalNode.symbol;
+import static mal.MalNode.vector;
 import static mal.Printer.print;
 import static mal.Reader.read;
 import static mal.Trampoline.done;
@@ -26,18 +26,18 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import mal.Mal.MalAtom;
-import mal.Mal.MalFunction;
-import mal.Mal.MalKey;
-import mal.Mal.MalSequence;
-import mal.Mal.MalKeyword;
-import mal.Mal.MalList;
-import mal.Mal.MalMacro;
-import mal.Mal.MalMap;
-import mal.Mal.MalNumber;
-import mal.Mal.MalString;
-import mal.Mal.MalSymbol;
-import mal.Mal.MalVector;
+import mal.MalNode.MalAtom;
+import mal.MalNode.MalFunction;
+import mal.MalNode.MalKey;
+import mal.MalNode.MalSequence;
+import mal.MalNode.MalKeyword;
+import mal.MalNode.MalList;
+import mal.MalNode.MalMacro;
+import mal.MalNode.MalMap;
+import mal.MalNode.MalNumber;
+import mal.MalNode.MalString;
+import mal.MalNode.MalSymbol;
+import mal.MalNode.MalVector;
 
 public interface Core {
 
@@ -75,7 +75,7 @@ public interface Core {
   };
 
   MalFunction EQ = args -> {
-    return Mal.equals(args.get(0), args.get(1)) ? done(TRUE) : done(FALSE);
+    return MalNode.equals(args.get(0), args.get(1)) ? done(TRUE) : done(FALSE);
   };
 
   MalFunction GT = args -> {
@@ -174,7 +174,7 @@ public interface Core {
   MalFunction SWAP = args -> {
     var atom = (MalAtom) args.get(0);
     var function = (MalFunction) args.get(1);
-    var newArgs = new ArrayList<Mal>();
+    var newArgs = new ArrayList<MalNode>();
     newArgs.add(atom.getValue());
     newArgs.addAll(args.values().stream().skip(2).toList());
     return function.apply(list(newArgs)).map(newValue -> {
@@ -186,7 +186,7 @@ public interface Core {
   MalFunction CONS = args -> {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
-    var result = new ArrayList<Mal>();
+    var result = new ArrayList<MalNode>();
     result.add(item);
     result.addAll(list.stream().toList());
     return done(list(result));
@@ -256,7 +256,7 @@ public interface Core {
     var function = (MalFunction) args.get(0);
     var elements = (MalSequence) args.get(1);
     var result = elements.stream().map(m -> function.apply(list(m))).toList();
-    return traverse(result).map(Mal::list);
+    return traverse(result).map(MalNode::list);
   };
 
   MalFunction NIL_Q = args -> {
@@ -350,7 +350,7 @@ public interface Core {
     return done(map.removeAll(keys));
   };
 
-  Map<String, Mal> NS = Map.ofEntries(
+  Map<String, MalNode> NS = Map.ofEntries(
     entry("prn", PRN),
     entry("println", PRINTLN),
     entry("list", LIST),
