@@ -1,5 +1,7 @@
 package mal;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,14 +33,19 @@ public sealed interface MalNode {
   MalVector EMPTY_VECTOR = new MalVector(List.of());
   MalMap EMPTY_MAP = new MalMap(Map.of());
 
-  record MalConstant(String name) implements MalNode {}
+  record MalConstant(String name) implements MalNode {
+
+    public MalConstant {
+      requireNonNull(name);
+    }
+  }
 
   final class MalAtom implements MalNode {
 
     private MalNode value;
 
     public MalAtom(MalNode value) {
-      this.value = value;
+      this.value = requireNonNull(value);
     }
 
     public MalNode getValue() {
@@ -56,6 +63,10 @@ public sealed interface MalNode {
   }
 
   record MalNumber(Integer value) implements MalNode {
+
+    public MalNumber {
+      requireNonNull(value);
+    }
 
     public MalNumber sum(MalNumber other) {
       return new MalNumber(this.value + other.value);
@@ -124,11 +135,24 @@ public sealed interface MalNode {
     }
   }
 
-  record MalList(List<MalNode> values) implements MalSequence {}
+  record MalList(List<MalNode> values) implements MalSequence {
+    
+    public MalList {
+      requireNonNull(values);
+    }
+  }
 
-  record MalVector(List<MalNode> values) implements MalSequence {}
+  record MalVector(List<MalNode> values) implements MalSequence {
+    public MalVector {
+      requireNonNull(values);
+    }
+  }
 
   record MalMap(Map<MalKey, MalNode> map) implements MalNode, Iterable<Map.Entry<MalKey, MalNode>> {
+
+    public MalMap {
+      requireNonNull(map);
+    }
 
     @Override
     public Iterator<Map.Entry<MalKey, MalNode>> iterator() {
@@ -172,9 +196,19 @@ public sealed interface MalNode {
     }
   }
 
-  record MalSymbol(String name) implements MalKey {}
+  record MalSymbol(String name) implements MalKey {
 
-  record MalError(Exception exception) implements MalNode {}
+    public MalSymbol {
+      requireNonNull(name);
+    }
+  }
+
+  record MalError(Exception exception) implements MalNode {
+
+    public MalError {
+      requireNonNull(exception);
+    }
+  }
 
   @FunctionalInterface
   non-sealed interface MalFunction extends MalNode {

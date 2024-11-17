@@ -38,6 +38,9 @@ public class App {
       case "step9_try" -> {
         step9_try.main(Arrays.copyOfRange(args, 1, args.length));
       }
+      case "stepA_mal" -> {
+        stepA_mal.main(Arrays.copyOfRange(args, 1, args.length));
+      }
       default -> throw new IllegalArgumentException("invalid step: " + args[0]);
     }
   }
