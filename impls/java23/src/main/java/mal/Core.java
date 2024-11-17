@@ -213,7 +213,7 @@ public interface Core {
     if (index.value() < 0 || index.value() >= list.size()) {
       throw new MalException("index out of bounds: " + list.size());
     }
-    return done(list.get(index.value()));
+    return done(list.get(index.asInt()));
   };
 
   MalFunction FIRST = args -> {
@@ -357,8 +357,8 @@ public interface Core {
     return line != null ? done(string(line)) : done(NIL);
   };
 
-  MalFunction TIME_MS = args -> {
-    throw new UnsupportedOperationException();
+  MalFunction TIME_MS = _ -> {
+    return done(number(System.nanoTime()));
   };
 
   MalFunction META = args -> {
@@ -370,20 +370,35 @@ public interface Core {
   };
 
   MalFunction FN_Q = args -> {
-    throw new UnsupportedOperationException();
+    if (args.get(0) instanceof MalMacro) {
+      return done(FALSE);
+    }
+    return args.get(0) instanceof MalFunction ? done(TRUE) : done(FALSE);
   };
 
   MalFunction STRING_Q = args -> {
-    throw new UnsupportedOperationException();
+    return args.get(0) instanceof MalString ? done(TRUE) : done(FALSE);
   };
 
   MalFunction NUMBER_Q = args -> {
-    throw new UnsupportedOperationException();
+    return args.get(0) instanceof MalNumber ? done(TRUE) : done(FALSE);
   };
 
   MalFunction SEQ = args -> {
-    throw new UnsupportedOperationException();
+    return switch (args.get(0)) {
+      case MalList(var values) when values.isEmpty() -> done(NIL);
+      case MalList(var values) -> done(list(values));
+      case MalVector(var values) when values.isEmpty() -> done(NIL);
+      case MalVector(var values) -> done(list(values));
+      case MalString(var value) when value.isEmpty() -> done(NIL);
+      case MalString(var value) -> done(asList(value));
+      default -> done(args.get(0));
+    };
   };
+
+  private static MalList asList(String string) {
+    return list(string.chars().mapToObj(Character::toString).map(MalNode::string).toList());
+  }
 
   MalFunction CONJ = args -> {
     throw new UnsupportedOperationException();

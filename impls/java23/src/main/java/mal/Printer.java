@@ -33,7 +33,7 @@ public class Printer {
         case MalString(var value) when !pretty -> done(value);
         case MalString(var value) -> done("\"" + escapeJava(value) + "\"");
         case MalKeyword(var value) -> done(":" + value);
-        case MalNumber(var value) -> done(Integer.toString(value));
+        case MalNumber(var value) -> done(Long.toString(value));
         case MalList(var list) -> {
           yield traverse(list.stream().map(m -> safePrint(m, pretty)).toList())
             .map(l -> l.stream().collect(joining(" ", "(", ")")));
