@@ -265,14 +265,21 @@ public sealed interface MalNode {
 
   static boolean equals(MalNode first, MalNode second) {
     if (first instanceof MalSequence a && second instanceof MalSequence b) {
-      var i = a.iterator();
-      var j = b.iterator();
-      while (i.hasNext() && j.hasNext()) {
-        if (!equals(i.next(), j.next())) {
+      return a.values().equals(b.values());
+    }
+    if (first instanceof MalMap a && second instanceof MalMap b) {
+      if (a.size() != b.size()) {
+        return false;
+      }
+      if (!a.keys().equals(b.keys())) {
+        return false;
+      }
+      for (var key : a.keys()) {
+        if (!equals(a.get(key), b.get(key))) {
           return false;
         }
       }
-      return !(i.hasNext() || j.hasNext());
+      return true;
     }
     return first.equals(second);
   }
