@@ -365,7 +365,8 @@ public interface Core {
   };
 
   MalLambda META = args -> {
-    return done(args.get(0).meta());
+    var meta = args.get(0).meta();
+    return meta != null ? done(meta) : done(NIL);
   };
 
   MalLambda WITH_META = args -> {
@@ -397,7 +398,19 @@ public interface Core {
   };
 
   MalLambda CONJ = args -> {
-    throw new UnsupportedOperationException("conj not supported");
+    return switch (args.get(0)) {
+      case MalList(var values, var _) -> {
+        var newValues = new ArrayList<>(values);
+        args.stream().skip(1).forEach(newValues::addFirst);
+        yield done(list(newValues));
+      }
+      case MalVector(var values, var _) -> {
+        var newValues = new ArrayList<>(values);
+        args.stream().skip(1).forEach(newValues::addLast);
+        yield done(vector(newValues));
+      }
+      default -> throw new MalException("invalid definition");
+    };
   };
 
   Map<String, MalNode> NS = Map.ofEntries(
