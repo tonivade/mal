@@ -4,7 +4,7 @@ import static mal.Printer.print;
 
 public class MalException extends RuntimeException {
 
-  public MalException(Mal value) {
+  public MalException(MalNode value) {
     this(print(value, false));
   }
 

@@ -1,15 +1,15 @@
 package mal;
 
-import static mal.Mal.FALSE;
-import static mal.Mal.list;
+import static mal.MalNode.FALSE;
+import static mal.MalNode.list;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import mal.Mal.MalSequence;
-import mal.Mal.MalSymbol;
+import mal.MalNode.MalSequence;
+import mal.MalNode.MalSymbol;
 
 public class Env {
 
@@ -18,13 +18,13 @@ public class Env {
   public static final Env DEFAULT = new Env(Core.NS);
 
   private final Env outer;
-  private final Map<String, Mal> map;
+  private final Map<String, MalNode> map;
 
   public Env() {
     this(DEFAULT, new HashMap<>());
   }
 
-  public Env(Map<String, Mal> map) {
+  public Env(Map<String, MalNode> map) {
     this(DEFAULT, map);
   }
 
@@ -36,7 +36,7 @@ public class Env {
     this(outer, toMap(binds, exprs));
   }
 
-  public Env(Env outer, Map<String, Mal> map) {
+  public Env(Env outer, Map<String, MalNode> map) {
     this.outer = outer;
     this.map = map;
   }
@@ -46,7 +46,7 @@ public class Env {
     return debugEval != null && debugEval != FALSE;
   }
 
-  public Mal get(String key) {
+  public MalNode get(String key) {
     var value = map.get(key);
     if (value != null) {
       return value;
@@ -57,22 +57,22 @@ public class Env {
     return null;
   }
 
-  public void set(MalSymbol key, Mal value) {
+  public void set(MalSymbol key, MalNode value) {
     map.put(key.name(), value);
   }
     
-  private static Map<String, Mal> toMap(MalSequence binds, MalSequence exprs) {
+  private static Map<String, MalNode> toMap(MalSequence binds, MalSequence exprs) {
     var i = binds.iterator();
     var j = exprs.iterator();
 
-    Map<String, Mal> result = new HashMap<>();
+    Map<String, MalNode> result = new HashMap<>();
 
     while (i.hasNext()) {
       var bind = (MalSymbol) i.next();
 
       if (bind.name().equals("&")) {
         bind = (MalSymbol) i.next();
-        List<Mal> list = new ArrayList<>();
+        List<MalNode> list = new ArrayList<>();
         while (j.hasNext()) {
           list.add(j.next());
         }

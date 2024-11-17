@@ -1,17 +1,17 @@
 package mal;
 
 import static java.util.stream.Collectors.toUnmodifiableMap;
-import static mal.Mal.CONCAT;
-import static mal.Mal.CONS;
-import static mal.Mal.FALSE;
-import static mal.Mal.NIL;
-import static mal.Mal.QUOTE;
-import static mal.Mal.SPLICE_UNQUOTE;
-import static mal.Mal.UNQUOTE;
-import static mal.Mal.error;
-import static mal.Mal.function;
-import static mal.Mal.list;
-import static mal.Mal.symbol;
+import static mal.MalNode.CONCAT;
+import static mal.MalNode.CONS;
+import static mal.MalNode.FALSE;
+import static mal.MalNode.NIL;
+import static mal.MalNode.QUOTE;
+import static mal.MalNode.SPLICE_UNQUOTE;
+import static mal.MalNode.UNQUOTE;
+import static mal.MalNode.error;
+import static mal.MalNode.function;
+import static mal.MalNode.list;
+import static mal.MalNode.symbol;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
 import static mal.Trampoline.map2;
@@ -22,23 +22,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import mal.Mal.MalError;
-import mal.Mal.MalFunction;
-import mal.Mal.MalKey;
-import mal.Mal.MalSequence;
-import mal.Mal.MalList;
-import mal.Mal.MalMacro;
-import mal.Mal.MalMap;
-import mal.Mal.MalSymbol;
-import mal.Mal.MalVector;
+import mal.MalNode.MalError;
+import mal.MalNode.MalFunction;
+import mal.MalNode.MalKey;
+import mal.MalNode.MalSequence;
+import mal.MalNode.MalList;
+import mal.MalNode.MalMacro;
+import mal.MalNode.MalMap;
+import mal.MalNode.MalSymbol;
+import mal.MalNode.MalVector;
 
 public class Evaluator {
 
-  static Mal eval(Mal ast, Env env) {
+  static MalNode eval(MalNode ast, Env env) {
     return safeEval(ast, env).run();
   }
 
-  static Mal tryEval(Mal ast, Env env) {
+  static MalNode tryEval(MalNode ast, Env env) {
     try {
       return eval(ast, env);
     } catch (RuntimeException e) {
@@ -46,7 +46,7 @@ public class Evaluator {
     }
   }
 
-  static Trampoline<Mal> safeEval(Mal ast, Env env) {
+  static Trampoline<MalNode> safeEval(MalNode ast, Env env) {
     return more(() -> {
       if (env.isDebugEval()) {
         System.out.println("EVAL: " + print(ast, true));
@@ -62,7 +62,7 @@ public class Evaluator {
     });
   }
 
-  private static Trampoline<Mal> evalSymbol(Env env, String name) {
+  private static Trampoline<MalNode> evalSymbol(Env env, String name) {
     var value = env.get(name);
     if (value == null) {
       throw new MalException(name + " not found");
@@ -70,7 +70,7 @@ public class Evaluator {
     return done(value);
   }
 
-  private static Trampoline<Mal> evalList(Env env, List<Mal> values) {
+  private static Trampoline<MalNode> evalList(Env env, List<MalNode> values) {
     return switch (values.getFirst()) {
 
       case MalSymbol(var name) when name.equals("def!") -> {
@@ -93,7 +93,7 @@ public class Evaluator {
       case MalSymbol(var name) when name.equals("let*") -> {
         var newEnv = new Env(env);
         var bindings = (MalSequence) values.get(1);
-        List<Trampoline<Mal>> later = new ArrayList<>();
+        List<Trampoline<MalNode>> later = new ArrayList<>();
         for (var iterator = bindings.iterator(); iterator.hasNext();) {
           var key = (MalSymbol) iterator.next();
           later.add(safeEval(iterator.next(), newEnv).map(value -> {
@@ -162,8 +162,8 @@ public class Evaluator {
       }
 
       default -> {
-        yield safeEval(values.getFirst(), env).<Mal>map(callable -> {
-          List<Mal> next = new ArrayList<>();
+        yield safeEval(values.getFirst(), env).<MalNode>map(callable -> {
+          List<MalNode> next = new ArrayList<>();
           next.add(callable);
           next.addAll(skipFirst(values));
           return list(next);
@@ -172,21 +172,21 @@ public class Evaluator {
     };
   }
 
-  private static Trampoline<Mal> evalVector(Env env, List<Mal> values) {
+  private static Trampoline<MalNode> evalVector(Env env, List<MalNode> values) {
     var later = values.stream().map(m -> safeEval(m, env)).toList();
-    return traverse(later).map(Mal::vector);
+    return traverse(later).map(MalNode::vector);
   }
 
-  private static Trampoline<Mal> evalMap(Env env, Map<MalKey, Mal> map) {
+  private static Trampoline<MalNode> evalMap(Env env, Map<MalKey, MalNode> map) {
     var later = map.entrySet().stream()
       .map(entry -> safeEval(entry.getValue(), env).map(value -> Map.entry(entry.getKey(), value)))
       .toList();
     return traverse(later)
       .map(list -> list.stream().collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
-      .map(Mal::map);
+      .map(MalNode::map);
   }
 
-  private static Trampoline<Mal> evalQuasiquote(Mal value) {
+  private static Trampoline<MalNode> evalQuasiquote(MalNode value) {
     return switch (value) {
       case MalSymbol _ -> done(list(QUOTE, value));
       case MalMap _ -> done(list(QUOTE, value));
@@ -198,7 +198,7 @@ public class Evaluator {
     }; 
   }
 
-  private static Trampoline<Mal> recursiveQuasiquote(List<Mal> values) {
+  private static Trampoline<MalNode> recursiveQuasiquote(List<MalNode> values) {
     if (values.isEmpty()) {
       return done(list());
     }
@@ -213,7 +213,7 @@ public class Evaluator {
     });
   }
 
-  private static List<Mal> skipFirst(List<Mal> values) {
+  private static List<MalNode> skipFirst(List<MalNode> values) {
     return values.stream().skip(1).toList();
   }
 }

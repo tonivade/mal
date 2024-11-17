@@ -2,9 +2,9 @@ package mal;
 
 import static mal.Evaluator.eval;
 import static mal.Evaluator.safeEval;
-import static mal.Mal.function;
-import static mal.Mal.list;
-import static mal.Mal.symbol;
+import static mal.MalNode.function;
+import static mal.MalNode.list;
+import static mal.MalNode.symbol;
 import static mal.Printer.print;
 import static mal.Reader.read;
 
@@ -61,11 +61,11 @@ public class step7_quote {
     }
   }
 
-  private static Mal argv(String[] arguments) {
+  private static MalNode argv(String[] arguments) {
     if (arguments.length < 1) {
       return list();
     }
     var copy = Arrays.copyOfRange(arguments, 1, arguments.length);
-    return list(Stream.of(copy).<Mal>map(Mal::string).toList());
+    return list(Stream.of(copy).<MalNode>map(MalNode::string).toList());
   }
 }

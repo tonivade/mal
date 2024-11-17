@@ -10,7 +10,7 @@ import org.jline.reader.UserInterruptException;
 
 public class step1_read_print {
 
-  static Mal eval(Mal ast) {
+  static MalNode eval(MalNode ast) {
     return ast;
   }
 
