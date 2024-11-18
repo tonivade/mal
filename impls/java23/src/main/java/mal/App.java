@@ -5,7 +5,8 @@ import java.util.Arrays;
 public class App {
   public static void main(String[] args) {
     if (args.length == 0) {
-      throw new IllegalArgumentException("mandatory step");
+      stepA_mal.main(args);
+      return;
     }
     switch (args[0]) {
       case "step0_repl" -> {
