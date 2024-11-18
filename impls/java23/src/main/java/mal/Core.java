@@ -322,8 +322,7 @@ public interface Core {
 
   MalLambda READ_LINE = args -> {
     var prompt = (MalString) args.get(0);
-    System.out.print(prompt.value());
-    var line = System.console().readLine();
+    var line = Readline.readline(prompt.value());
     return line != null ? done(string(line)) : done(NIL);
   };
 
