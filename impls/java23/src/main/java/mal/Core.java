@@ -56,13 +56,9 @@ public interface Core {
     return done(NIL);
   };
 
-  MalLambda LIST = args -> {
-    return done(list(args.values()));
-  };
+  MalLambda LIST = args -> done(list(args.values()));
 
-  MalLambda LIST_Q = args -> {
-    return args.get(0) instanceof MalList ? done(TRUE) : done(FALSE);
-  };
+  MalLambda LIST_Q = args -> args.get(0) instanceof MalList ? done(TRUE) : done(FALSE);
 
   MalLambda EMPTY_Q = args -> {
     var list = (MalSequence) args.get(0);
@@ -77,9 +73,7 @@ public interface Core {
     return done(number(((MalSequence) first).size()));
   };
 
-  MalLambda EQ = args -> {
-    return MalNode.equals(args.get(0), args.get(1)) ? done(TRUE) : done(FALSE);
-  };
+  MalLambda EQ = args -> MalNode.equals(args.get(0), args.get(1)) ? done(TRUE) : done(FALSE);
 
   MalLambda GT = args -> {
     var first = (MalNumber) args.get(0);
@@ -154,13 +148,9 @@ public interface Core {
     }
   };
 
-  MalLambda ATOM = args -> {
-    return done(atom(args.get(0)));
-  };
+  MalLambda ATOM = args -> done(atom(args.get(0)));
 
-  MalLambda ATOM_Q = args -> {
-    return args.get(0) instanceof MalAtom ? done(TRUE) : done(FALSE);
-  };
+  MalLambda ATOM_Q = args -> args.get(0) instanceof MalAtom ? done(TRUE) : done(FALSE);
 
   MalLambda DEREF = args -> {
     var atom = (MalAtom) args.get(0);
@@ -205,10 +195,7 @@ public interface Core {
     return done(vector(list.stream()));
   };
 
-  MalLambda MACRO_Q = args -> {
-    var first = args.get(0);
-    return first instanceof MalMacro ? done(TRUE) : done(FALSE);
-  };
+  MalLambda MACRO_Q = args -> args.get(0) instanceof MalMacro ? done(TRUE) : done(FALSE);
 
   MalLambda NTH = args -> {
     var list = (MalSequence) args.get(0);
@@ -262,37 +249,21 @@ public interface Core {
     return traverse(result).map(MalNode::list);
   };
 
-  MalLambda NIL_Q = args -> {
-    return args.get(0).equals(NIL) ? done(TRUE) : done(FALSE);
-  };
+  MalLambda NIL_Q = args -> args.get(0).equals(NIL) ? done(TRUE) : done(FALSE);
 
-  MalLambda TRUE_Q = args -> {
-    return args.get(0).equals(TRUE) ? done(TRUE) : done(FALSE);
-  };
+  MalLambda TRUE_Q = args -> args.get(0).equals(TRUE) ? done(TRUE) : done(FALSE);
 
-  MalLambda FALSE_Q = args -> {
-    return args.get(0).equals(FALSE) ? done(TRUE) : done(FALSE);
-  };
+  MalLambda FALSE_Q = args -> args.get(0).equals(FALSE) ? done(TRUE) : done(FALSE);
 
-  MalLambda SYMBOL_Q = args -> {
-    return args.get(0) instanceof MalSymbol ? done(TRUE) : done(FALSE);
-  };
+  MalLambda SYMBOL_Q = args -> args.get(0) instanceof MalSymbol ? done(TRUE) : done(FALSE);
 
-  MalLambda KEYWORD_Q = args -> {
-    return args.get(0) instanceof MalKeyword ? done(TRUE) : done(FALSE);
-  };
+  MalLambda KEYWORD_Q = args -> args.get(0) instanceof MalKeyword ? done(TRUE) : done(FALSE);
 
-  MalLambda VECTOR_Q = args -> {
-    return args.get(0) instanceof MalVector ? done(TRUE) : done(FALSE);
-  };
+  MalLambda VECTOR_Q = args -> args.get(0) instanceof MalVector ? done(TRUE) : done(FALSE);
 
-  MalLambda SEQUENTIAL_Q = args -> {
-    return args.get(0) instanceof MalSequence ? done(TRUE) : done(FALSE);
-  };
+  MalLambda SEQUENTIAL_Q = args -> args.get(0) instanceof MalSequence ? done(TRUE) : done(FALSE);
 
-  MalLambda MAP_Q = args -> {
-    return args.get(0) instanceof MalMap ? done(TRUE) : done(FALSE);
-  };
+  MalLambda MAP_Q = args -> args.get(0) instanceof MalMap ? done(TRUE) : done(FALSE);
 
   MalLambda GET = args -> {
     if (args.get(0).equals(NIL)) {
@@ -333,13 +304,9 @@ public interface Core {
     return done(keyword(name.value()));
   };
 
-  MalLambda VECTOR = args -> {
-    return done(vector(args.values()));
-  };
+  MalLambda VECTOR = args -> done(vector(args.values()));
 
-  MalLambda HASH_MAP = args -> {
-    return done(map(args.values()));
-  };
+  MalLambda HASH_MAP = args -> done(map(args.values()));
 
   MalLambda ASSOC = args -> {
     var map = (MalMap) args.get(0);
@@ -360,57 +327,43 @@ public interface Core {
     return line != null ? done(string(line)) : done(NIL);
   };
 
-  MalLambda TIME_MS = _ -> {
-    return done(number(System.nanoTime()));
-  };
+  MalLambda TIME_MS = _ -> done(number(System.nanoTime()));
 
   MalLambda META = args -> {
     var meta = args.get(0).meta();
     return meta != null ? done(meta) : done(NIL);
   };
 
-  MalLambda WITH_META = args -> {
-    return done(args.get(0).withMeta(args.get(1)));
+  MalLambda WITH_META = args -> done(args.get(0).withMeta(args.get(1)));
+
+  MalLambda FN_Q = args -> args.get(0) instanceof MalFunction ? done(TRUE) : done(FALSE);
+
+  MalLambda STRING_Q = args -> args.get(0) instanceof MalString ? done(TRUE) : done(FALSE);
+
+  MalLambda NUMBER_Q = args -> args.get(0) instanceof MalNumber ? done(TRUE) : done(FALSE);
+
+  MalLambda SEQ = args -> switch (args.get(0)) {
+    case MalList(var values, var _) when values.isEmpty() -> done(NIL);
+    case MalList(var values, var _) -> done(list(values));
+    case MalVector(var values, var _) when values.isEmpty() -> done(NIL);
+    case MalVector(var values, var _) -> done(list(values));
+    case MalString(var value, var _) when value.isEmpty() -> done(NIL);
+    case MalString(var value, var _) -> done(asList(value));
+    default -> done(args.get(0));
   };
 
-  MalLambda FN_Q = args -> {
-    return args.get(0) instanceof MalFunction ? done(TRUE) : done(FALSE);
-  };
-
-  MalLambda STRING_Q = args -> {
-    return args.get(0) instanceof MalString ? done(TRUE) : done(FALSE);
-  };
-
-  MalLambda NUMBER_Q = args -> {
-    return args.get(0) instanceof MalNumber ? done(TRUE) : done(FALSE);
-  };
-
-  MalLambda SEQ = args -> {
-    return switch (args.get(0)) {
-      case MalList(var values, var _) when values.isEmpty() -> done(NIL);
-      case MalList(var values, var _) -> done(list(values));
-      case MalVector(var values, var _) when values.isEmpty() -> done(NIL);
-      case MalVector(var values, var _) -> done(list(values));
-      case MalString(var value, var _) when value.isEmpty() -> done(NIL);
-      case MalString(var value, var _) -> done(asList(value));
-      default -> done(args.get(0));
-    };
-  };
-
-  MalLambda CONJ = args -> {
-    return switch (args.get(0)) {
-      case MalList(var values, var _) -> {
-        var newValues = new ArrayList<>(values);
-        args.stream().skip(1).forEach(newValues::addFirst);
-        yield done(list(newValues));
-      }
-      case MalVector(var values, var _) -> {
-        var newValues = new ArrayList<>(values);
-        args.stream().skip(1).forEach(newValues::addLast);
-        yield done(vector(newValues));
-      }
-      default -> throw new MalException("invalid definition");
-    };
+  MalLambda CONJ = args -> switch (args.get(0)) {
+    case MalList(var values, var _) -> {
+      var newValues = new ArrayList<>(values);
+      args.stream().skip(1).forEach(newValues::addFirst);
+      yield done(list(newValues));
+    }
+    case MalVector(var values, var _) -> {
+      var newValues = new ArrayList<>(values);
+      args.stream().skip(1).forEach(newValues::addLast);
+      yield done(vector(newValues));
+    }
+    default -> throw new MalException("invalid definition");
   };
 
   Map<String, MalNode> NS = Map.ofEntries(

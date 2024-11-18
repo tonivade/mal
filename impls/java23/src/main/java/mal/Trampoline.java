@@ -57,11 +57,11 @@ public sealed interface Trampoline<T> {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
-  static <T> Trampoline<List<T>> traverse(Collection<Trampoline<T>> list) {
+  static <T> Trampoline<List<T>> traverse(Collection<? extends Trampoline<T>> list) {
     return list.stream().reduce(done(List.<T>of()), Trampoline::add, Trampoline::merge);
   }
 
-  private static <T> Trampoline<List<T>> add(Trampoline<List<T>> tlist, Trampoline<T> titem) {
+  private static <T> Trampoline<List<T>> add(Trampoline<? extends Collection<T>> tlist, Trampoline<T> titem) {
     return map2(tlist, titem, (list, item) -> {
       List<T> newList = new ArrayList<>(list);
       newList.add(item);
@@ -69,7 +69,8 @@ public sealed interface Trampoline<T> {
     });
   }
 
-  private static <T> Trampoline<List<T>> merge(Trampoline<List<T>> tlist1, Trampoline<List<T>> tlist2) {
+  private static <T> Trampoline<List<T>> merge(
+      Trampoline<? extends Collection<T>> tlist1, Trampoline<? extends Collection<T>> tlist2) {
     return map2(tlist1, tlist2, (list1, list2) -> {
       List<T> newList = new ArrayList<>(list1);
       newList.addAll(list2);
