@@ -34,12 +34,7 @@ import mal.MalNode.MalVector;
 public class Evaluator {
 
   static MalNode eval(MalNode ast, Env env) {
-    try {
-      return safeEval(ast, env).run();
-    } catch (RuntimeException e) {
-      System.err.println(ast + ": uncaught exception: " + e);
-      throw e;
-    }
+    return safeEval(ast, env).run();
   }
 
   static Trampoline<MalNode> safeEval(MalNode ast, Env env) {
@@ -111,7 +106,7 @@ public class Evaluator {
           yield done(eval(body, env));
         } catch (RuntimeException e) {
           if (values.size() < 3) {
-            throw e;
+            yield done(error(e));
           }
           var catch_ = (MalList) values.get(2);
           var symbol = (MalSymbol) catch_.get(1);
