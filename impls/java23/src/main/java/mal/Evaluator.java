@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import mal.MalNode.MalError;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalSequence;
@@ -35,14 +34,11 @@ import mal.MalNode.MalVector;
 public class Evaluator {
 
   static MalNode eval(MalNode ast, Env env) {
-    return safeEval(ast, env).run();
-  }
-
-  static MalNode tryEval(MalNode ast, Env env) {
     try {
-      return eval(ast, env);
+      return safeEval(ast, env).run();
     } catch (RuntimeException e) {
-      return error(e);
+      System.err.println(ast + ": uncaught exception: " + e);
+      throw e;
     }
   }
 
@@ -111,20 +107,18 @@ public class Evaluator {
 
       case MalSymbol(var name, var _) when name.equals("try*") -> {
         var body = values.get(1);
-        var result = tryEval(body, env);
-        yield switch (result) {
-          case MalError error when values.size() < 3 -> {
-            throw new MalException(error);
+        try {
+          yield done(eval(body, env));
+        } catch (RuntimeException e) {
+          if (values.size() < 3) {
+            throw e;
           }
-          case MalError error -> {
-            var catch_ = (MalList) values.get(2);
-            var symbol = (MalSymbol) catch_.get(1);
-            var recover = catch_.get(2);
-            var newEnv = new Env(env, Map.of(symbol.name(), error));
-            yield safeEval(recover, newEnv);
-          }
-          default -> done(result);
-        };
+          var catch_ = (MalList) values.get(2);
+          var symbol = (MalSymbol) catch_.get(1);
+          var recover = catch_.get(2);
+          var newEnv = new Env(env, Map.of(symbol.name(), error(e)));
+          yield safeEval(recover, newEnv);
+        }
       }
 
       case MalSymbol(var name, var _) when name.equals("if") -> {
@@ -195,7 +189,7 @@ public class Evaluator {
       case MalList(var values, var _) -> recursiveQuasiquote(values);
       case MalVector(var values, var _) -> recursiveQuasiquote(values).map(next -> list(symbol("vec"), next));
       default -> done(value);
-    }; 
+    };
   }
 
   private static Trampoline<MalNode> recursiveQuasiquote(List<MalNode> values) {
@@ -208,7 +202,7 @@ public class Evaluator {
         return recursiveQuasiquote(skipFirst(values))
           .map(result -> list(CONCAT, list.get(1), result));
       }
-      return map2(recursiveQuasiquote(skipFirst(values)), evalQuasiquote(element), 
+      return map2(recursiveQuasiquote(skipFirst(values)), evalQuasiquote(element),
         (next, eval) -> list(CONS, eval, next));
     });
   }
