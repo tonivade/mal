@@ -17,7 +17,7 @@ public class step4_if_fn_do {
     return print(eval(read(input), ENV), true);
   }
 
-  public static void main(String[] args) {
+  public static void main(String... args) {
     String prompt = "user> ";
 
     rep("(def! not (fn* (a) (if a false true)))");

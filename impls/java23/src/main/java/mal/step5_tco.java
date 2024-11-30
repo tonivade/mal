@@ -17,7 +17,7 @@ public class step5_tco {
     return print(eval(read(input), ENV), true);
   }
 
-  public static void main(String[] args) {
+  public static void main(String... args) {
     String prompt = "user> ";
 
     rep("(def! not (fn* (a) (if a false true)))");

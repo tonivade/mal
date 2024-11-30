@@ -17,7 +17,7 @@ public class step3_env {
     return print(eval(read(input), ENV), true);
   }
 
-  public static void main(String[] args) {
+  public static void main(String... args) {
     String prompt = "user> ";
 
     var reader = LineReaderBuilder.builder()

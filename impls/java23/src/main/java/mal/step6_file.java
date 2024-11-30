@@ -24,7 +24,7 @@ public class step6_file {
     return print(eval(read(input), ENV), true);
   }
 
-  public static void main(String[] arguments) {
+  public static void main(String... arguments) {
     String prompt = "user> ";
 
     rep("(def! not (fn* (a) (if a false true)))");
@@ -61,7 +61,7 @@ public class step6_file {
     }
   }
 
-  private static MalNode argv(String[] arguments) {
+  private static MalNode argv(String... arguments) {
     if (arguments.length < 1) {
       return list();
     }

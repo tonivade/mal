@@ -15,7 +15,7 @@ public class step2_eval {
     return print(eval(read(input), new Env()), true);
   }
 
-  public static void main(String[] args) {
+  public static void main(String... args) {
     String prompt = "user> ";
 
     var reader = LineReaderBuilder.builder()

@@ -24,7 +24,7 @@ public class stepA_mal {
     return print(eval(read(input), ENV), true);
   }
 
-  public static void main(String[] arguments) {
+  public static void main(String... arguments) {
     String prompt = "user> ";
 
     ENV.set(symbol("eval"), function(args -> safeEval(args.get(0), ENV)));
@@ -59,7 +59,7 @@ public class stepA_mal {
     }
   }
 
-  private static MalNode argv(String[] arguments) {
+  private static MalNode argv(String... arguments) {
     if (arguments.length < 1) {
       return list();
     }
