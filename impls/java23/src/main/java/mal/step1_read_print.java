@@ -18,7 +18,7 @@ public class step1_read_print {
     return print(eval(read(input)), true);
   }
 
-  public static void main(String[] args) {
+  public static void main(String... args) {
     String prompt = "user> ";
 
     var reader = LineReaderBuilder.builder()
