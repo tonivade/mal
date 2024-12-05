@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024, Antonio Gabriel Muñoz Conejo <me at tonivade dot es>
+ * Distributed under the terms of the MIT License
+ */
 package mal;
 
 import static java.util.Objects.requireNonNull;
@@ -22,7 +26,7 @@ public sealed interface MalNode {
   MalSymbol SPLICE_UNQUOTE = new MalSymbol("splice-unquote", null);
   MalSymbol WITH_META = new MalSymbol("with-meta", null);
   MalSymbol DEREF = new MalSymbol("deref", null);
-  
+
   MalSymbol CONCAT = new MalSymbol("concat", null);
   MalSymbol CONS = new MalSymbol("cons", null);
 
@@ -165,6 +169,7 @@ public sealed interface MalNode {
 
     List<MalNode> values();
 
+    @Override
     default Iterator<MalNode> iterator() {
       return values().iterator();
     }
@@ -190,7 +195,7 @@ public sealed interface MalNode {
   }
 
   record MalList(List<MalNode> values, MalNode meta) implements MalSequence {
-    
+
     public MalList {
       requireNonNull(values);
     }
@@ -292,7 +297,7 @@ public sealed interface MalNode {
 
   @FunctionalInterface
   interface MalLambda {
-    
+
     Trampoline<MalNode> apply(MalList args);
   }
 
@@ -306,7 +311,7 @@ public sealed interface MalNode {
     public MalMacro toMacro() {
       return new MalMacro(lambda, null);
     }
-    
+
     @Override
     public MalNode withMeta(MalNode meta) {
       return new MalFunction(lambda, meta);

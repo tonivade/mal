@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024, Antonio Gabriel Muñoz Conejo <me at tonivade dot es>
+ * Distributed under the terms of the MIT License
+ */
 package mal;
 
 import static mal.MalNode.FALSE;
@@ -60,7 +64,7 @@ public class Env {
   public void set(MalSymbol key, MalNode value) {
     map.put(key.name(), value);
   }
-    
+
   private static Map<String, MalNode> toMap(MalSequence binds, MalSequence exprs) {
     var i = binds.iterator();
     var j = exprs.iterator();

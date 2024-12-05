@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024, Antonio Gabriel Muñoz Conejo <me at tonivade dot es>
+ * Distributed under the terms of the MIT License
+ */
 package mal;
 
 import static mal.Evaluator.eval;
@@ -34,14 +38,14 @@ public class step9_try {
     ENV.set(symbol("eval"), function(args -> {
       return safeEval(args.get(0), ENV);
     }));
-      
+
     ENV.set(symbol("*ARGV*"), argv(arguments));
 
     if (arguments.length > 0) {
       rep("(load-file \"" + arguments[0] + "\")");
       return;
     }
-    
+
     var reader = LineReaderBuilder.builder()
       .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
       .build();

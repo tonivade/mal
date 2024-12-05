@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024, Antonio Gabriel Muñoz Conejo <me at tonivade dot es>
+ * Distributed under the terms of the MIT License
+ */
 package mal;
 
 import org.jline.reader.EndOfFileException;
@@ -6,7 +10,7 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
 public class step0_repl {
-  
+
   static String read(String input) {
     return input;
   }
