@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024, Antonio Gabriel Muñoz Conejo <me at tonivade dot es>
+ * Distributed under the terms of the MIT License
+ */
 package mal;
 
 import static java.util.function.Predicate.not;
@@ -30,7 +34,7 @@ public class Reader {
 
   record Token(String value) { }
 
-  private static final Pattern PATTERN = 
+  private static final Pattern PATTERN =
     Pattern.compile("[\\s,]*(~@|[\\[\\]{}()'`~^@]|\"(?:\\\\.|[^\\\\\"])*\"?|;.*|[^\\s\\[\\]{}('\"`,;)]*)");
 
   private final List<Token> tokens;
@@ -149,11 +153,11 @@ public class Reader {
       case Token(var value) when value.equals("nil") -> NIL;
       case Token(var value) when value.equals("true") -> TRUE;
       case Token(var value) when value.equals("false") -> FALSE;
-      case Token(var value) when value.matches("-?\\d+") -> 
+      case Token(var value) when value.matches("-?\\d+") ->
         number(Integer.parseInt(value));
-      case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*") -> 
+      case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*") ->
         throw new MalException("EOF");
-      case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*\"") -> 
+      case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*\"") ->
         string(unescapeJava(value.substring(1, value.length() - 1)));
       case Token(var value) when value.startsWith(":") ->
         keyword(value.substring(1));

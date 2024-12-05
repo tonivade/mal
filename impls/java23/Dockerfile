@@ -1,3 +1,5 @@
+# Copyright (c) 2024, Antonio Gabriel Muñoz Conejo <me AT tonivade DOT es>
+# Distributed under the terms of the MIT License
 FROM ubuntu:24.04
 
 USER root
