@@ -30,8 +30,11 @@ import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
+import mal.lib.Strings;
 
 public class Evaluator {
+  
+  private static final Map<MalSymbol, Map<String, MalNode>> LIBS = Map.of(symbol("str"), Strings.NS);
 
   static MalNode eval(MalNode ast, Env env) {
     return safeEval(ast, env).run();
@@ -106,7 +109,7 @@ public class Evaluator {
           yield done(eval(body, env));
         } catch (RuntimeException e) {
           if (values.size() < 3) {
-            yield done(error(e));
+            throw new MalException(e.getMessage());
           }
           var catch_ = (MalList) values.get(2);
           var symbol = (MalSymbol) catch_.get(1);
@@ -138,6 +141,20 @@ public class Evaluator {
 
       case MalSymbol(var name, var _) when name.equals("quasiquote") -> {
         yield evalQuasiquote(values.get(1)).flatMap(result -> safeEval(result, env));
+      }
+
+      case MalSymbol(var name, var _) when name.equals("require") -> {
+        var lib = (MalSymbol) values.get(1);
+        if (LIBS.containsKey(lib)) {
+          var method = (MalSymbol) values.get(2);
+          var function = LIBS.get(lib).get(method.name());
+          if (function == null) {
+            throw new MalException("function not found: " + method.name());
+          }
+          env.set(method, function);
+          yield done(function);
+        }
+        throw new MalException("namespace not found: " + lib.name());
       }
 
       case MalMacro(var lambda, var _) -> {
