@@ -46,11 +46,7 @@ public interface Strings {
       list.add(string(result.group(0)));
       for (int i = 1; i <= result.groupCount(); i++) {
         var group = result.group(i);
-        if (group != null) {
-          list.add(string(group));
-        } else {
-          list.add(NIL);
-        }
+        list.add(group != null ? string(group) : NIL);
       }
       return list(list);
     }).toList();
