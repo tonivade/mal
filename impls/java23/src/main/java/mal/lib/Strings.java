@@ -54,6 +54,11 @@ public interface Strings {
     return done(list(fullResult));
   };
 
+  MalLambda TO_CHARS = args -> {
+    var input = (MalString) args.get(0);
+    return done(list(input.value().chars().mapToObj(ch -> string(Character.toString(ch)))));
+  };
+
   MalLambda TO_NUMBER = args -> {
     var input = (MalString) args.get(0);
     return done(number(Integer.parseInt(input.value())));
@@ -63,6 +68,7 @@ public interface Strings {
     entry("split-lines", function(SPLIT_LINES)),
     entry("split", function(SPLIT)),
     entry("to-number", function(TO_NUMBER)),
-    entry("find-matches", function(FIND_MATCHES))
+    entry("find-matches", function(FIND_MATCHES)),
+    entry("to-chars", function(TO_CHARS))
   );
 }
