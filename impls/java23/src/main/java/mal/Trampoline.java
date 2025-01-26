@@ -4,27 +4,41 @@
  */
 package mal;
 
-import static java.util.function.Function.identity;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 public sealed interface Trampoline<T> {
 
-  record Done<T>(T value) implements Trampoline<T> {}
-  record More<T>(Supplier<Trampoline<T>> next) implements Trampoline<T> {}
+  static Trampoline<Void> UNIT = done(null);
+
+  record Done<T>(T value) implements Trampoline<T> {
+    @Override
+    public <R> Trampoline<R> apply(Function<T, Trampoline<R>> parent) {
+      return parent.apply(value);
+    }
+  }
+
+  record FlatMap<T, R>(Trampoline<T> current, Function<T, Trampoline<R>> next) implements Trampoline<R> {
+    @Override
+    public <S> Trampoline<S> apply(Function<R, Trampoline<S>> parent) {
+      return current.flatMap(value -> next.apply(value).flatMap(parent));
+    }
+
+    private Trampoline<R> resume() {
+      return current.apply(next);
+    }
+  }
 
   static <T> Trampoline<T> done(T value) {
     return new Done<>(value);
   }
 
   static <T> Trampoline<T> more(Supplier<Trampoline<T>> next) {
-    return new More<>(next);
+    return UNIT.flatMap(_ -> next.get());
   }
 
   default <R> Trampoline<R> map(Function<T, R> mapper) {
@@ -32,29 +46,25 @@ public sealed interface Trampoline<T> {
   }
 
   default <R> Trampoline<R> flatMap(Function<T, Trampoline<R>> mapper) {
-    return fold(next -> more(() -> next.flatMap(mapper)), mapper);
+    return new FlatMap<>(this, mapper);
   }
 
   default <R> Trampoline<R> andThen(Trampoline<R> next) {
     return flatMap(_ -> next);
   }
 
-  default <R> R fold(Function<Trampoline<T>, R> moreMapper, Function<T, R> doneMapper) {
-    return switch (this) {
-      case Done<T>(var value) -> doneMapper.apply(value);
-      case More<T>(var next) -> moreMapper.apply(next.get());
-    };
+  default boolean isSuspended() {
+    return this instanceof FlatMap;
   }
+
+  <R> Trampoline<R> apply(Function<T, Trampoline<R>> parent);
 
   default T run() {
-    return iterate().fold(_ -> {
-      throw new IllegalStateException();
-    }, identity());
-  }
-
-  private Trampoline<T> iterate() {
-    return Stream.iterate(this, t -> t.fold(identity(), _ -> t))
-        .dropWhile(t -> t instanceof More).findFirst().orElseThrow();
+    var current = this;
+    while (current instanceof FlatMap<?, T> flatMap) {
+      current = flatMap.resume();
+    }
+    return ((Done<T>) current).value();
   }
 
   static <A, B, R> Trampoline<R> map2(Trampoline<A> ta, Trampoline<B> tb, BiFunction<A, B, R> mapper) {
