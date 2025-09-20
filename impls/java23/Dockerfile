@@ -19,6 +19,6 @@ USER ubuntu
 # Downloading SDKMAN!
 RUN curl -s "https://get.sdkman.io" | bash
 RUN bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && \
-    yes | sdk install java 24.0.1-tem && \
+    yes | sdk install java 25-oracle && \
     rm -rf $HOME/.sdkman/archives/* && \
     rm -rf $HOME/.sdkman/tmp/*"
