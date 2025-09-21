@@ -50,13 +50,13 @@ public interface Core {
 
   MalLambda PRN = args -> {
     var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
-    System.out.println(result);
+    IO.println(result);
     return done(NIL);
   };
 
   MalLambda PRINTLN = args -> {
     var result = args.stream().map(m -> print(m, false)).collect(joining(" "));
-    System.out.println(result);
+    IO.println(result);
     return done(NIL);
   };
 

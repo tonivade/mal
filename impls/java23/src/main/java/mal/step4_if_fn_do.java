@@ -39,7 +39,7 @@ public class step4_if_fn_do {
         return;
       }
       try {
-        System.out.println(rep(line));
+        IO.println(rep(line));
       } catch (RuntimeException e) {
         System.err.println(e.getMessage());
       }

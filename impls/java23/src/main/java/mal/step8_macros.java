@@ -59,7 +59,7 @@ public class step8_macros {
         return;
       }
       try {
-        System.out.println(rep(line));
+        IO.println(rep(line));
       } catch (RuntimeException e) {
         System.err.println(e.getMessage());
       }
