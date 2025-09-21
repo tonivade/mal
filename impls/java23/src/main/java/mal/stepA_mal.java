@@ -56,7 +56,7 @@ public class stepA_mal {
         return;
       }
       try {
-        System.out.println(rep(line));
+        IO.println(rep(line));
       } catch (RuntimeException e) {
         System.err.println("ERROR: " + e.getMessage());
       }

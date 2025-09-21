@@ -42,7 +42,7 @@ public class step0_repl {
       } catch (EndOfFileException e) {
         return;
       }
-      System.out.println(rep(line));
+      IO.println(rep(line));
     }
   }
 }

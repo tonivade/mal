@@ -38,7 +38,7 @@ public class step1_read_print {
         return;
       }
       try {
-        System.out.println(rep(line));
+        IO.println(rep(line));
       } catch (RuntimeException e) {
         System.err.println(e.getMessage());
       }

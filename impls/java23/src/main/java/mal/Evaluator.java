@@ -47,7 +47,7 @@ public class Evaluator {
   static Trampoline<MalNode> safeEval(MalNode ast, Env env) {
     return more(() -> {
       if (env.isDebugEval()) {
-        System.out.println("EVAL: " + print(ast, true));
+        IO.println("EVAL: " + print(ast, true));
       }
 
       return switch (ast) {
