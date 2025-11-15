@@ -32,7 +32,7 @@ public sealed interface Trampoline<T> {
   }
 
   default <R> Trampoline<R> flatMap(Function<T, Trampoline<R>> mapper) {
-    return fold(next -> more(() -> next.flatMap(mapper)), mapper);
+    return fold(next -> next.flatMap(mapper), mapper);
   }
 
   default <R> Trampoline<R> andThen(Trampoline<R> next) {
