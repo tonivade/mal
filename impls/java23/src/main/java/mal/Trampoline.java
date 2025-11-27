@@ -32,18 +32,11 @@ public sealed interface Trampoline<T> {
   }
 
   default <R> Trampoline<R> flatMap(Function<T, Trampoline<R>> mapper) {
-    return fold(next -> more(() -> next.flatMap(mapper)), mapper);
+    return fold(next -> more(() -> next.step(mapper)), mapper);
   }
 
   default <R> Trampoline<R> andThen(Trampoline<R> next) {
     return flatMap(_ -> next);
-  }
-
-  default <R> R fold(Function<Trampoline<T>, R> moreMapper, Function<T, R> doneMapper) {
-    return switch (this) {
-      case Done<T>(var value) -> doneMapper.apply(value);
-      case More<T>(var next) -> moreMapper.apply(next.get());
-    };
   }
 
   default T run() {
@@ -52,17 +45,31 @@ public sealed interface Trampoline<T> {
     }, identity());
   }
 
-  private Trampoline<T> iterate() {
-    return Stream.iterate(this, t -> t.fold(identity(), _ -> t))
-        .dropWhile(t -> t instanceof More).findFirst().orElseThrow();
-  }
-
   static <A, B, R> Trampoline<R> map2(Trampoline<A> ta, Trampoline<B> tb, BiFunction<A, B, R> mapper) {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
   static <T> Trampoline<List<T>> traverse(Collection<? extends Trampoline<T>> list) {
     return list.stream().reduce(done(List.<T>of()), Trampoline::add, Trampoline::merge);
+  }
+
+  private Trampoline<T> iterate() {
+    return Stream.iterate(this, t -> t.fold(identity(), _ -> t))
+        .dropWhile(t -> t instanceof More).findFirst().orElseThrow();
+  }
+
+  private <R> R fold(Function<Trampoline<T>, R> moreMapper, Function<T, R> doneMapper) {
+    return switch (this) {
+      case Done<T>(var value) -> doneMapper.apply(value);
+      case More<T>(var next) -> moreMapper.apply(next.get());
+    };
+  }
+
+  private <R> Trampoline<R> step(Function<T, Trampoline<R>> mapper) {
+    return switch (this) {
+      case Done<T>(var value) -> mapper.apply(value);
+      case More<T>(var next) -> next.get().flatMap(mapper);
+    };
   }
 
   private static <T> Trampoline<List<T>> add(Trampoline<? extends Collection<T>> tlist, Trampoline<T> titem) {
