@@ -1,0 +1,73 @@
+// Copyright (c) 2024, Antonio Gabriel Muñoz Conejo <me AT tonivade DOT es>
+// Distributed under the terms of the MIT License
+
+plugins {
+  id 'java'
+  id 'application'
+  id 'com.gradleup.shadow' version '9.2.2'
+  id 'org.graalvm.buildtools.native' version '0.11.3'
+}
+ 
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+ 
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(25)
+  }
+}
+ 
+tasks.withType(JavaCompile) {
+  options.compilerArgs << '-Xlint:unchecked'
+  options.compilerArgs << '-Xlint:rawtypes'
+  options.release = 25
+}
+ 
+dependencies {
+  implementation 'org.jline:jline-terminal-ffm:3.30.6'
+  implementation 'org.jline:jline-reader:3.30.6'
+  implementation 'info.picocli:picocli:4.7.7'
+  implementation 'org.apache.commons:commons-text:1.14.0'
+ 
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  testImplementation("org.mockito:mockito-core:5.20.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.20.0")
+}
+ 
+test {
+  useJUnitPlatform()
+}
+
+application {
+  mainClass = 'mal.App'
+}
+
+shadowJar {
+  manifest {
+    attributes 'Main-Class': 'mal.App'
+  }
+}
+
+graalvmNative {
+  toolchainDetection = true
+  binaries {
+    main {
+      imageName = "mal"
+      mainClass = "mal.App"
+      buildArgs.add("-O2")
+      buildArgs.add('--verbose')
+      buildArgs.add('--report-unsupported-elements-at-runtime')
+      buildArgs.add('--no-fallback')
+      buildArgs.add('--allow-incomplete-classpath')
+    }
+    test {
+      buildArgs.add("-O0")
+    }
+  }
+//  binaries.all {
+//    resources.autodetect()
+//  }
+}
