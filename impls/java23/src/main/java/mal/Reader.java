@@ -139,24 +139,6 @@ public class Reader {
     return readListAccum(reader, '{', '}').map(MalNode::map);
   }
 
-  private static Trampoline<List<MalNode>> readList(Reader reader, char start, char end) {
-    var list = new ArrayList<Trampoline<MalNode>>();
-    var token = reader.next();
-    if (token.value().charAt(0) != start) {
-      throw new MalException("expected '" + start + "'");
-    }
-
-    while ((token = reader.peek()) != null && token.value().charAt(0) != end) {
-      list.add(more(() -> parse(reader)));
-    }
-
-    if (token == null) {
-      throw new MalException("EOF");
-    }
-    reader.next();
-    return traverse(list);
-  }
-
   private static Trampoline<List<MalNode>> readListAccum(Reader reader, char start, char end) {
     Token t = reader.next();
     if (t == null || t.value().charAt(0) != start) {
