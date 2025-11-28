@@ -30,6 +30,10 @@ class MalTest {
     assertEquals("false", step1_read_print.rep("false"));
     assertEquals("asdf", step1_read_print.rep("asdf"));
     assertEquals(":asdf", step1_read_print.rep(":asdf"));
+    assertEquals("()", step1_read_print.rep("()"));
+    assertEquals("()", step1_read_print.rep("( )"));
+    assertEquals("(nil)", step1_read_print.rep("(nil)"));
+    assertEquals("((3 4))", step1_read_print.rep("((3 4))"));
     assertThrows(MalException.class, () -> step1_read_print.rep("\""));
     assertThrows(MalException.class, () -> step1_read_print.rep("("));
     assertThrows(MalException.class, () -> step1_read_print.rep("["));

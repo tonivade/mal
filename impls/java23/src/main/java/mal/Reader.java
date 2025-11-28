@@ -22,6 +22,7 @@ import static mal.MalNode.number;
 import static mal.MalNode.string;
 import static mal.MalNode.symbol;
 import static mal.Trampoline.done;
+import static mal.Trampoline.map2;
 import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
@@ -71,35 +72,47 @@ public class Reader {
       case null -> done(NIL);
 
       case Token(var value) when value.charAt(0) == '\'' -> {
-        reader.next();
-        yield parse(reader).map(next -> list(QUOTE, next));
+        yield more(() -> {
+          reader.next();
+          return parse(reader);
+        }).map(next -> list(QUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '`' -> {
-        reader.next();
-        yield parse(reader).map(next -> list(QUASIQUOTE, next));
+        yield more(() -> {
+          reader.next();
+          return parse(reader);
+        }).map(next -> list(QUASIQUOTE, next));
       }
 
       case Token(var value) when value.equals("~") -> {
-        reader.next();
-        yield parse(reader).map(next -> list(UNQUOTE, next));
+        yield more(() -> {
+          reader.next();
+          return parse(reader);
+        }).map(next -> list(UNQUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '~' -> {
-        reader.next();
-        yield parse(reader).map(next -> list(SPLICE_UNQUOTE, next));
+        yield more(() -> {
+          reader.next();
+          return parse(reader);
+        }).map(next -> list(SPLICE_UNQUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '^' -> {
-        reader.next();
-        yield Trampoline.map2(parse(reader), parse(reader), (meta, next) -> {
+        yield map2(more(() -> {
+          reader.next();
+          return parse(reader);
+        }), more(() -> parse(reader)), (meta, next) -> {
           return list(WITH_META, next, meta);
         });
       }
 
       case Token(var value) when value.charAt(0) == '@' -> {
-        reader.next();
-        yield parse(reader).map(next -> list(DEREF, next));
+        yield more(() -> {
+          reader.next();
+          return parse(reader);
+        }).map(next -> list(DEREF, next));
       }
 
       case Token(var value) when value.charAt(0) == '(' -> readList(reader);
@@ -115,36 +128,60 @@ public class Reader {
   }
 
   private static Trampoline<MalNode> readList(Reader reader) {
-    return readList(reader, '(', ')').map(MalNode::list);
+    return readListAccum(reader, '(', ')').map(MalNode::list);
   }
 
   private static Trampoline<MalNode> readVector(Reader reader) {
-    return readList(reader, '[', ']').map(MalNode::vector);
+    return readListAccum(reader, '[', ']').map(MalNode::vector);
   }
 
   private static Trampoline<MalNode> readMap(Reader reader) {
-    return readList(reader, '{', '}').map(MalNode::map);
+    return readListAccum(reader, '{', '}').map(MalNode::map);
   }
 
   private static Trampoline<List<MalNode>> readList(Reader reader, char start, char end) {
-    return more(() -> {
-      var list = new ArrayList<Trampoline<MalNode>>();
-      var token = reader.next();
-      if (token.value().charAt(0) != start) {
-        throw new MalException("expected '" + start + "'");
-      }
+    var list = new ArrayList<Trampoline<MalNode>>();
+    var token = reader.next();
+    if (token.value().charAt(0) != start) {
+      throw new MalException("expected '" + start + "'");
+    }
 
-      while ((token = reader.peek()) != null && token.value().charAt(0) != end) {
-        list.add(parse(reader));
-      }
+    while ((token = reader.peek()) != null && token.value().charAt(0) != end) {
+      list.add(more(() -> parse(reader)));
+    }
 
-      if (token == null) {
-        throw new MalException("EOF");
-      }
-      reader.next();
+    if (token == null) {
+      throw new MalException("EOF");
+    }
+    reader.next();
+    return traverse(list);
+  }
 
-      return traverse(list);
-    });
+  private static Trampoline<List<MalNode>> readListAccum(Reader reader, char start, char end) {
+    Token t = reader.next();
+    if (t == null || t.value().charAt(0) != start) {
+      throw new MalException("expected '" + start + "'");
+    }
+
+    return readElems(reader, end, new ArrayList<>());
+  }
+
+  private static Trampoline<List<MalNode>> readElems(Reader reader, char end, ArrayList<MalNode> acc) {
+    Token peek = reader.peek();
+    if (peek == null) {
+      throw new MalException("EOF");
+    }
+    if (peek.value().charAt(0) == end) {
+      reader.next(); // consume end
+      return done(acc);
+    }
+
+    // parse next element lazily, then append to acc and continue
+    return more(() -> parse(reader))
+      .flatMap(elem -> {
+        acc.add(elem);
+        return readElems(reader, end, acc);
+      });
   }
 
   private static MalNode readAtom(Reader reader) {
