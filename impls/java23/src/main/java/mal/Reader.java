@@ -24,7 +24,6 @@ import static mal.MalNode.symbol;
 import static mal.Trampoline.done;
 import static mal.Trampoline.map2;
 import static mal.Trampoline.more;
-import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
 import java.util.ArrayList;
@@ -128,27 +127,27 @@ public class Reader {
   }
 
   private static Trampoline<MalNode> readList(Reader reader) {
-    return readListAccum(reader, '(', ')').map(MalNode::list);
+    return readList(reader, '(', ')').map(MalNode::list);
   }
 
   private static Trampoline<MalNode> readVector(Reader reader) {
-    return readListAccum(reader, '[', ']').map(MalNode::vector);
+    return readList(reader, '[', ']').map(MalNode::vector);
   }
 
   private static Trampoline<MalNode> readMap(Reader reader) {
-    return readListAccum(reader, '{', '}').map(MalNode::map);
+    return readList(reader, '{', '}').map(MalNode::map);
   }
 
-  private static Trampoline<List<MalNode>> readListAccum(Reader reader, char start, char end) {
+  private static Trampoline<List<MalNode>> readList(Reader reader, char start, char end) {
     Token t = reader.next();
     if (t == null || t.value().charAt(0) != start) {
       throw new MalException("expected '" + start + "'");
     }
 
-    return readElems(reader, end, new ArrayList<>());
+    return readElements(reader, end, new ArrayList<>());
   }
 
-  private static Trampoline<List<MalNode>> readElems(Reader reader, char end, ArrayList<MalNode> acc) {
+  private static Trampoline<List<MalNode>> readElements(Reader reader, char end, ArrayList<MalNode> acc) {
     Token peek = reader.peek();
     if (peek == null) {
       throw new MalException("EOF");
@@ -162,7 +161,7 @@ public class Reader {
     return more(() -> parse(reader))
       .flatMap(elem -> {
         acc.add(elem);
-        return readElems(reader, end, acc);
+        return readElements(reader, end, acc);
       });
   }
 
