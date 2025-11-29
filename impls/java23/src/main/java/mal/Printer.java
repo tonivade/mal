@@ -6,9 +6,9 @@ package mal;
 
 import static java.util.stream.Collectors.joining;
 import static mal.Trampoline.done;
-import static mal.Trampoline.map2;
+import static mal.Trampoline.zip;
 import static mal.Trampoline.more;
-import static mal.Trampoline.traverse;
+import static mal.Trampoline.sequence;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import mal.MalNode.MalAtom;
@@ -40,16 +40,16 @@ public class Printer {
         case MalKeyword(var value, var _) -> done(":" + value);
         case MalNumber(var value, var _) -> done(Long.toString(value));
         case MalList(var list, var _) -> {
-          yield traverse(list.stream().map(m -> safePrint(m, pretty)).toList())
+          yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
             .map(l -> l.stream().collect(joining(" ", "(", ")")));
         }
         case MalVector(var list, var _) -> {
-          yield traverse(list.stream().map(m -> safePrint(m, pretty)).toList())
+          yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
             .map(l -> l.stream().collect(joining(" ", "[", "]")));
         }
         case MalMap(var map, var _) -> {
-          yield traverse(map.entrySet().stream()
-            .map(entry -> map2(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), (a, b) -> a + " " + b))
+          yield sequence(map.entrySet().stream()
+            .map(entry -> zip(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), (a, b) -> a + " " + b))
             .toList())
             .map(l -> l.stream().collect(joining(" ", "{", "}")));
         }

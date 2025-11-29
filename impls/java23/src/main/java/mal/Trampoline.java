@@ -13,11 +13,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public sealed interface Trampoline<T> {
+sealed interface Trampoline<T> {
 
   record Done<T>(T value) implements Trampoline<T> {}
-  record More<T>(Supplier<Trampoline<T>> next) implements Trampoline<T> {}
-  record FlatMap<T, R>(Trampoline<T> current, Function<T, Trampoline<R>> mapper) implements Trampoline<R> {}
+  record More<T>(Supplier<? extends Trampoline<T>> next) implements Trampoline<T> {}
+  record FlatMap<T, R>(Trampoline<T> current, Function<? super T, ? extends Trampoline<R>> mapper) implements Trampoline<R> {}
 
   static <T> Trampoline<T> done(T value) {
     return new Done<>(value);
@@ -27,7 +27,7 @@ public sealed interface Trampoline<T> {
     return new More<>(next);
   }
 
-  default <R> Trampoline<R> map(Function<T, R> mapper) {
+  default <R> Trampoline<R> map(Function<? super T, ? extends R> mapper) {
     return flatMap(mapper.andThen(Trampoline::done));
   }
 
@@ -35,7 +35,7 @@ public sealed interface Trampoline<T> {
     return flatMap(_ -> next);
   }
 
-  default <R> Trampoline<R> flatMap(Function<T, Trampoline<R>> mapper) {
+  default <R> Trampoline<R> flatMap(Function<? super T, ? extends Trampoline<R>> mapper) {
     return new FlatMap<>(this, mapper);
   }
 
@@ -55,45 +55,37 @@ public sealed interface Trampoline<T> {
    *
    * @return the final result of the computation
    */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings("unchecked")
   default T run() {
     Trampoline<?> current = this;
     Deque<Function<Object, Trampoline<?>>> stack = new ArrayDeque<>();
 
     while (true) {
-      if (current instanceof Done<?> done) {
-        var value = done.value();
-
+      if (current instanceof Done(var value)) {
         if (stack.isEmpty()) {
           return (T) value; // end of program
         }
 
-        Function<Object, Trampoline<?>> k = stack.pop();
-        current = k.apply(value);
-      } else if (current instanceof More<?> more) {
-        current = more.next().get();
-      } else if (current instanceof FlatMap<?, ?> flatMap) {
-        Trampoline<Object> source = (Trampoline<Object>) flatMap.current();
-        Function<Object, Trampoline<?>> nextFn = (Function) flatMap.mapper();
-
-        // Push the mapper and continue with the source. Using an explicit
-        // stack avoids allocating a new closure for each chained flatMap step.
-        stack.push(nextFn);
+        current = stack.pop().apply(value);
+      } else if (current instanceof More(var next)) {
+        current = next.get();
+      } else if (current instanceof FlatMap(var source, var nextFn)) {
+        stack.push((Function<Object, Trampoline<?>>) nextFn);
         current = source;
       }
     }
   }
 
-  static <A, B, R> Trampoline<R> map2(Trampoline<A> ta, Trampoline<B> tb, BiFunction<A, B, R> mapper) {
+  static <A, B, R> Trampoline<R> zip(Trampoline<A> ta, Trampoline<B> tb, BiFunction<A, B, R> mapper) {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
-  static <T> Trampoline<List<T>> traverse(Collection<? extends Trampoline<T>> list) {
+  static <T> Trampoline<List<T>> sequence(Collection<? extends Trampoline<T>> list) {
     return list.stream().reduce(done(List.<T>of()), Trampoline::add, Trampoline::merge);
   }
 
   private static <T> Trampoline<List<T>> add(Trampoline<? extends Collection<T>> tlist, Trampoline<T> titem) {
-    return map2(tlist, titem, (list, item) -> {
+    return zip(tlist, titem, (list, item) -> {
       List<T> newList = new ArrayList<>(list);
       newList.add(item);
       return List.copyOf(newList);
@@ -102,7 +94,7 @@ public sealed interface Trampoline<T> {
 
   private static <T> Trampoline<List<T>> merge(
       Trampoline<? extends Collection<T>> tlist1, Trampoline<? extends Collection<T>> tlist2) {
-    return map2(tlist1, tlist2, (list1, list2) -> {
+    return zip(tlist1, tlist2, (list1, list2) -> {
       List<T> newList = new ArrayList<>(list1);
       newList.addAll(list2);
       return List.copyOf(newList);

@@ -22,7 +22,7 @@ import static mal.MalNode.number;
 import static mal.MalNode.string;
 import static mal.MalNode.symbol;
 import static mal.Trampoline.done;
-import static mal.Trampoline.map2;
+import static mal.Trampoline.zip;
 import static mal.Trampoline.more;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
@@ -99,7 +99,7 @@ public class Reader {
       }
 
       case Token(var value) when value.charAt(0) == '^' -> {
-        yield map2(more(() -> {
+        yield zip(more(() -> {
           reader.next();
           return parse(reader);
         }), more(() -> parse(reader)), (meta, next) -> {

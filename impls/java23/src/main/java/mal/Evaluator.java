@@ -18,9 +18,9 @@ import static mal.MalNode.list;
 import static mal.MalNode.symbol;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
-import static mal.Trampoline.map2;
+import static mal.Trampoline.zip;
 import static mal.Trampoline.more;
-import static mal.Trampoline.traverse;
+import static mal.Trampoline.sequence;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,12 +99,12 @@ public class Evaluator {
             return value;
           }));
         }
-        yield traverse(later).andThen(safeEval(values.get(2), newEnv));
+        yield sequence(later).andThen(safeEval(values.get(2), newEnv));
       }
 
       case MalSymbol(var name, var _) when name.equals("do") -> {
         var later = values.stream().skip(1).map(m -> safeEval(m, env)).toList();
-        yield traverse(later).map(List::getLast);
+        yield sequence(later).map(List::getLast);
       }
 
       case MalSymbol(var name, var _) when name.equals("try*") -> {
@@ -167,7 +167,7 @@ public class Evaluator {
       }
 
       case MalFunction(var lambda, var _) -> {
-        yield traverse(skipFirst(values).stream().map(m -> safeEval(m, env)).toList())
+        yield sequence(skipFirst(values).stream().map(m -> safeEval(m, env)).toList())
           .flatMap(args -> lambda.apply(list(args)));
       }
 
@@ -184,14 +184,14 @@ public class Evaluator {
 
   private static Trampoline<MalNode> evalVector(Env env, List<MalNode> values) {
     var later = values.stream().map(m -> safeEval(m, env)).toList();
-    return traverse(later).map(MalNode::vector);
+    return sequence(later).map(MalNode::vector);
   }
 
   private static Trampoline<MalNode> evalMap(Env env, Map<MalKey, MalNode> map) {
     var later = map.entrySet().stream()
       .map(entry -> safeEval(entry.getValue(), env).map(value -> Map.entry(entry.getKey(), value)))
       .toList();
-    return traverse(later)
+    return sequence(later)
       .map(list -> list.stream().collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
       .map(MalNode::map);
   }
@@ -218,7 +218,7 @@ public class Evaluator {
         return recursiveQuasiquote(skipFirst(values))
           .map(result -> list(CONCAT, list.get(1), result));
       }
-      return map2(recursiveQuasiquote(skipFirst(values)), evalQuasiquote(element),
+      return zip(recursiveQuasiquote(skipFirst(values)), evalQuasiquote(element),
         (next, eval) -> list(CONS, eval, next));
     });
   }
