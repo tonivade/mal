@@ -44,6 +44,7 @@ IMPL:
   - {IMPL: io, NO_SELF_HOST: 1, NO_SELF_HOST_PERF: 1}  # invalid pointer, perf OOM
   - {IMPL: janet}
   - {IMPL: java}
+  - {IMPL: java25}
   - {IMPL: java-truffle}
   - {IMPL: jq, NO_SELF_HOST: 1}  # start-up failure and other issues
   - {IMPL: js}

@@ -33,7 +33,7 @@ public class stepA_mal {
 
     ENV.set(symbol("eval"), function(args -> safeEval(args.get(0), ENV)));
     ENV.set(symbol("*ARGV*"), argv(arguments));
-    ENV.set(symbol("*host-language*"), string("java23"));
+    ENV.set(symbol("*host-language*"), string("java25"));
 
     rep("(def! not (fn* (a) (if a false true)))");
     rep("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\\nnil)\")))))");
