@@ -71,47 +71,29 @@ class Reader {
       case null -> done(NIL);
 
       case Token(var value) when value.charAt(0) == '\'' -> {
-        yield more(() -> {
-          reader.next();
-          return parse(reader);
-        }).map(next -> list(QUOTE, next));
+        yield nextAndParse(reader).map(next -> list(QUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '`' -> {
-        yield more(() -> {
-          reader.next();
-          return parse(reader);
-        }).map(next -> list(QUASIQUOTE, next));
+        yield nextAndParse(reader).map(next -> list(QUASIQUOTE, next));
       }
 
       case Token(var value) when value.equals("~") -> {
-        yield more(() -> {
-          reader.next();
-          return parse(reader);
-        }).map(next -> list(UNQUOTE, next));
+        yield nextAndParse(reader).map(next -> list(UNQUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '~' -> {
-        yield more(() -> {
-          reader.next();
-          return parse(reader);
-        }).map(next -> list(SPLICE_UNQUOTE, next));
+        yield nextAndParse(reader).map(next -> list(SPLICE_UNQUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '^' -> {
-        yield zip(more(() -> {
-          reader.next();
-          return parse(reader);
-        }), more(() -> parse(reader)), (meta, next) -> {
+        yield zip(nextAndParse(reader), more(() -> parse(reader)), (meta, next) -> {
           return list(WITH_META, next, meta);
         });
       }
 
       case Token(var value) when value.charAt(0) == '@' -> {
-        yield more(() -> {
-          reader.next();
-          return parse(reader);
-        }).map(next -> list(DEREF, next));
+        yield nextAndParse(reader).map(next -> list(DEREF, next));
       }
 
       case Token(var value) when value.charAt(0) == '(' -> readList(reader);
@@ -124,6 +106,13 @@ class Reader {
 
       default -> done(readAtom(reader));
     };
+  }
+
+  private static Trampoline<MalNode> nextAndParse(Reader reader) {
+    return more(() -> {
+      reader.next();
+      return parse(reader);
+    });
   }
 
   private static Trampoline<MalNode> readList(Reader reader) {
