@@ -30,11 +30,12 @@ dependencies {
   implementation 'org.jline:jline-reader:3.30.6'
   implementation 'info.picocli:picocli:4.7.7'
   implementation 'org.apache.commons:commons-text:1.14.0'
+  implementation 'org.codehaus.janino:janino:3.1.1'
  
   testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-  testImplementation("org.mockito:mockito-core:5.20.0")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.20.0")
+  testImplementation 'org.mockito:mockito-core:5.20.0'
+  testImplementation 'org.mockito:mockito-junit-jupiter:5.20.0'
 }
  
 test {

@@ -6,6 +6,7 @@ package mal;
 
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
@@ -25,22 +26,28 @@ import static mal.Trampoline.sequence;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.codehaus.commons.compiler.CompileException;
+import org.codehaus.janino.ScriptEvaluator;
 
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
-import mal.MalNode.MalSequence;
 import mal.MalNode.MalKeyword;
 import mal.MalNode.MalLambda;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
+import mal.MalNode.MalSequence;
 import mal.MalNode.MalString;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
@@ -369,6 +376,54 @@ public interface Core {
     default -> throw new MalException("invalid definition");
   });
 
+  MalLambda EVAL = lambda(args -> {
+    try {
+      if (args.get(0) instanceof MalString(var value, _)) {
+        var evaluator = new ScriptEvaluator();
+        evaluator.setReturnType(Object.class);
+        evaluator.cook(value);
+        return convert(evaluator.evaluate(new Object[] {}));
+      }
+      throw new MalException("invalid definition");
+    } catch (CompileException e) {
+      throw new MalException(e.getMessage());
+    } catch (InvocationTargetException e) {
+      throw new MalException(e.getMessage());
+    } catch (RuntimeException e) {
+      throw new MalException(e.getMessage());
+    }
+  });
+
+  static MalNode convert(Object value) {
+    return switch (value) {
+      case null -> NIL;
+      case String s -> string(s);
+      case Boolean b -> b ? TRUE : FALSE;
+      case Integer i -> number(i);
+      case Long l -> number(l);
+      case Collection<?> l -> list(convertList(l));
+      case Map<?, ?> m -> map(convertMap(m));
+      default -> throw new MalException("unknown value " + value);
+    };
+  }
+
+  static List<MalNode> convertList(Collection<?> list) {
+    return list.stream().map(Core::convert).toList();
+  }
+
+  static Map<MalKey, MalNode> convertMap(Map<?, ?> map) {
+    return map.entrySet().stream()
+          .map(entry -> entry(convertKey(entry.getKey()), convert(entry.getValue())))
+          .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  static MalKey convertKey(Object value) {
+    return switch (value) {
+      case String s -> string(s);
+      case null, default -> throw new MalException("invalid key" + value);
+    };
+  }
+
   Map<String, MalNode> NS = Map.ofEntries(
     entry("prn", function(PRN)),
     entry("println", function(PRINTLN)),
@@ -430,7 +485,8 @@ public interface Core {
     entry("string?", function(STRING_Q)),
     entry("number?", function(NUMBER_Q)),
     entry("seq", function(SEQ)),
-    entry("conj", function(CONJ))
+    entry("conj", function(CONJ)),
+    entry("java-eval", function(EVAL))
   );
 
   private static MalList asList(String string) {
