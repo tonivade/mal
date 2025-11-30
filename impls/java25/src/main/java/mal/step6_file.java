@@ -20,7 +20,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-public class step6_file {
+class step6_file {
 
   private static final Env ENV = new Env();
 
@@ -28,7 +28,7 @@ public class step6_file {
     return print(eval(read(input), ENV), true);
   }
 
-  public static void main(String... arguments) {
+  static void main(String... arguments) {
     String prompt = "user> ";
 
     rep("(def! not (fn* (a) (if a false true)))");

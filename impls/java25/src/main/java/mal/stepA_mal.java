@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.UserInterruptException;
 
-public class stepA_mal {
+class stepA_mal {
 
   private static final Env ENV = new Env();
 
@@ -28,7 +28,7 @@ public class stepA_mal {
     return print(eval(read(input), ENV), true);
   }
 
-  public static void main(String... arguments) {
+  static void main(String... arguments) {
     String prompt = "user> ";
 
     ENV.set(symbol("eval"), function(args -> safeEval(args.get(0), ENV)));

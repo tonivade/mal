@@ -13,13 +13,13 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-public class step2_eval {
+class step2_eval {
 
   static String rep(String input) {
     return print(eval(read(input), new Env()), true);
   }
 
-  public static void main(String... args) {
+  static void main(String... args) {
     String prompt = "user> ";
 
     var reader = LineReaderBuilder.builder()

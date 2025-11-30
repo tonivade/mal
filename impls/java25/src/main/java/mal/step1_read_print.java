@@ -12,7 +12,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-public class step1_read_print {
+class step1_read_print {
 
   static MalNode eval(MalNode ast) {
     return ast;
@@ -22,7 +22,7 @@ public class step1_read_print {
     return print(eval(read(input)), true);
   }
 
-  public static void main(String... args) {
+  static void main(String... args) {
     String prompt = "user> ";
 
     var reader = LineReaderBuilder.builder()

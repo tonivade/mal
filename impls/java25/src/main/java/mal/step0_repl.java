@@ -9,7 +9,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-public class step0_repl {
+class step0_repl {
 
   static String read(String input) {
     return input;
@@ -27,7 +27,7 @@ public class step0_repl {
     return print(eval(read(input)));
   }
 
-  public static void main(String... args) {
+  static void main(String... args) {
     String prompt = "user> ";
 
     var reader = LineReaderBuilder.builder()

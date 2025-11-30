@@ -13,7 +13,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-public class step5_tco {
+class step5_tco {
 
   private static final Env ENV = new Env();
 
@@ -21,7 +21,7 @@ public class step5_tco {
     return print(eval(read(input), ENV), true);
   }
 
-  public static void main(String... args) {
+  static void main(String... args) {
     String prompt = "user> ";
 
     rep("(def! not (fn* (a) (if a false true)))");
