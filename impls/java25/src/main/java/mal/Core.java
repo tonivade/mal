@@ -6,7 +6,7 @@ package mal;
 
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
+import static mal.Interop.toMal;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
@@ -30,8 +30,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -53,7 +51,7 @@ import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
 import mal.MalNode.MalWithLambda;
 
-public interface Core {
+interface Core {
 
   MalLambda PRN = lambda(args -> {
     var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
@@ -382,7 +380,7 @@ public interface Core {
         var evaluator = new ScriptEvaluator();
         evaluator.setReturnType(Object.class);
         evaluator.cook(value);
-        return convert(evaluator.evaluate(new Object[] {}));
+        return toMal(evaluator.evaluate(new Object[] {}));
       }
       throw new MalException("invalid definition");
     } catch (CompileException e) {
@@ -393,36 +391,6 @@ public interface Core {
       throw new MalException(e.getMessage());
     }
   });
-
-  static MalNode convert(Object value) {
-    return switch (value) {
-      case null -> NIL;
-      case String s -> string(s);
-      case Boolean b -> b ? TRUE : FALSE;
-      case Integer i -> number(i);
-      case Long l -> number(l);
-      case Collection<?> l -> list(convertList(l));
-      case Map<?, ?> m -> map(convertMap(m));
-      default -> throw new MalException("unknown value " + value);
-    };
-  }
-
-  static List<MalNode> convertList(Collection<?> list) {
-    return list.stream().map(Core::convert).toList();
-  }
-
-  static Map<MalKey, MalNode> convertMap(Map<?, ?> map) {
-    return map.entrySet().stream()
-          .map(entry -> entry(convertKey(entry.getKey()), convert(entry.getValue())))
-          .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  static MalKey convertKey(Object value) {
-    return switch (value) {
-      case String s -> string(s);
-      case null, default -> throw new MalException("invalid key" + value);
-    };
-  }
 
   Map<String, MalNode> NS = Map.ofEntries(
     entry("prn", function(PRN)),

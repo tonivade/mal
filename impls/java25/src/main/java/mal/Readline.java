@@ -14,7 +14,7 @@ import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.StringsCompleter;
 import org.jline.reader.impl.history.DefaultHistory;
 
-public class Readline {
+class Readline {
 
   private static final LineReader reader = LineReaderBuilder.builder()
     .variable(LineReader.HISTORY_FILE, System.getProperty("user.home") + "/.malhistory")
@@ -43,7 +43,7 @@ public class Readline {
     }));
   }
 
-  public static String readline(String prompt) {
+  static String readline(String prompt) {
     return reader.readLine(prompt);
   }
 }

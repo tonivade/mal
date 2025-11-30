@@ -24,13 +24,13 @@ import mal.MalNode.MalString;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
 
-public class Printer {
+class Printer {
 
-  public static String print(MalNode val, boolean pretty) {
+  static String print(MalNode val, boolean pretty) {
     return safePrint(val, pretty).run();
   }
 
-  public static Trampoline<String> safePrint(MalNode val, boolean pretty) {
+  static Trampoline<String> safePrint(MalNode val, boolean pretty) {
     return more(() -> {
       return switch (val) {
         case MalConstant(var name, var _) -> done(name);

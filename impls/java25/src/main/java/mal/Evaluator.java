@@ -36,7 +36,7 @@ import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
 import mal.lib.Strings;
 
-public class Evaluator {
+class Evaluator {
 
   private static final Map<MalSymbol, Map<String, MalNode>> LIBS = Map.of(symbol("str"), Strings.NS);
 

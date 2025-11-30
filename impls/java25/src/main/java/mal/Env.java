@@ -15,7 +15,7 @@ import java.util.Map;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalSymbol;
 
-public class Env {
+class Env {
 
   private static final String DEBUG_EVAL = "DEBUG-EVAL";
 

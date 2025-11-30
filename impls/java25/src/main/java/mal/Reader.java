@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class Reader {
+class Reader {
 
   record Token(String value) { }
 
@@ -40,29 +40,29 @@ public class Reader {
   private final List<Token> tokens;
   private int position;
 
-  public Reader(List<Token> tokens) {
+  Reader(List<Token> tokens) {
     this.tokens = tokens;
   }
 
-  public Token next() {
+  Token next() {
     if (position >= tokens.size()) {
       return null;
     }
     return tokens.get(position++);
   }
 
-  public Token peek() {
+  Token peek() {
     if (position >= tokens.size()) {
       return null;
     }
     return tokens.get(position);
   }
 
-  public boolean isEmpty() {
+  boolean isEmpty() {
     return tokens.isEmpty();
   }
 
-  public static MalNode read(String input) {
+  static MalNode read(String input) {
     return parse(tokenize(input)).run();
   }
 
