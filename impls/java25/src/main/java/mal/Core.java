@@ -244,8 +244,8 @@ interface Core {
   MalLambda APPLY = args -> {
     var function = (MalWithLambda) args.get(0);
     var arguments = list(args.stream().skip(1).flatMap(m -> switch (m) {
-      case MalList(var values, var _) -> values.stream();
-      case MalVector(var values, var _) -> values.stream();
+      case MalList(var values, _) -> values.stream();
+      case MalVector(var values, _) -> values.stream();
       default -> Stream.of(m);
     }).toList());
     return function.lambda().apply(arguments);
@@ -351,22 +351,22 @@ interface Core {
   MalLambda NUMBER_Q = lambda(args -> args.get(0) instanceof MalNumber ? TRUE : FALSE);
 
   MalLambda SEQ = lambda(args -> switch (args.get(0)) {
-    case MalList(var values, var _) when values.isEmpty() -> NIL;
-    case MalList(var values, var _) -> list(values);
-    case MalVector(var values, var _) when values.isEmpty() -> NIL;
-    case MalVector(var values, var _) -> list(values);
-    case MalString(var value, var _) when value.isEmpty() -> NIL;
-    case MalString(var value, var _) -> asList(value);
+    case MalList(var values, _) when values.isEmpty() -> NIL;
+    case MalList(var values, _) -> list(values);
+    case MalVector(var values, _) when values.isEmpty() -> NIL;
+    case MalVector(var values, _) -> list(values);
+    case MalString(var value, _) when value.isEmpty() -> NIL;
+    case MalString(var value, _) -> asList(value);
     default -> args.get(0);
   });
 
   MalLambda CONJ = lambda(args -> switch (args.get(0)) {
-    case MalList(var values, var _) -> {
+    case MalList(var values, _) -> {
       var newValues = new ArrayList<>(values);
       args.stream().skip(1).forEach(newValues::addFirst);
       yield list(newValues);
     }
-    case MalVector(var values, var _) -> {
+    case MalVector(var values, _) -> {
       var newValues = new ArrayList<>(values);
       args.stream().skip(1).forEach(newValues::addLast);
       yield vector(newValues);

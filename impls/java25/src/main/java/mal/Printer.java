@@ -33,21 +33,21 @@ class Printer {
   static Trampoline<String> safePrint(MalNode val, boolean pretty) {
     return more(() -> {
       return switch (val) {
-        case MalConstant(var name, var _) -> done(name);
-        case MalSymbol(var name, var _) -> done(name);
-        case MalString(var value, var _) when !pretty -> done(value);
-        case MalString(var value, var _) -> done("\"" + escapeJava(value) + "\"");
-        case MalKeyword(var value, var _) -> done(":" + value);
-        case MalNumber(var value, var _) -> done(Long.toString(value));
-        case MalList(var list, var _) -> {
+        case MalConstant(var name, _) -> done(name);
+        case MalSymbol(var name, _) -> done(name);
+        case MalString(var value, _) when !pretty -> done(value);
+        case MalString(var value, _) -> done("\"" + escapeJava(value) + "\"");
+        case MalKeyword(var value, _) -> done(":" + value);
+        case MalNumber(var value, _) -> done(Long.toString(value));
+        case MalList(var list, _) -> {
           yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
             .map(l -> l.stream().collect(joining(" ", "(", ")")));
         }
-        case MalVector(var list, var _) -> {
+        case MalVector(var list, _) -> {
           yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
             .map(l -> l.stream().collect(joining(" ", "[", "]")));
         }
-        case MalMap(var map, var _) -> {
+        case MalMap(var map, _) -> {
           yield sequence(map.entrySet().stream()
             .map(entry -> zip(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), (a, b) -> a + " " + b))
             .toList())
@@ -56,8 +56,8 @@ class Printer {
         case MalAtom atom -> safePrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
         case MalFunction _ -> done("#function");
         case MalMacro _ -> done("#function");
-        case MalError(var exception, var _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
-        case MalError(var exception, var _) -> done(exception.getMessage());
+        case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
+        case MalError(var exception, _) -> done(exception.getMessage());
       };
     });
   }
