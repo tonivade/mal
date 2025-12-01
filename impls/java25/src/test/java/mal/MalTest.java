@@ -47,4 +47,9 @@ class MalTest {
     assertEquals("4", step2_eval.rep("(* 2 2)"));
     assertEquals("1", step2_eval.rep("(/ 2 2)"));
   }
+
+  @Test
+  void stepA() {
+    assertEquals("6", stepA_mal.rep("(java-eval \"1 + 2 + 3\")"));
+  }
 }

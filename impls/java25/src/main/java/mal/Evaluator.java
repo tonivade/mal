@@ -14,29 +14,45 @@ import static mal.MalNode.SPLICE_UNQUOTE;
 import static mal.MalNode.UNQUOTE;
 import static mal.MalNode.error;
 import static mal.MalNode.function;
+import static mal.MalNode.lambda;
 import static mal.MalNode.list;
 import static mal.MalNode.symbol;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
-import static mal.Trampoline.zip;
 import static mal.Trampoline.more;
 import static mal.Trampoline.sequence;
+import static mal.Trampoline.zip;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
-import mal.MalNode.MalSequence;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
+import mal.MalNode.MalNumber;
+import mal.MalNode.MalSequence;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
 import mal.lib.Strings;
 
 class Evaluator {
+
+  private static final String IMPORT = "import";
+  private static final String REQUIRE = "require";
+  private static final String QUASIQUOTE = "quasiquote";
+  private static final String QUOTE_ = "quote";
+  private static final String FN = "fn*";
+  private static final String IF = "if";
+  private static final String TRY = "try*";
+  private static final String LET = "let*";
+  private static final String DEFMACRO = "defmacro!";
+  private static final String DEF = "def!";
 
   private static final Map<MalSymbol, Map<String, MalNode>> LIBS = Map.of(symbol("str"), Strings.NS);
 
@@ -71,7 +87,7 @@ class Evaluator {
   private static Trampoline<MalNode> evalList(Env env, List<MalNode> values) {
     return switch (values.getFirst()) {
 
-      case MalSymbol(var name, _) when name.equals("def!") -> {
+      case MalSymbol(var name, _) when name.equals(DEF) -> {
         var key = (MalSymbol) values.get(1);
         yield safeEval(values.get(2), env).map(value -> {
           env.set(key, value);
@@ -79,7 +95,7 @@ class Evaluator {
         });
       }
 
-      case MalSymbol(var name, _) when name.equals("defmacro!") -> {
+      case MalSymbol(var name, _) when name.equals(DEFMACRO) -> {
         var key = (MalSymbol) values.get(1);
         yield safeEval(values.get(2), env).map(value -> {
           var macro = ((MalFunction) value).toMacro();
@@ -88,7 +104,7 @@ class Evaluator {
         });
       }
 
-      case MalSymbol(var name, _) when name.equals("let*") -> {
+      case MalSymbol(var name, _) when name.equals(LET) -> {
         var newEnv = new Env(env);
         var bindings = (MalSequence) values.get(1);
         List<Trampoline<MalNode>> later = new ArrayList<>();
@@ -107,7 +123,7 @@ class Evaluator {
         yield sequence(later).map(List::getLast);
       }
 
-      case MalSymbol(var name, _) when name.equals("try*") -> {
+      case MalSymbol(var name, _) when name.equals(TRY) -> {
         var body = values.get(1);
         try {
           yield done(eval(body, env));
@@ -123,7 +139,7 @@ class Evaluator {
         }
       }
 
-      case MalSymbol(var name, _) when name.equals("if") -> {
+      case MalSymbol(var name, _) when name.equals(IF) -> {
         yield safeEval(values.get(1), env).flatMap(result -> {
           if (result != NIL && result != FALSE) {
             return safeEval(values.get(2), env);
@@ -132,22 +148,22 @@ class Evaluator {
         });
       }
 
-      case MalSymbol(var name, _) when name.equals("fn*") -> {
+      case MalSymbol(var name, _) when name.equals(FN) -> {
         yield done(function(args -> {
           var newEnv = new Env(env, (MalSequence) values.get(1), args);
           return safeEval(values.get(2), newEnv);
         }));
       }
 
-      case MalSymbol(var name, _) when name.equals("quote") -> {
+      case MalSymbol(var name, _) when name.equals(QUOTE_) -> {
         yield done(values.get(1));
       }
 
-      case MalSymbol(var name, _) when name.equals("quasiquote") -> {
+      case MalSymbol(var name, _) when name.equals(QUASIQUOTE) -> {
         yield evalQuasiquote(values.get(1)).flatMap(result -> safeEval(result, env));
       }
 
-      case MalSymbol(var name, _) when name.equals("require") -> {
+      case MalSymbol(var name, _) when name.equals(REQUIRE) -> {
         var lib = (MalSymbol) values.get(1);
         if (LIBS.containsKey(lib)) {
           var method = (MalSymbol) values.get(2);
@@ -159,6 +175,21 @@ class Evaluator {
           yield done(function);
         }
         throw new MalException("namespace not found: " + lib.name());
+      }
+
+      case MalSymbol(var name, _) when name.equals(IMPORT) -> {
+        var clazz = (MalSymbol) values.get(1);
+        var method = (MalSymbol) values.get(2);
+        int numberOfArgs = getNumberOfArguments(values);
+        try {
+          var methodRef = getMethod(clazz, method, numberOfArgs)
+              .orElseThrow(() -> new MalException("method not found " + method.name()));
+          var function = function(lambda(methodRef));
+          env.set(method, function);
+          yield done(function);
+        } catch (ClassNotFoundException e) {
+          throw new MalException("class not found: " + clazz.name());
+        }
       }
 
       case MalMacro(var lambda, _) -> {
@@ -180,6 +211,23 @@ class Evaluator {
         }).flatMap(list -> safeEval(list, env));
       }
     };
+  }
+
+  private static Optional<Method> getMethod(MalSymbol clazz, MalSymbol method, int numberOfArgs) throws ClassNotFoundException {
+    var classRef = Class.forName(clazz.name());
+    return Stream.of(classRef.getDeclaredMethods())
+        .filter(m -> m.getParameterCount() == numberOfArgs)
+        .filter(m -> m.getName().equals(method.name()))
+        .filter(m -> m.trySetAccessible())
+        .findFirst();
+  }
+
+  private static int getNumberOfArguments(List<MalNode> values) {
+    if (values.size() > 3) {
+      var args = (MalNumber) values.get(3);
+      return (int) args.value();
+    }
+    return 0;
   }
 
   private static Trampoline<MalNode> evalVector(Env env, List<MalNode> values) {

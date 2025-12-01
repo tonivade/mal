@@ -5,7 +5,7 @@
 package mal;
 
 import static java.util.Map.entry;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
@@ -15,10 +15,15 @@ import static mal.MalNode.number;
 import static mal.MalNode.string;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import mal.MalNode.MalConstant;
 import mal.MalNode.MalKey;
+import mal.MalNode.MalMap;
+import mal.MalNode.MalNumber;
+import mal.MalNode.MalSequence;
+import mal.MalNode.MalString;
 
 class Interop {
 
@@ -29,23 +34,36 @@ class Interop {
       case Boolean b -> b ? TRUE : FALSE;
       case Integer i -> number(i);
       case Long l -> number(l);
-      case Collection<?> l -> list(listToMal(l));
-      case Map<?, ?> m -> map(mapToMal(m));
+      case Collection<?> l -> listToMal(l);
+      case Map<?, ?> m -> mapToMal(m);
+      case Stream<?> s -> listToMal(s.toList());
+      case Object[] a -> listToMal(Stream.of(a).toList());
       default -> throw new MalException("unknown value " + value);
     };
   }
 
-  static List<MalNode> listToMal(Collection<?> list) {
-    return list.stream().map(Interop::toMal).toList();
+  static Object toJava(MalNode node) {
+    return switch (node) {
+      case MalString(var value, _) -> value;
+      case MalNumber(var value, _) -> value;
+      case MalConstant(var value, _) when value.equals("true") -> true;
+      case MalConstant(var value, _) when value.equals("false") -> false;
+      case MalConstant(var value, _) when value.equals("nil") -> null;
+      default -> throw new MalException("not supported " + node);
+    };
   }
 
-  static Map<MalKey, MalNode> mapToMal(Map<?, ?> map) {
-    return map.entrySet().stream()
+  private static MalSequence listToMal(Collection<?> list) {
+    return list(list.stream().map(Interop::toMal).toList());
+  }
+
+  private static MalMap mapToMal(Map<?, ?> map) {
+    return map(map.entrySet().stream()
         .map(entry -> entry(convertKey(entry.getKey()), toMal(entry.getValue())))
-        .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        .collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
-  static MalKey convertKey(Object value) {
+  private static MalKey convertKey(Object value) {
     return switch (value) {
       case String s -> string(s);
       case null, default -> throw new MalException("invalid key" + value);

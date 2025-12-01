@@ -34,8 +34,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.codehaus.commons.compiler.CompileException;
-import org.codehaus.janino.ScriptEvaluator;
-
+import org.codehaus.janino.ExpressionEvaluator;
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
@@ -377,7 +376,7 @@ interface Core {
   MalLambda EVAL = lambda(args -> {
     try {
       if (args.get(0) instanceof MalString(var value, _)) {
-        var evaluator = new ScriptEvaluator();
+        var evaluator = new ExpressionEvaluator();
         evaluator.setReturnType(Object.class);
         evaluator.cook(value);
         return toMal(evaluator.evaluate(new Object[] {}));
