@@ -5,6 +5,7 @@
 package mal;
 
 import static java.util.Objects.requireNonNull;
+import static mal.Interop.convertArgs;
 import static mal.Interop.toMal;
 import static mal.Trampoline.done;
 
@@ -114,6 +115,10 @@ public sealed interface MalNode {
 
     public MalNumber div(MalNumber other) {
       return new MalNumber(this.value / other.value, null);
+    }
+
+    public MalNumber mod(MalNumber other) {
+      return new MalNumber(this.value % other.value, null);
     }
 
     public boolean gt(MalNumber other) {
@@ -411,10 +416,10 @@ public sealed interface MalNode {
       try {
         var arguments = args.stream().map(Interop::toJava).toArray();
         if (Modifier.isStatic(method.getModifiers())) {
-          var result = method.invoke(null, arguments);
+          var result = method.invoke(null, convertArgs(method, arguments));
           return done(toMal(result));
         } else if (arguments.length > 0) {
-          var result = method.invoke(arguments[0], Arrays.copyOfRange(arguments, 1, arguments.length));
+          var result = method.invoke(arguments[0], convertArgs(method, Arrays.copyOfRange(arguments, 1, arguments.length)));
           return done(toMal(result));
         }
         throw new MalException("expected argument for method: " + method);

@@ -131,6 +131,12 @@ interface Core {
     return arg1.div(arg2);
   });
 
+  MalLambda MOD = lambda(args -> {
+    var arg1 = (MalNumber) args.get(0);
+    var arg2 = (MalNumber) args.get(1);
+    return arg1.mod(arg2);
+  });
+
   MalLambda PR_STR = lambda(args -> {
     var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
     return string(result);
@@ -402,6 +408,7 @@ interface Core {
     entry("-", function(SUB)),
     entry("*", function(MUL)),
     entry("/", function(DIV)),
+    entry("%", function(MOD)),
     entry("=", function(EQ)),
     entry(">", function(GT)),
     entry(">=", function(GTE)),

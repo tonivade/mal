@@ -14,6 +14,7 @@ import static mal.MalNode.map;
 import static mal.MalNode.number;
 import static mal.MalNode.string;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -38,6 +39,7 @@ class Interop {
       case Map<?, ?> m -> mapToMal(m);
       case Stream<?> s -> listToMal(s.toList());
       case Object[] a -> listToMal(Stream.of(a).toList());
+      case Character c -> string(c.toString());
       default -> throw new MalException("unknown value " + value);
     };
   }
@@ -51,6 +53,23 @@ class Interop {
       case MalConstant(var value, _) when value.equals("nil") -> null;
       default -> throw new MalException("not supported " + node);
     };
+  }
+
+  static Object[] convertArgs(Method method, Object[] arguments) {
+    var params = method.getParameterTypes();
+    if (params.length != arguments.length) {
+      throw new MalException("expected " + params.length + " arguments but got " + arguments.length);
+    }
+    for (int i = 0; i < params.length; i++) {
+      if (params[i].isPrimitive()) {
+        if (params[i] == int.class && arguments[i] instanceof Long l) {
+          arguments[i] = l.intValue();
+        } else if (params[i] == long.class && arguments[i] instanceof Integer n) {
+          arguments[i] = n.longValue();
+        }
+      }
+    }
+    return arguments;
   }
 
   private static MalSequence listToMal(Collection<?> list) {
