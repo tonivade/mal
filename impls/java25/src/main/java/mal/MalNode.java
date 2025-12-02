@@ -424,9 +424,10 @@ public sealed interface MalNode {
         }
         throw new MalException("expected argument for method: " + method);
       } catch (IllegalAccessException e) {
-        throw new MalException(e.getMessage());
+        throw new MalException("error calling method: " + method.getName());
       } catch (InvocationTargetException e) {
-        throw new MalException(e.getMessage());
+        e.printStackTrace();
+        throw new MalException("error calling method: " + method.getName());
       }
     };
   }

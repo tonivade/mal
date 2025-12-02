@@ -195,7 +195,7 @@ interface Core {
     var list = (MalSequence) args.get(1);
     var result = new ArrayList<MalNode>();
     result.add(item);
-    result.addAll(list.stream().toList());
+    result.addAll(list.values());
     return list(result);
   });
 
