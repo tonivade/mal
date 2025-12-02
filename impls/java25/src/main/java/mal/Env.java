@@ -81,9 +81,11 @@ class Env {
           list.add(j.next());
         }
         result.put(bind.name(), list(list));
-      } else {
+      } else if (j.hasNext()) {
         var expr = j.next();
         result.put(bind.name(), expr);
+      } else {
+        throw new MalException("missing arg: " + bind);
       }
     }
 
