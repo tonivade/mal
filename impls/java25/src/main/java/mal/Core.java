@@ -29,7 +29,6 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -181,9 +180,7 @@ interface Core {
   MalLambda SWAP = args -> {
     var atom = (MalAtom) args.get(0);
     var function = (MalWithLambda) args.get(1);
-    var newArgs = new ArrayList<MalNode>();
-    newArgs.add(atom.getValue());
-    newArgs.addAll(args.values().stream().skip(2).toList());
+    var newArgs = Stream.concat(Stream.of(atom.getValue()), args.stream().skip(2)).toList();
     return function.lambda().apply(list(newArgs)).map(newValue -> {
       atom.setValue(newValue);
       return newValue;
@@ -193,9 +190,7 @@ interface Core {
   MalLambda CONS = lambda(args -> {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
-    var result = new ArrayList<MalNode>();
-    result.add(item);
-    result.addAll(list.values());
+    var result = Stream.concat(Stream.of(item), list.stream()).toList();
     return list(result);
   });
 
@@ -367,13 +362,12 @@ interface Core {
 
   MalLambda CONJ = lambda(args -> switch (args.get(0)) {
     case MalList(var values, _) -> {
-      var newValues = new ArrayList<>(values);
-      args.stream().skip(1).forEach(newValues::addFirst);
+      var reversed = args.stream().skip(1).toList().reversed();
+      var newValues = Stream.concat(reversed.stream(), values.stream()).toList();
       yield list(newValues);
     }
     case MalVector(var values, _) -> {
-      var newValues = new ArrayList<>(values);
-      args.stream().skip(1).forEach(newValues::addLast);
+      var newValues = Stream.concat(values.stream(), args.stream().skip(1)).toList();
       yield vector(newValues);
     }
     default -> throw new MalException("invalid definition");
