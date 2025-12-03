@@ -39,13 +39,7 @@ public interface Strings {
     return list(fullResult);
   });
 
-  MalLambda TO_CHARS = lambda(args -> {
-    var input = (MalString) args.get(0);
-    return list(input.value().chars().mapToObj(ch -> string(Character.toString(ch))));
-  });
-
   Map<String, MalNode> NS = Map.ofEntries(
-    entry("find-matches", function(FIND_MATCHES)),
-    entry("to-chars", function(TO_CHARS))
+    entry("find-matches", function(FIND_MATCHES))
   );
 }
