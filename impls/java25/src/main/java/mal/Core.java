@@ -236,7 +236,7 @@ interface Core {
     if (list.isEmpty()) {
       return list();
     }
-    return list(list.stream().skip(1).toList());
+    return list(list.values().dropFirst());
   });
 
   MalLambda THROW = lambda(args -> {
@@ -323,7 +323,7 @@ interface Core {
 
   MalLambda ASSOC = lambda(args -> {
     var map = (MalMap) args.get(0);
-    var entries = map(args.stream().skip(1).toList());
+    var entries = map(args.values().dropFirst());
     return map.addAll(entries.map());
   });
 

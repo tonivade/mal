@@ -123,6 +123,13 @@ final class ImmutableList<E> implements Collection<E> {
     return (E) segments[segIdx][offset];
   }
 
+  public E getLast() {
+    if (totalSize == 0) {
+      throw new NoSuchElementException();
+    }
+    return get(totalSize - 1);
+  }
+
   // --- Mutation-style (returning new instances) ---
 
   public ImmutableList<E> concat(ImmutableList<E> other) {

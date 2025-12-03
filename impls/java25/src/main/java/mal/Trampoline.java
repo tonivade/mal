@@ -5,10 +5,8 @@
 package mal;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -80,24 +78,16 @@ sealed interface Trampoline<T> {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
-  static <T> Trampoline<List<T>> sequence(Collection<? extends Trampoline<T>> list) {
-    return list.stream().reduce(done(List.<T>of()), Trampoline::add, Trampoline::merge);
+  static <T> Trampoline<ImmutableList<T>> sequence(Collection<? extends Trampoline<T>> list) {
+    return list.stream().reduce(done(ImmutableList.<T>empty()), Trampoline::add, Trampoline::merge);
   }
 
-  private static <T> Trampoline<List<T>> add(Trampoline<? extends Collection<T>> tlist, Trampoline<T> titem) {
-    return zip(tlist, titem, (list, item) -> {
-      List<T> newList = new ArrayList<>(list);
-      newList.add(item);
-      return List.copyOf(newList);
-    });
+  private static <T> Trampoline<ImmutableList<T>> add(Trampoline<ImmutableList<T>> tlist, Trampoline<T> titem) {
+    return zip(tlist, titem, ImmutableList::append);
   }
 
-  private static <T> Trampoline<List<T>> merge(
-      Trampoline<? extends Collection<T>> tlist1, Trampoline<? extends Collection<T>> tlist2) {
-    return zip(tlist1, tlist2, (list1, list2) -> {
-      List<T> newList = new ArrayList<>(list1);
-      newList.addAll(list2);
-      return List.copyOf(newList);
-    });
+  private static <T> Trampoline<ImmutableList<T>> merge(
+      Trampoline<ImmutableList<T>> tlist1, Trampoline<ImmutableList<T>> tlist2) {
+    return zip(tlist1, tlist2, ImmutableList::concat);
   }
 }

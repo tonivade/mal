@@ -120,7 +120,7 @@ class Evaluator {
 
       case MalSymbol(var name, _) when name.equals("do") -> {
         var later = values.stream().skip(1).map(m -> safeEval(m, env)).toList();
-        yield sequence(later).map(List::getLast);
+        yield sequence(later).map(ImmutableList::getLast);
       }
 
       case MalSymbol(var name, _) when name.equals(TRY) -> {
@@ -203,12 +203,9 @@ class Evaluator {
       }
 
       default -> {
-        yield safeEval(values.get(0), env).<MalNode>map(callable -> {
-          List<MalNode> next = new ArrayList<>();
-          next.add(callable);
-          next.addAll(values.dropFirst());
-          return list(next);
-        }).flatMap(list -> safeEval(list, env));
+        yield safeEval(values.get(0), env)
+          .<MalNode>map(callable -> list(values.dropFirst().prepend(callable)))
+          .flatMap(node -> safeEval(node, env));
       }
     };
   }
