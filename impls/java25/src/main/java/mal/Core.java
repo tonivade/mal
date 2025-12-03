@@ -339,7 +339,7 @@ interface Core {
     return line != null ? string(line) : NIL;
   });
 
-  MalLambda TIME_MS = lambda(_ -> number(System.nanoTime()));
+  MalLambda TIME_MS = lambda(_ -> number(System.currentTimeMillis()));
 
   MalLambda META = lambda(args -> {
     var meta = args.get(0).meta();
