@@ -60,7 +60,6 @@ final class ImmutableList<E> implements Collection<E> {
     return list;
   }
 
-  // --- Accessors ---
   @Override
   public int size() {
     return totalSize;
@@ -121,45 +120,6 @@ final class ImmutableList<E> implements Collection<E> {
   }
 
   // --- Mutation-style (returning new instances) ---
-  public ImmutableList<E> append(E elem) {
-    Objects.requireNonNull(elem);
-    if (totalSize == 0) {
-      Object[] seg = new Object[segmentCapacity];
-      seg[0] = elem;
-      Object[][] newSegs = new Object[][] { seg };
-      int[] newCum = new int[] { 1 };
-      return new ImmutableList<>(newSegs, newCum, 1, segmentCapacity);
-    }
-
-    int lastIdx = segments.length - 1;
-    int lastSegCount = cumulativeSizes[lastIdx] - (lastIdx == 0 ? 0 : cumulativeSizes[lastIdx - 1]);
-
-    if (lastSegCount < segmentCapacity) {
-      // clone last segment and add element
-      Object[] newLast = segments[lastIdx].clone();
-      newLast[lastSegCount] = elem;
-
-      Object[][] newSegs = segments.clone();
-      newSegs[lastIdx] = newLast;
-
-      int[] newCum = cumulativeSizes.clone();
-      newCum[lastIdx] = newCum[lastIdx] + 1;
-
-      return new ImmutableList<>(newSegs, newCum, totalSize + 1, segmentCapacity);
-    } else {
-      // need to create a new segment at the end
-      Object[] newSeg = new Object[segmentCapacity];
-      newSeg[0] = elem;
-
-      Object[][] newSegs = Arrays.copyOf(segments, segments.length + 1);
-      newSegs[segments.length] = newSeg;
-
-      int[] newCum = Arrays.copyOf(cumulativeSizes, cumulativeSizes.length + 1);
-      newCum[newCum.length - 1] = totalSize + 1;
-
-      return new ImmutableList<>(newSegs, newCum, totalSize + 1, segmentCapacity);
-    }
-  }
 
   public ImmutableList<E> concat(ImmutableList<E> other) {
     Objects.requireNonNull(other);
@@ -185,6 +145,46 @@ final class ImmutableList<E> implements Collection<E> {
     return new ImmutableList<>(newSegs, newCum, this.totalSize + other.totalSize, segmentCapacity);
   }
 
+  public ImmutableList<E> append(E elem) {
+    Objects.requireNonNull(elem);
+    if (totalSize == 0) {
+      Object[] seg = new Object[segmentCapacity];
+      seg[0] = elem;
+      Object[][] newSegs = new Object[][] { seg };
+      int[] newCum = new int[] { 1 };
+      return new ImmutableList<>(newSegs, newCum, 1, segmentCapacity);
+    }
+
+    int lastIdx = segments.length - 1;
+    int lastSegCount = cumulativeSizes[lastIdx] - (lastIdx == 0 ? 0 : cumulativeSizes[lastIdx - 1]);
+
+    if (lastSegCount < segmentCapacity) {
+      // clone last segment and add element
+      Object[] newLast = segments[lastIdx].clone();
+      newLast[lastSegCount] = elem;
+
+      Object[][] newSegs = segments.clone();
+      newSegs[lastIdx] = newLast;
+
+      int[] newCum = cumulativeSizes.clone();
+      newCum[lastIdx] = newCum[lastIdx] + 1;
+
+      return new ImmutableList<>(newSegs, newCum, totalSize + 1, segmentCapacity);
+    }
+
+    // need to create a new segment at the end
+    Object[] newSeg = new Object[segmentCapacity];
+    newSeg[0] = elem;
+
+    Object[][] newSegs = Arrays.copyOf(segments, segments.length + 1);
+    newSegs[segments.length] = newSeg;
+
+    int[] newCum = Arrays.copyOf(cumulativeSizes, cumulativeSizes.length + 1);
+    newCum[newCum.length - 1] = totalSize + 1;
+
+    return new ImmutableList<>(newSegs, newCum, totalSize + 1, segmentCapacity);
+  }
+
   public ImmutableList<E> prepend(E elem) {
     Objects.requireNonNull(elem);
     if (totalSize == 0) {
@@ -207,34 +207,38 @@ final class ImmutableList<E> implements Collection<E> {
       newSegs[0] = newFirst;
 
       int[] newCum = cumulativeSizes.clone();
-      for (int i = 0; i < newCum.length; ++i)
+      for (int i = 0; i < newCum.length; ++i) {
         newCum[i] = newCum[i] + 1;
-
-      return new ImmutableList<>(newSegs, newCum, totalSize + 1, segmentCapacity);
-    } else {
-      // need a new segment in front
-      Object[] newSeg = new Object[segmentCapacity];
-      newSeg[0] = elem;
-
-      Object[][] newSegs = new Object[segments.length + 1][];
-      System.arraycopy(segments, 0, newSegs, 1, segments.length);
-      newSegs[0] = newSeg;
-
-      int[] newCum = new int[cumulativeSizes.length + 1];
-      newCum[0] = 1;
-      for (int i = 0; i < cumulativeSizes.length; ++i)
-        newCum[i + 1] = cumulativeSizes[i] + 1;
+      }
 
       return new ImmutableList<>(newSegs, newCum, totalSize + 1, segmentCapacity);
     }
+
+    // need a new segment in front
+    Object[] newSeg = new Object[segmentCapacity];
+    newSeg[0] = elem;
+
+    Object[][] newSegs = new Object[segments.length + 1][];
+    System.arraycopy(segments, 0, newSegs, 1, segments.length);
+    newSegs[0] = newSeg;
+
+    int[] newCum = new int[cumulativeSizes.length + 1];
+    newCum[0] = 1;
+    for (int i = 0; i < cumulativeSizes.length; ++i) {
+      newCum[i + 1] = cumulativeSizes[i] + 1;
+    }
+
+    return new ImmutableList<>(newSegs, newCum, totalSize + 1, segmentCapacity);
   }
 
   public ImmutableList<E> dropFirst() {
-    if (totalSize == 0)
+    if (totalSize == 0) {
       throw new NoSuchElementException("empty");
+    }
     // remove element at index 0
-    if (totalSize == 1)
+    if (totalSize == 1) {
       return empty(segmentCapacity);
+    }
 
     // operate on first segment
     int firstCount = cumulativeSizes[0];
@@ -247,25 +251,29 @@ final class ImmutableList<E> implements Collection<E> {
       newSegs[0] = newFirst;
 
       int[] newCum = cumulativeSizes.clone();
-      for (int i = 0; i < newCum.length; ++i)
+      for (int i = 0; i < newCum.length; ++i) {
         newCum[i] = newCum[i] - 1;
+      }
 
       return new ImmutableList<>(newSegs, newCum, totalSize - 1, segmentCapacity);
-    } else {
-      // first segment had exactly 1 element -> drop it
-      Object[][] newSegs = Arrays.copyOfRange(segments, 1, segments.length);
-      int[] newCum = new int[cumulativeSizes.length - 1];
-      for (int i = 0; i < newCum.length; ++i)
-        newCum[i] = cumulativeSizes[i + 1] - 1;
-      return new ImmutableList<>(newSegs, newCum, totalSize - 1, segmentCapacity);
     }
+
+    // first segment had exactly 1 element -> drop it
+    Object[][] newSegs = Arrays.copyOfRange(segments, 1, segments.length);
+    int[] newCum = new int[cumulativeSizes.length - 1];
+    for (int i = 0; i < newCum.length; ++i) {
+      newCum[i] = cumulativeSizes[i + 1] - 1;
+    }
+    return new ImmutableList<>(newSegs, newCum, totalSize - 1, segmentCapacity);
   }
 
   public ImmutableList<E> dropLast() {
-    if (totalSize == 0)
+    if (totalSize == 0) {
       throw new NoSuchElementException("empty");
-    if (totalSize == 1)
+    }
+    if (totalSize == 1) {
       return empty(segmentCapacity);
+    }
 
     int lastIdx = segments.length - 1;
     int lastCount = cumulativeSizes[lastIdx] - (lastIdx == 0 ? 0 : cumulativeSizes[lastIdx - 1]);
@@ -281,12 +289,12 @@ final class ImmutableList<E> implements Collection<E> {
       newCum[lastIdx] = newCum[lastIdx] - 1;
 
       return new ImmutableList<>(newSegs, newCum, totalSize - 1, segmentCapacity);
-    } else {
-      // drop last segment
-      Object[][] newSegs = Arrays.copyOf(segments, segments.length - 1);
-      int[] newCum = Arrays.copyOf(cumulativeSizes, cumulativeSizes.length - 1);
-      return new ImmutableList<>(newSegs, newCum, totalSize - 1, segmentCapacity);
     }
+
+    // drop last segment
+    Object[][] newSegs = Arrays.copyOf(segments, segments.length - 1);
+    int[] newCum = Arrays.copyOf(cumulativeSizes, cumulativeSizes.length - 1);
+    return new ImmutableList<>(newSegs, newCum, totalSize - 1, segmentCapacity);
   }
 
   @Override
@@ -366,8 +374,6 @@ final class ImmutableList<E> implements Collection<E> {
     throw new UnsupportedOperationException("ImmutableSegmentedList is immutable");
   }
 
-  // --- Helpers ---
-
   // find segment index that contains logical index (0..totalSize-1)
   private int findSegmentIndex(int index) {
     // binary search on cumulativeSizes
@@ -376,8 +382,9 @@ final class ImmutableList<E> implements Collection<E> {
       int mid = (lo + hi) >>> 1;
       int cum = cumulativeSizes[mid];
       if (index < cum) {
-        if (mid == 0 || index >= cumulativeSizes[mid - 1])
+        if (mid == 0 || index >= cumulativeSizes[mid - 1]) {
           return mid;
+        }
         hi = mid - 1;
       } else {
         lo = mid + 1;
