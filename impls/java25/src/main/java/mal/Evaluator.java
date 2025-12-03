@@ -84,8 +84,8 @@ class Evaluator {
     return done(value);
   }
 
-  private static Trampoline<MalNode> evalList(Env env, List<MalNode> values) {
-    return switch (values.getFirst()) {
+  private static Trampoline<MalNode> evalList(Env env, ImmutableList<MalNode> values) {
+    return switch (values.get(0)) {
 
       case MalSymbol(var name, _) when name.equals(DEF) -> {
         var key = (MalSymbol) values.get(1);
@@ -193,20 +193,20 @@ class Evaluator {
       }
 
       case MalMacro(var lambda, _) -> {
-        yield lambda.apply(list(skipFirst(values)))
+        yield lambda.apply(list(values.dropFirst()))
           .flatMap(next -> safeEval(next, env));
       }
 
       case MalFunction(var lambda, _) -> {
-        yield sequence(skipFirst(values).stream().map(m -> safeEval(m, env)).toList())
+        yield sequence(values.dropFirst().stream().map(m -> safeEval(m, env)).toList())
           .flatMap(args -> lambda.apply(list(args)));
       }
 
       default -> {
-        yield safeEval(values.getFirst(), env).<MalNode>map(callable -> {
+        yield safeEval(values.get(0), env).<MalNode>map(callable -> {
           List<MalNode> next = new ArrayList<>();
           next.add(callable);
-          next.addAll(skipFirst(values));
+          next.addAll(values.dropFirst());
           return list(next);
         }).flatMap(list -> safeEval(list, env));
       }
@@ -222,7 +222,7 @@ class Evaluator {
         .findFirst();
   }
 
-  private static int getNumberOfArguments(List<MalNode> values) {
+  private static int getNumberOfArguments(ImmutableList<MalNode> values) {
     if (values.size() > 3) {
       var args = (MalNumber) values.get(3);
       return (int) args.value();
@@ -230,7 +230,7 @@ class Evaluator {
     return 0;
   }
 
-  private static Trampoline<MalNode> evalVector(Env env, List<MalNode> values) {
+  private static Trampoline<MalNode> evalVector(Env env, ImmutableList<MalNode> values) {
     var later = values.stream().map(m -> safeEval(m, env)).toList();
     return sequence(later).map(MalNode::vector);
   }
@@ -249,29 +249,25 @@ class Evaluator {
       case MalSymbol _ -> done(list(QUOTE, value));
       case MalMap _ -> done(list(QUOTE, value));
       case MalList(var values, _) when values.isEmpty() -> done(value);
-      case MalList(var values, _) when values.getFirst().equals(UNQUOTE) -> done(values.get(1));
+      case MalList(var values, _) when values.get(0).equals(UNQUOTE) -> done(values.get(1));
       case MalList(var values, _) -> recursiveQuasiquote(values);
       case MalVector(var values, _) -> recursiveQuasiquote(values).map(next -> list(symbol("vec"), next));
       default -> done(value);
     };
   }
 
-  private static Trampoline<MalNode> recursiveQuasiquote(List<MalNode> values) {
+  private static Trampoline<MalNode> recursiveQuasiquote(ImmutableList<MalNode> values) {
     if (values.isEmpty()) {
       return done(list());
     }
     return more(() -> {
-      var element = values.getFirst();
+      var element = values.get(0);
       if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
-        return recursiveQuasiquote(skipFirst(values))
+        return recursiveQuasiquote(values.dropFirst())
           .map(result -> list(CONCAT, list.get(1), result));
       }
-      return zip(recursiveQuasiquote(skipFirst(values)), evalQuasiquote(element),
+      return zip(recursiveQuasiquote(values.dropFirst()), evalQuasiquote(element),
         (next, eval) -> list(CONS, eval, next));
     });
-  }
-
-  private static List<MalNode> skipFirst(List<MalNode> values) {
-    return values.stream().skip(1).toList();
   }
 }

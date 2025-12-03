@@ -180,7 +180,7 @@ interface Core {
   MalLambda SWAP = args -> {
     var atom = (MalAtom) args.get(0);
     var function = (MalWithLambda) args.get(1);
-    var newArgs = Stream.concat(Stream.of(atom.getValue()), args.stream().skip(2)).toList();
+    var newArgs = args.values().dropFirst().dropFirst().prepend(atom.getValue());
     return function.lambda().apply(list(newArgs)).map(newValue -> {
       atom.setValue(newValue);
       return newValue;
@@ -190,8 +190,7 @@ interface Core {
   MalLambda CONS = lambda(args -> {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
-    var result = Stream.concat(Stream.of(item), list.stream()).toList();
-    return list(result);
+    return list(list.values().prepend(item));
   });
 
   MalLambda CONCAT = lambda(args -> {
@@ -362,12 +361,11 @@ interface Core {
 
   MalLambda CONJ = lambda(args -> switch (args.get(0)) {
     case MalList(var values, _) -> {
-      var reversed = args.stream().skip(1).toList().reversed();
-      var newValues = Stream.concat(reversed.stream(), values.stream()).toList();
+      var newValues = args.stream().skip(1).reduce(values, ImmutableList::prepend, ImmutableList::concat);
       yield list(newValues);
     }
     case MalVector(var values, _) -> {
-      var newValues = Stream.concat(values.stream(), args.stream().skip(1)).toList();
+      var newValues = args.stream().skip(1).reduce(values, ImmutableList::append, ImmutableList::concat);
       yield vector(newValues);
     }
     default -> throw new MalException("invalid definition");

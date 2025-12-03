@@ -45,8 +45,8 @@ public sealed interface MalNode {
   MalNumber ZERO = new MalNumber(0, null);
   MalNumber ONE = new MalNumber(1, null);
 
-  MalList EMPTY_LIST = new MalList(List.of(), null);
-  MalVector EMPTY_VECTOR = new MalVector(List.of(), null);
+  MalList EMPTY_LIST = new MalList(ImmutableList.empty(), null);
+  MalVector EMPTY_VECTOR = new MalVector(ImmutableList.empty(), null);
   MalMap EMPTY_MAP = new MalMap(Map.of(), null);
 
   record MalConstant(String name, MalNode meta) implements MalNode {
@@ -179,7 +179,7 @@ public sealed interface MalNode {
 
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
-    List<MalNode> values();
+    ImmutableList<MalNode> values();
 
     @Override
     default Iterator<MalNode> iterator() {
@@ -206,7 +206,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalList(List<MalNode> values, MalNode meta) implements MalSequence {
+  record MalList(ImmutableList<MalNode> values, MalNode meta) implements MalSequence {
 
     public MalList {
       requireNonNull(values);
@@ -218,7 +218,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalVector(List<MalNode> values, MalNode meta) implements MalSequence {
+  record MalVector(ImmutableList<MalNode> values, MalNode meta) implements MalSequence {
 
     public MalVector {
       requireNonNull(values);
@@ -346,7 +346,7 @@ public sealed interface MalNode {
     return map(List.of(tokens));
   }
 
-  static MalMap map(List<MalNode> tokens) {
+  static MalMap map(Collection<MalNode> tokens) {
     return map(toMap(tokens));
   }
 
@@ -369,7 +369,7 @@ public sealed interface MalNode {
     if (tokens.isEmpty()) {
       return EMPTY_VECTOR;
     }
-    return new MalVector(List.copyOf(tokens), null);
+    return new MalVector(ImmutableList.of(tokens), null);
   }
 
   static MalList list(MalNode...tokens) {
@@ -384,7 +384,7 @@ public sealed interface MalNode {
     if (tokens.isEmpty()) {
       return EMPTY_LIST;
     }
-    return new MalList(List.copyOf(tokens), null);
+    return new MalList(ImmutableList.of(tokens), null);
   }
 
   static MalNumber number(long value) {
@@ -467,7 +467,7 @@ public sealed interface MalNode {
     return first.equals(second);
   }
 
-  private static Map<MalKey, MalNode> toMap(List<MalNode> tokens) {
+  private static Map<MalKey, MalNode> toMap(Collection<MalNode> tokens) {
     Map<MalKey, MalNode> map = new LinkedHashMap<>();
     for (var iterator = tokens.iterator(); iterator.hasNext();) {
       var key = (MalKey) iterator.next();
