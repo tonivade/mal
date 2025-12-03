@@ -194,7 +194,10 @@ interface Core {
   });
 
   MalLambda CONCAT = lambda(args -> {
-    var result = args.stream().map(MalSequence.class::cast).flatMap(MalSequence::stream).toList();
+    var result = args.stream()
+      .map(MalSequence.class::cast)
+      .map(MalSequence::values)
+      .reduce(ImmutableList.empty(), ImmutableList::concat);
     return list(result);
   });
 
@@ -253,7 +256,9 @@ interface Core {
   MalLambda MAP = args -> {
     var function = (MalWithLambda) args.get(0);
     var elements = (MalSequence) args.get(1);
-    var result = elements.stream().map(m -> function.lambda().apply(list(m))).toList();
+    var result = elements.stream()
+      .map(n -> function.lambda().apply(list(n)))
+      .reduce(ImmutableList.<Trampoline<MalNode>>empty(), ImmutableList::append, ImmutableList::concat);
     return sequence(result).map(MalNode::list);
   };
 
@@ -361,11 +366,13 @@ interface Core {
 
   MalLambda CONJ = lambda(args -> switch (args.get(0)) {
     case MalList(var values, _) -> {
-      var newValues = args.stream().skip(1).reduce(values, ImmutableList::prepend, ImmutableList::concat);
+      var newValues = args.stream().skip(1)
+        .reduce(values, ImmutableList::prepend, ImmutableList::concat);
       yield list(newValues);
     }
     case MalVector(var values, _) -> {
-      var newValues = args.stream().skip(1).reduce(values, ImmutableList::append, ImmutableList::concat);
+      var newValues = args.stream().skip(1)
+        .reduce(values, ImmutableList::append, ImmutableList::concat);
       yield vector(newValues);
     }
     default -> throw new MalException("invalid definition");

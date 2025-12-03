@@ -11,11 +11,15 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 /**
- * Immutable segmented list (persistent-ish): - Backed by multiple fixed-size
- * array segments (Object[]) - append and prepend create at most one new segment
- * or clone a single end segment - Random access uses a binary search on prefix
- * sums of segment sizes (O(log k))
+ * <p>
+ * Immutable segmented list (persistent-ish):
+ * <ul>
+ * <li>Backed by multiple fixed-size array segments (Object[])</li>
+ * <li>Append and prepend create at most one new segment or clone a single end segment</li>
+ * <li>Random access uses a binary search on prefix sums of segment sizes (O(log k))</li>
+ * </ul>
  *
+ * <p>
  * This is a simple, safe, and practical draft implementation. Segment size
  * should be chosen (e.g. 32, 64, 128) depending on workload.
  */
