@@ -6,6 +6,7 @@ package mal;
 
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
+import static mal.ImmutableList.toImmutableList;
 import static mal.Interop.toMal;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
@@ -259,7 +260,7 @@ interface Core {
     var elements = (MalSequence) args.get(1);
     var result = elements.stream()
       .map(n -> function.lambda().apply(list(n)))
-      .collect(ImmutableList.toImmutableList());
+      .collect(toImmutableList());
     return sequence(result).map(MalNode::list);
   };
 

@@ -4,6 +4,7 @@
  */
 package mal;
 
+import static java.util.Map.entry;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static mal.ImmutableList.toImmutableList;
 import static mal.MalNode.CONCAT;
@@ -120,7 +121,9 @@ class Evaluator {
       }
 
       case MalSymbol(var name, _) when name.equals("do") -> {
-        var later = values.dropFirst().stream().map(m -> safeEval(m, env)).collect(ImmutableList.toImmutableList());
+        var later = values.dropFirst().stream()
+          .map(m -> safeEval(m, env))
+          .collect(toImmutableList());
         yield sequence(later).map(ImmutableList::getLast);
       }
 
@@ -234,14 +237,14 @@ class Evaluator {
   private static Trampoline<MalNode> evalVector(Env env, ImmutableList<MalNode> values) {
     var later = values.stream()
       .map(m -> safeEval(m, env))
-      .collect(ImmutableList.toImmutableList());
+      .collect(toImmutableList());
     return sequence(later).map(MalNode::vector);
   }
 
   private static Trampoline<MalNode> evalMap(Env env, Map<MalKey, MalNode> map) {
     var later = map.entrySet().stream()
-      .map(entry -> safeEval(entry.getValue(), env).map(value -> Map.entry(entry.getKey(), value)))
-      .collect(ImmutableList.toImmutableList());
+      .map(entry -> safeEval(entry.getValue(), env).map(value -> entry(entry.getKey(), value)))
+      .collect(toImmutableList());
     return sequence(later)
       .map(list -> list.stream().collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
       .map(MalNode::map);

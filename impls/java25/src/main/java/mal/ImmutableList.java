@@ -417,7 +417,7 @@ final class ImmutableList<E> implements Collection<E> {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("ImmutableSegmentedList[size=").append(totalSize).append(", segCap=").append(segmentCapacity)
+    sb.append("ImmutableList[size=").append(totalSize).append(", segCap=").append(segmentCapacity)
         .append("]{");
     boolean first = true;
     for (Object[] seg : segments) {
@@ -443,32 +443,32 @@ final class ImmutableList<E> implements Collection<E> {
 
   @Override
   public boolean add(E e) {
-    throw new UnsupportedOperationException("ImmutableSegmentedList is immutable");
+    throw new UnsupportedOperationException("ImmutableList is immutable");
   }
 
   @Override
   public boolean addAll(Collection<? extends E> c) {
-    throw new UnsupportedOperationException("ImmutableSegmentedList is immutable");
+    throw new UnsupportedOperationException("ImmutableList is immutable");
   }
 
   @Override
   public boolean remove(Object o) {
-    throw new UnsupportedOperationException("ImmutableSegmentedList is immutable");
+    throw new UnsupportedOperationException("ImmutableList is immutable");
   }
 
   @Override
   public boolean removeAll(Collection<?> c) {
-    throw new UnsupportedOperationException("ImmutableSegmentedList is immutable");
+    throw new UnsupportedOperationException("ImmutableList is immutable");
   }
 
   @Override
   public boolean retainAll(Collection<?> c) {
-    throw new UnsupportedOperationException("ImmutableSegmentedList is immutable");
+    throw new UnsupportedOperationException("ImmutableList is immutable");
   }
 
   @Override
   public void clear() {
-    throw new UnsupportedOperationException("ImmutableSegmentedList is immutable");
+    throw new UnsupportedOperationException("ImmutableList is immutable");
   }
 
   // find segment index that contains logical index (0..totalSize-1)
