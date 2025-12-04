@@ -6,6 +6,7 @@ package mal;
 
 import static mal.Evaluator.eval;
 import static mal.Evaluator.safeEval;
+import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.function;
 import static mal.MalNode.list;
 import static mal.MalNode.symbol;
@@ -67,7 +68,7 @@ class step7_quote {
 
   private static MalNode argv(String... arguments) {
     if (arguments.length < 1) {
-      return list();
+      return EMPTY_LIST;
     }
     var copy = Arrays.copyOfRange(arguments, 1, arguments.length);
     return list(Stream.of(copy).<MalNode>map(MalNode::string).toList());

@@ -8,6 +8,7 @@ import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
 import static mal.ImmutableList.toImmutableList;
 import static mal.Interop.toMal;
+import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
@@ -232,11 +233,11 @@ interface Core {
 
   MalLambda REST = lambda(args -> {
     if (args.get(0).equals(NIL)) {
-      return list();
+      return EMPTY_LIST;
     }
     var list = (MalSequence) args.get(0);
     if (list.isEmpty()) {
-      return list();
+      return EMPTY_LIST;
     }
     return list(list.values().dropFirst());
   });

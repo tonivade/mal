@@ -174,6 +174,18 @@ public sealed interface MalNode {
     }
   }
 
+  record MalSymbol(String name, MalNode meta) implements MalKey {
+
+    public MalSymbol {
+      requireNonNull(name);
+    }
+
+    @Override
+    public MalSymbol withMeta(MalNode meta) {
+      return new MalSymbol(name, meta);
+    }
+  }
+
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
     ImmutableList<MalNode> values();
@@ -277,18 +289,6 @@ public sealed interface MalNode {
     @Override
     public MalMap withMeta(MalNode meta) {
       return new MalMap(map, meta);
-    }
-  }
-
-  record MalSymbol(String name, MalNode meta) implements MalKey {
-
-    public MalSymbol {
-      requireNonNull(name);
-    }
-
-    @Override
-    public MalSymbol withMeta(MalNode meta) {
-      return new MalSymbol(name, meta);
     }
   }
 

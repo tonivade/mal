@@ -9,6 +9,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 import static mal.ImmutableList.toImmutableList;
 import static mal.MalNode.CONCAT;
 import static mal.MalNode.CONS;
+import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.QUOTE;
@@ -264,7 +265,7 @@ class Evaluator {
 
   private static Trampoline<MalNode> recursiveQuasiquote(ImmutableList<MalNode> values) {
     if (values.isEmpty()) {
-      return done(list());
+      return done(EMPTY_LIST);
     }
     return more(() -> {
       var element = values.get(0);
