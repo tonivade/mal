@@ -5,6 +5,7 @@
 package mal;
 
 import static java.util.stream.Collectors.toUnmodifiableMap;
+import static mal.ImmutableList.toImmutableList;
 import static mal.MalNode.CONCAT;
 import static mal.MalNode.CONS;
 import static mal.MalNode.FALSE;
@@ -198,7 +199,9 @@ class Evaluator {
       }
 
       case MalFunction(var lambda, _) -> {
-        var later = values.dropFirst().stream().map(m -> safeEval(m, env)).toList();
+        var later = values.dropFirst().stream()
+          .map(m -> safeEval(m, env))
+          .collect(toImmutableList());
         yield sequence(later)
           .flatMap(args -> lambda.apply(list(args)));
       }
@@ -229,14 +232,16 @@ class Evaluator {
   }
 
   private static Trampoline<MalNode> evalVector(Env env, ImmutableList<MalNode> values) {
-    var later = values.stream().map(m -> safeEval(m, env)).toList();
+    var later = values.stream()
+      .map(m -> safeEval(m, env))
+      .collect(ImmutableList.toImmutableList());
     return sequence(later).map(MalNode::vector);
   }
 
   private static Trampoline<MalNode> evalMap(Env env, Map<MalKey, MalNode> map) {
     var later = map.entrySet().stream()
       .map(entry -> safeEval(entry.getValue(), env).map(value -> Map.entry(entry.getKey(), value)))
-      .toList();
+      .collect(ImmutableList.toImmutableList());
     return sequence(later)
       .map(list -> list.stream().collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
       .map(MalNode::map);
