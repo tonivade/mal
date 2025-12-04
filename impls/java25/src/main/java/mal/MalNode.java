@@ -34,6 +34,7 @@ public sealed interface MalNode {
   MalSymbol SPLICE_UNQUOTE = new MalSymbol("splice-unquote", null);
   MalSymbol WITH_META = new MalSymbol("with-meta", null);
   MalSymbol DEREF = new MalSymbol("deref", null);
+  MalSymbol DEBUG_EVAL = new MalSymbol("DEBUG-EVAL", null);
 
   MalSymbol CONCAT = new MalSymbol("concat", null);
   MalSymbol CONS = new MalSymbol("cons", null);

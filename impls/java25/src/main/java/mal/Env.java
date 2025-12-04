@@ -17,8 +17,6 @@ import mal.MalNode.MalSymbol;
 
 class Env {
 
-  private static final String DEBUG_EVAL = "DEBUG-EVAL";
-
   public static final Env DEFAULT = new Env(Core.NS);
 
   private final Env outer;
@@ -46,7 +44,7 @@ class Env {
   }
 
   public boolean isDebugEval() {
-    var debugEval = map.get(DEBUG_EVAL);
+    var debugEval = map.get(MalNode.DEBUG_EVAL.name());
     return debugEval != null && debugEval != FALSE;
   }
 

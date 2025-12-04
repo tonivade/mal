@@ -6,6 +6,7 @@ package mal;
 
 import static mal.Evaluator.eval;
 import static mal.Evaluator.safeEval;
+import static mal.MalNode.DEBUG_EVAL;
 import static mal.MalNode.function;
 import static mal.MalNode.list;
 import static mal.MalNode.string;
@@ -23,6 +24,12 @@ import org.jline.reader.UserInterruptException;
 class stepA_mal {
 
   private static final Env ENV = new Env();
+
+  static void setDebug(boolean debug) {
+    if (debug) {
+      ENV.set(DEBUG_EVAL, MalNode.TRUE);
+    }
+  }
 
   static String rep(String input) {
     return print(eval(read(input), ENV), true);

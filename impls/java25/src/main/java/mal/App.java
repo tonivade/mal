@@ -15,6 +15,9 @@ public class App implements Runnable {
   @Option(names = "--step", description = "step to execute", defaultValue = "stepA_mal")
   private String step;
 
+  @Option(names = "--debug", description = "enable debug", defaultValue = "false")
+  private boolean debug;
+
   @Parameters(description = "rest of arguments")
   private String[] rest = new String[] {};
 
@@ -52,6 +55,7 @@ public class App implements Runnable {
         step9_try.main(rest);
       }
       case "stepA_mal" -> {
+        stepA_mal.setDebug(debug);
         stepA_mal.main(rest);
       }
       default -> throw new IllegalArgumentException("invalid step: " + step);
