@@ -358,33 +358,33 @@ public sealed interface MalNode {
   }
 
   static MalVector vector(MalNode...tokens) {
-    return vector(List.of(tokens));
+    return vector(ImmutableList.of(tokens));
   }
 
   static MalVector vector(Stream<? extends MalNode> tokens) {
-    return vector(tokens.toList());
+    return vector(ImmutableList.from(tokens));
   }
 
   static MalVector vector(Collection<? extends MalNode> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_VECTOR;
     }
-    return new MalVector(ImmutableList.of(tokens), null);
+    return new MalVector(ImmutableList.from(tokens), null);
   }
 
   static MalList list(MalNode...tokens) {
-    return list(List.of(tokens));
+    return list(ImmutableList.of(tokens));
   }
 
   static MalList list(Stream<? extends MalNode> tokens) {
-    return list(tokens.toList());
+    return list(ImmutableList.from(tokens));
   }
 
   static MalList list(Collection<? extends MalNode> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_LIST;
     }
-    return new MalList(ImmutableList.of(tokens), null);
+    return new MalList(ImmutableList.from(tokens), null);
   }
 
   static MalNumber number(long value) {

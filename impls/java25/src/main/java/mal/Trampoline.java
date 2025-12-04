@@ -10,6 +10,7 @@ import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import mal.ImmutableList.Builder;
 
 sealed interface Trampoline<T> {
 
@@ -79,15 +80,17 @@ sealed interface Trampoline<T> {
   }
 
   static <T> Trampoline<ImmutableList<T>> sequence(Collection<? extends Trampoline<T>> list) {
-    return list.stream().reduce(done(ImmutableList.<T>empty()), Trampoline::add, Trampoline::merge);
+    return list.stream()
+      .reduce(done(ImmutableList.<T>builder()), Trampoline::add, Trampoline::merge)
+      .map(ImmutableList.Builder::build);
   }
 
-  private static <T> Trampoline<ImmutableList<T>> add(Trampoline<ImmutableList<T>> tlist, Trampoline<T> titem) {
-    return zip(tlist, titem, ImmutableList::append);
+  private static <T> Trampoline<ImmutableList.Builder<T>> add(Trampoline<ImmutableList.Builder<T>> tlist, Trampoline<T> titem) {
+    return zip(tlist, titem, ImmutableList.Builder::append);
   }
 
-  private static <T> Trampoline<ImmutableList<T>> merge(
-      Trampoline<ImmutableList<T>> tlist1, Trampoline<ImmutableList<T>> tlist2) {
-    return zip(tlist1, tlist2, ImmutableList::concat);
+  private static <T> Trampoline<ImmutableList.Builder<T>> merge(
+      Trampoline<ImmutableList.Builder<T>> tlist1, Trampoline<ImmutableList.Builder<T>> tlist2) {
+    return zip(tlist1, tlist2, Builder::merge);
   }
 }

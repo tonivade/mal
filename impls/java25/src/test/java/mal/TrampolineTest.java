@@ -6,6 +6,7 @@ package mal;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class TrampolineTest {
@@ -32,6 +33,18 @@ class TrampolineTest {
         () -> assertEquals(45150, sum(300)),
         () -> assertEquals(705082704, sum(100000))
       );
+  }
+
+  @Test
+  void sequence() {
+    var trampolines = Trampoline.sequence(
+      List.of(
+        Trampoline.done(1),
+        Trampoline.more(() -> Trampoline.done(2)),
+        Trampoline.more(() -> Trampoline.more(() -> Trampoline.done(3))))
+      );
+
+    assertEquals(ImmutableList.of(1, 2, 3), trampolines.run());
   }
 
   @Test

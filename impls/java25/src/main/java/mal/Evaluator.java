@@ -119,7 +119,7 @@ class Evaluator {
       }
 
       case MalSymbol(var name, _) when name.equals("do") -> {
-        var later = values.stream().skip(1).map(m -> safeEval(m, env)).toList();
+        var later = values.dropFirst().stream().map(m -> safeEval(m, env)).collect(ImmutableList.toImmutableList());
         yield sequence(later).map(ImmutableList::getLast);
       }
 
@@ -198,7 +198,8 @@ class Evaluator {
       }
 
       case MalFunction(var lambda, _) -> {
-        yield sequence(values.dropFirst().stream().map(m -> safeEval(m, env)).toList())
+        var later = values.dropFirst().stream().map(m -> safeEval(m, env)).toList();
+        yield sequence(later)
           .flatMap(args -> lambda.apply(list(args)));
       }
 

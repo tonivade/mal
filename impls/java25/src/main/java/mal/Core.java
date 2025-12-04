@@ -197,7 +197,8 @@ interface Core {
     var result = args.stream()
       .map(MalSequence.class::cast)
       .map(MalSequence::values)
-      .reduce(ImmutableList.empty(), ImmutableList::concat);
+      .reduce(ImmutableList.<MalNode>builder(), ImmutableList.Builder::merge, ImmutableList.Builder::merge)
+      .build();
     return list(result);
   });
 
@@ -245,7 +246,7 @@ interface Core {
 
   MalLambda APPLY = args -> {
     var function = (MalWithLambda) args.get(0);
-    var arguments = list(args.stream().skip(1).flatMap(m -> switch (m) {
+    var arguments = list(args.values().dropFirst().stream().flatMap(m -> switch (m) {
       case MalList(var values, _) -> values.stream();
       case MalVector(var values, _) -> values.stream();
       default -> Stream.of(m);
@@ -258,7 +259,7 @@ interface Core {
     var elements = (MalSequence) args.get(1);
     var result = elements.stream()
       .map(n -> function.lambda().apply(list(n)))
-      .reduce(ImmutableList.<Trampoline<MalNode>>empty(), ImmutableList::append, ImmutableList::concat);
+      .collect(ImmutableList.toImmutableList());
     return sequence(result).map(MalNode::list);
   };
 
@@ -329,7 +330,7 @@ interface Core {
 
   MalLambda DISSOC = lambda(args -> {
     var map = (MalMap) args.get(0);
-    var keys = args.stream().skip(1).map(MalKey.class::cast).toList();
+    var keys = args.values().dropFirst().stream().map(MalKey.class::cast).toList();
     return map.removeAll(keys);
   });
 
@@ -366,13 +367,11 @@ interface Core {
 
   MalLambda CONJ = lambda(args -> switch (args.get(0)) {
     case MalList(var values, _) -> {
-      var newValues = args.stream().skip(1)
-        .reduce(values, ImmutableList::prepend, ImmutableList::concat);
+      var newValues = values.toBuilder().prependAll(args.stream().skip(1)::iterator).build();
       yield list(newValues);
     }
     case MalVector(var values, _) -> {
-      var newValues = args.stream().skip(1)
-        .reduce(values, ImmutableList::append, ImmutableList::concat);
+      var newValues = values.toBuilder().appendAll(args.stream().skip(1)::iterator).build();
       yield vector(newValues);
     }
     default -> throw new MalException("invalid definition");

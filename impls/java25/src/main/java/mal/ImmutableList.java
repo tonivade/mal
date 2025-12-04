@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 /**
  * <p>
@@ -32,12 +34,36 @@ final class ImmutableList<E> implements Collection<E> {
   private final int totalSize;
   private final int segmentCapacity;
 
-  // --- Constructors ---
   private ImmutableList(Object[][] segments, int[] cumulativeSizes, int totalSize, int segmentCapacity) {
     this.segments = Objects.requireNonNull(segments);
     this.cumulativeSizes = Objects.requireNonNull(cumulativeSizes);
     this.totalSize = totalSize;
     this.segmentCapacity = segmentCapacity;
+  }
+
+  static <E> Collector<E, ?, ImmutableList<E>> toImmutableList() {
+    return toImmutableList(DEFAULT_SEGMENT_SIZE);
+  }
+
+  static <E> Collector<E, ?, ImmutableList<E>> toImmutableList(int segmentCapacity) {
+    return Collector.of(
+        () -> new Builder<E>(segmentCapacity),
+        Builder::append,
+        Builder::merge,
+        Builder::build);
+  }
+
+  static <E> Builder<E> builder() {
+    return builder(DEFAULT_SEGMENT_SIZE);
+  }
+
+  static <E> Builder<E> builder(int segmentCapacity) {
+    return new Builder<>(segmentCapacity);
+  }
+
+  @SafeVarargs
+  static <E> ImmutableList<E> of(E... elems) {
+    return from(Stream.of(elems));
   }
 
   public static <T> ImmutableList<T> empty() {
@@ -51,17 +77,37 @@ final class ImmutableList<E> implements Collection<E> {
     return new ImmutableList<>(new Object[0][], new int[0], 0, segmentCapacity);
   }
 
+  public static <T> ImmutableList<T> from(Stream<? extends T> stream) {
+    return from(stream, DEFAULT_SEGMENT_SIZE);
+  }
+
   @SuppressWarnings("unchecked")
-  public static <T> ImmutableList<T> of(Collection<? extends T> elems) {
+  public static <T> ImmutableList<T> from(Stream<? extends T> stream, int segmentCapacity) {
+    Objects.requireNonNull(stream);
+    return (ImmutableList<T>) fromIterable(stream::iterator, segmentCapacity);
+  }
+
+  public static <T> ImmutableList<T> from(Collection<? extends T> elems) {
+    return from(elems, DEFAULT_SEGMENT_SIZE);
+  }
+
+  public static <T> ImmutableList<T> from(Collection<? extends T> elems, int segmentCapacity) {
+    return fromIterable(elems, segmentCapacity);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> ImmutableList<T> fromIterable(Iterable<? extends T> elems, int segmentCapacity) {
     Objects.requireNonNull(elems);
     if (elems instanceof ImmutableList<?>) {
       return (ImmutableList<T>) elems;
     }
-    ImmutableList<T> list = empty();
-    for (T e : elems) {
-      list = list.append(e);
-    }
-    return list;
+    return new Builder<T>(segmentCapacity).appendAll(elems).build();
+  }
+
+  public Builder<E> toBuilder() {
+    Builder<E> builder = new Builder<>(segmentCapacity);
+    builder.merge(this);
+    return builder;
   }
 
   @Override
@@ -123,8 +169,15 @@ final class ImmutableList<E> implements Collection<E> {
     return (E) segments[segIdx][offset];
   }
 
+  public E getFirst() {
+    if (isEmpty()) {
+      throw new NoSuchElementException();
+    }
+    return get(0);
+  }
+
   public E getLast() {
-    if (totalSize == 0) {
+    if (isEmpty()) {
       throw new NoSuchElementException();
     }
     return get(totalSize - 1);
@@ -134,10 +187,10 @@ final class ImmutableList<E> implements Collection<E> {
 
   public ImmutableList<E> concat(ImmutableList<E> other) {
     Objects.requireNonNull(other);
-    if (other.totalSize == 0) {
+    if (other.isEmpty()) {
       return this;
     }
-    if (this.totalSize == 0) {
+    if (this.isEmpty()) {
       return other;
     }
 
@@ -158,7 +211,7 @@ final class ImmutableList<E> implements Collection<E> {
 
   public ImmutableList<E> append(E elem) {
     Objects.requireNonNull(elem);
-    if (totalSize == 0) {
+    if (isEmpty()) {
       Object[] seg = new Object[segmentCapacity];
       seg[0] = elem;
       Object[][] newSegs = new Object[][] { seg };
@@ -198,7 +251,7 @@ final class ImmutableList<E> implements Collection<E> {
 
   public ImmutableList<E> prepend(E elem) {
     Objects.requireNonNull(elem);
-    if (totalSize == 0) {
+    if (isEmpty()) {
       Object[] seg = new Object[segmentCapacity];
       seg[0] = elem;
       Object[][] newSegs = new Object[][] { seg };
@@ -243,7 +296,7 @@ final class ImmutableList<E> implements Collection<E> {
   }
 
   public ImmutableList<E> dropFirst() {
-    if (totalSize == 0) {
+    if (isEmpty()) {
       throw new NoSuchElementException("empty");
     }
     // remove element at index 0
@@ -279,7 +332,7 @@ final class ImmutableList<E> implements Collection<E> {
   }
 
   public ImmutableList<E> dropLast() {
-    if (totalSize == 0) {
+    if (isEmpty()) {
       throw new NoSuchElementException("empty");
     }
     if (totalSize == 1) {
@@ -326,6 +379,39 @@ final class ImmutableList<E> implements Collection<E> {
         return get(currentIndex++);
       }
     };
+  }
+
+  @Override
+  public int hashCode() {
+    int hash = 1;
+    hash = 31 * hash + Arrays.hashCode(segments);
+    hash = 31 * hash + Arrays.hashCode(cumulativeSizes);
+    hash = 31 * hash + Integer.hashCode(segmentCapacity);
+    hash = 31 * hash + Integer.hashCode(totalSize);
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof ImmutableList<?> other)) {
+      return false;
+    }
+    if (this.size() != other.size()) {
+      return false;
+    }
+    Iterator<E> it1 = this.iterator();
+    Iterator<?> it2 = other.iterator();
+    while (it1.hasNext() && it2.hasNext()) {
+      E e1 = it1.next();
+      Object e2 = it2.next();
+      if (!Objects.equals(e1, e2)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
@@ -411,5 +497,109 @@ final class ImmutableList<E> implements Collection<E> {
       }
     }
     return -1;
+  }
+
+  static final class Builder<E> {
+    final int segmentCapacity;
+    Object[][] segments;
+    int segmentCount;
+    int[] segmentSizes;
+    int totalSize;
+
+    Builder(int segmentCapacity) {
+      this.segmentCapacity = segmentCapacity;
+      this.segments = new Object[4][];
+      this.segmentSizes = new int[4];
+    }
+
+    Builder<E> prepend(E elem) {
+      if (segmentCount == 0 || segmentSizes[0] == segmentCapacity) {
+        // new segment at front
+        if (segmentCount == segments.length) {
+          segments = Arrays.copyOf(segments, segments.length * 2);
+          segmentSizes = Arrays.copyOf(segmentSizes, segmentSizes.length * 2);
+        }
+        // shift existing segments right
+        System.arraycopy(segments, 0, segments, 1, segmentCount);
+        System.arraycopy(segmentSizes, 0, segmentSizes, 1, segmentCount);
+        segments[0] = new Object[segmentCapacity];
+        segmentSizes[0] = 0;
+        segmentCount++;
+      }
+      // shift elements right within first segment
+      System.arraycopy(segments[0], 0, segments[0], 1, segmentSizes[0]);
+      segments[0][0] = elem;
+      segmentSizes[0]++;
+      totalSize++;
+      return this;
+    }
+
+    Builder<E> prependAll(Iterable<? extends E> elems) {
+      for (E e : elems) {
+        prepend(e);
+      }
+      return this;
+    }
+
+    Builder<E> append(E elem) {
+      if (segmentCount == 0 || segmentSizes[segmentCount - 1] == segmentCapacity) {
+        // new segment
+        if (segmentCount == segments.length) {
+          segments = Arrays.copyOf(segments, segments.length * 2);
+          segmentSizes = Arrays.copyOf(segmentSizes, segmentSizes.length * 2);
+        }
+        segments[segmentCount] = new Object[segmentCapacity];
+        segmentSizes[segmentCount] = 0;
+        segmentCount++;
+      }
+      segments[segmentCount - 1][segmentSizes[segmentCount - 1]++] = elem;
+      totalSize++;
+      return this;
+    }
+
+    Builder<E> appendAll(Iterable<? extends E> elems) {
+      for (E e : elems) {
+        append(e);
+      }
+      return this;
+    }
+
+    Builder<E> merge(Builder<E> other) {
+      for (int i = 0; i < other.segmentCount; i++) {
+        addSegment(other.segments[i], other.segmentSizes[i]);
+      }
+      return this;
+    }
+
+    Builder<E> merge(ImmutableList<E> other) {
+      for (int i = 0; i < other.segments.length; i++) {
+        int segSize = other.cumulativeSizes[i] - (i == 0 ? 0 : other.cumulativeSizes[i - 1]);
+        addSegment(other.segments[i], segSize);
+      }
+      return this;
+    }
+
+    private void addSegment(Object[] seg, int size) {
+      // copies only references, not elements
+      if (segmentCount == segments.length) {
+        segments = Arrays.copyOf(segments, segments.length * 2);
+        segmentSizes = Arrays.copyOf(segmentSizes, segmentSizes.length * 2);
+      }
+      segments[segmentCount] = Arrays.copyOf(seg, segmentCapacity);
+      segmentSizes[segmentCount] = size;
+      segmentCount++;
+      totalSize += size;
+    }
+
+    ImmutableList<E> build() {
+      Object[][] finalSegs = Arrays.copyOf(segments, segmentCount);
+      int[] cumulative = new int[segmentCount];
+      int sum = 0;
+      for (int i = 0; i < segmentCount; i++) {
+        sum += segmentSizes[i];
+        cumulative[i] = sum;
+      }
+      return new ImmutableList<>(finalSegs, cumulative, totalSize, segmentCapacity);
+    }
   }
 }
