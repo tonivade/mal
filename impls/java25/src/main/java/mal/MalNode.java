@@ -98,10 +98,6 @@ public sealed interface MalNode {
 
   record MalNumber(long value, MalNode meta) implements MalNode {
 
-    public MalNumber {
-      requireNonNull(value);
-    }
-
     public MalNumber sum(MalNumber other) {
       return new MalNumber(this.value + other.value, null);
     }
