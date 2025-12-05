@@ -66,7 +66,11 @@ class stepA_mal {
       try {
         IO.println(rep(line));
       } catch (RuntimeException e) {
-        System.err.println("ERROR: " + e.getMessage());
+        if (ENV.isDebugEval()) {
+          e.printStackTrace(System.err);
+        } else {
+          System.err.println("ERROR: " + e.getMessage());
+        }
       }
     }
   }
