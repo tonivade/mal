@@ -161,7 +161,7 @@ class Reader {
       case Token(var value) when value.equals("true") -> TRUE;
       case Token(var value) when value.equals("false") -> FALSE;
       case Token(var value) when value.matches("-?\\d+") ->
-        number(Integer.parseInt(value));
+        number(Long.parseLong(value));
       case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*") ->
         throw new MalException("EOF");
       case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*\"") ->
