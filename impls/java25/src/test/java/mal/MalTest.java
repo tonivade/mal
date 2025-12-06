@@ -51,5 +51,7 @@ class MalTest {
   @Test
   void stepA() {
     assertEquals("6", StepA.rep("(java-eval \"1 + 2 + 3\")"));
+    StepA.rep("(import java.lang.String length)");
+    assertEquals("5", StepA.rep("(length \"12345\")"));
   }
 }

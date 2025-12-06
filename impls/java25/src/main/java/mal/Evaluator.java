@@ -17,7 +17,6 @@ import static mal.MalNode.SPLICE_UNQUOTE;
 import static mal.MalNode.UNQUOTE;
 import static mal.MalNode.error;
 import static mal.MalNode.function;
-import static mal.MalNode.lambda;
 import static mal.MalNode.list;
 import static mal.MalNode.symbol;
 import static mal.Printer.print;
@@ -26,13 +25,9 @@ import static mal.Trampoline.more;
 import static mal.Trampoline.sequence;
 import static mal.Trampoline.zip;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalList;
@@ -168,15 +163,9 @@ class Evaluator {
         var clazz = (MalSymbol) values.get(1);
         var method = (MalSymbol) values.get(2);
         int numberOfArgs = getNumberOfArguments(values);
-        try {
-          var methodRef = getMethod(clazz, method, numberOfArgs)
-              .orElseThrow(() -> new MalException("method not found " + method.name()));
-          var function = function(lambda(methodRef));
-          env.set(method, function);
-          yield done(function);
-        } catch (ClassNotFoundException e) {
-          throw new MalException("class not found: " + clazz.name());
-        }
+        var function = function(Interop.toLambda(clazz.name(), method.name(), numberOfArgs));
+        env.set(method, function);
+        yield done(function);
       }
 
       case MalMacro(var lambda, _) -> {
@@ -198,15 +187,6 @@ class Evaluator {
           .flatMap(node -> safeEval(node, env));
       }
     };
-  }
-
-  private static Optional<Method> getMethod(MalSymbol clazz, MalSymbol method, int numberOfArgs) throws ClassNotFoundException {
-    var classRef = Class.forName(clazz.name());
-    return Stream.of(classRef.getDeclaredMethods())
-        .filter(m -> m.getParameterCount() == numberOfArgs)
-        .filter(m -> m.getName().equals(method.name()))
-        .filter(m -> m.trySetAccessible())
-        .findFirst();
   }
 
   private static int getNumberOfArguments(ImmutableList<MalNode> values) {

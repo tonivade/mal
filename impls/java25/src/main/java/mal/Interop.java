@@ -13,20 +13,52 @@ import static mal.MalNode.list;
 import static mal.MalNode.map;
 import static mal.MalNode.number;
 import static mal.MalNode.string;
+import static mal.Trampoline.done;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalKey;
+import mal.MalNode.MalLambda;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalString;
 
 class Interop {
+
+  static MalLambda toLambda(String clazz, String method, int numberOfArgs) {
+    try {
+      var methodRef = getMethod(clazz, method, numberOfArgs)
+          .orElseThrow(() -> new MalException("method not found " + method));
+      return args -> {
+        try {
+          var arguments = args.stream().map(Interop::toJava).toArray();
+          if (Modifier.isStatic(methodRef.getModifiers())) {
+            var result = methodRef.invoke(null, convertArgs(methodRef, arguments));
+            return done(toMal(result));
+          } else if (arguments.length > 0) {
+            var result = methodRef.invoke(arguments[0], convertArgs(methodRef, Arrays.copyOfRange(arguments, 1, arguments.length)));
+            return done(toMal(result));
+          }
+          throw new MalException("expected argument for method: " + methodRef.getName());
+        } catch (IllegalAccessException e) {
+          throw new MalException("error calling method: " + methodRef.getName());
+        } catch (InvocationTargetException e) {
+          throw new MalException("error calling method: " + methodRef.getName());
+        }
+      };
+    } catch (ClassNotFoundException e) {
+      throw new MalException("class not found: " + clazz);
+    }
+  }
 
   static MalNode toMal(Object value) {
     return switch (value) {
@@ -70,6 +102,15 @@ class Interop {
       }
     }
     return arguments;
+  }
+
+  private static Optional<Method> getMethod(String clazz, String method, int numberOfArgs) throws ClassNotFoundException {
+    var classRef = Class.forName(clazz);
+    return Stream.of(classRef.getDeclaredMethods())
+        .filter(m -> m.getParameterCount() == numberOfArgs)
+        .filter(m -> m.getName().equals(method))
+        .filter(m -> m.trySetAccessible())
+        .findFirst();
   }
 
   private static MalSequence listToMal(Collection<?> list) {

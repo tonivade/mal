@@ -5,14 +5,8 @@
 package mal;
 
 import static java.util.Objects.requireNonNull;
-import static mal.Interop.convertArgs;
-import static mal.Interop.toMal;
 import static mal.Trampoline.done;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -406,27 +400,6 @@ public sealed interface MalNode {
 
   static MalLambda lambda(Function<MalList, MalNode> lambda) {
     return args -> done(lambda.apply(args));
-  }
-
-  static MalLambda lambda(Method method) {
-    return args -> {
-      try {
-        var arguments = args.stream().map(Interop::toJava).toArray();
-        if (Modifier.isStatic(method.getModifiers())) {
-          var result = method.invoke(null, convertArgs(method, arguments));
-          return done(toMal(result));
-        } else if (arguments.length > 0) {
-          var result = method.invoke(arguments[0], convertArgs(method, Arrays.copyOfRange(arguments, 1, arguments.length)));
-          return done(toMal(result));
-        }
-        throw new MalException("expected argument for method: " + method);
-      } catch (IllegalAccessException e) {
-        throw new MalException("error calling method: " + method.getName());
-      } catch (InvocationTargetException e) {
-        e.printStackTrace();
-        throw new MalException("error calling method: " + method.getName());
-      }
-    };
   }
 
   static MalFunction function(MalLambda lambda) {
