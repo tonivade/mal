@@ -21,7 +21,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-class step9_try {
+class Step6 {
 
   private static final Env ENV = new Env();
 
@@ -34,7 +34,6 @@ class step9_try {
 
     rep("(def! not (fn* (a) (if a false true)))");
     rep("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\\nnil)\")))))");
-    rep("(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))");
 
     ENV.set(symbol("eval"), function(args -> {
       return safeEval(args.get(0), ENV);
@@ -62,7 +61,7 @@ class step9_try {
       try {
         IO.println(rep(line));
       } catch (RuntimeException e) {
-        System.err.println("ERROR: " + e.getMessage());
+        System.err.println(e.getMessage());
       }
     }
   }

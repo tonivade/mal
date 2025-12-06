@@ -9,7 +9,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-class step0_repl {
+class Step0 {
 
   static String read(String input) {
     return input;

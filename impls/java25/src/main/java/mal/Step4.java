@@ -13,14 +13,18 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-class step2_eval {
+class Step4 {
+
+  private static final Env ENV = new Env();
 
   static String rep(String input) {
-    return print(eval(read(input), new Env()), true);
+    return print(eval(read(input), ENV), true);
   }
 
   static void main(String... args) {
     String prompt = "user> ";
+
+    rep("(def! not (fn* (a) (if a false true)))");
 
     var reader = LineReaderBuilder.builder()
       .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)

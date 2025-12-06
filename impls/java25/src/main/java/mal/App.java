@@ -25,38 +25,38 @@ public class App implements Runnable {
   public void run() {
     switch (step) {
       case "step0_repl" -> {
-        step0_repl.main(rest);
+        Step0.main(rest);
       }
       case "step1_read_print" -> {
-        step1_read_print.main(rest);
+        Step1.main(rest);
       }
       case "step2_eval" -> {
-        step2_eval.main(rest);
+        Step2.main(rest);
       }
       case "step3_env" -> {
-        step3_env.main(rest);
+        Step3.main(rest);
       }
       case "step4_if_fn_do" -> {
-        step4_if_fn_do.main(rest);
+        Step4.main(rest);
       }
       case "step5_tco" -> {
-        step5_tco.main(rest);
+        Step5.main(rest);
       }
       case "step6_file" -> {
-        step6_file.main(rest);
+        Step6.main(rest);
       }
       case "step7_quote" -> {
-        step7_quote.main(rest);
+        Step7.main(rest);
       }
       case "step8_macros" -> {
-        step8_macros.main(rest);
+        Step8.main(rest);
       }
       case "step9_try" -> {
-        step9_try.main(rest);
+        Step9.main(rest);
       }
       case "stepA_mal" -> {
-        stepA_mal.setDebug(debug);
-        stepA_mal.main(rest);
+        StepA.setDebug(debug);
+        StepA.main(rest);
       }
       default -> throw new IllegalArgumentException("invalid step: " + step);
     }

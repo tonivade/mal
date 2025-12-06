@@ -4,6 +4,7 @@
  */
 package mal;
 
+import static mal.Evaluator.eval;
 import static mal.Printer.print;
 import static mal.Reader.read;
 
@@ -12,18 +13,18 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-class step1_read_print {
+class Step5 {
 
-  static MalNode eval(MalNode ast) {
-    return ast;
-  }
+  private static final Env ENV = new Env();
 
   static String rep(String input) {
-    return print(eval(read(input)), true);
+    return print(eval(read(input), ENV), true);
   }
 
   static void main(String... args) {
     String prompt = "user> ";
+
+    rep("(def! not (fn* (a) (if a false true)))");
 
     var reader = LineReaderBuilder.builder()
       .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
@@ -31,7 +32,7 @@ class step1_read_print {
     while (true) {
       String line = null;
       try {
-          line = reader.readLine(prompt);
+        line = reader.readLine(prompt);
       } catch (UserInterruptException e) {
         // Ignore
       } catch (EndOfFileException e) {

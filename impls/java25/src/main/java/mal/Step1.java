@@ -4,7 +4,6 @@
  */
 package mal;
 
-import static mal.Evaluator.eval;
 import static mal.Printer.print;
 import static mal.Reader.read;
 
@@ -13,12 +12,14 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-class step3_env {
+class Step1 {
 
-  private static final Env ENV = new Env();
+  static MalNode eval(MalNode ast) {
+    return ast;
+  }
 
   static String rep(String input) {
-    return print(eval(read(input), ENV), true);
+    return print(eval(read(input)), true);
   }
 
   static void main(String... args) {
@@ -30,7 +31,7 @@ class step3_env {
     while (true) {
       String line = null;
       try {
-        line = reader.readLine(prompt);
+          line = reader.readLine(prompt);
       } catch (UserInterruptException e) {
         // Ignore
       } catch (EndOfFileException e) {

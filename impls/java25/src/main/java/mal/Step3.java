@@ -13,7 +13,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 
-class step4_if_fn_do {
+class Step3 {
 
   private static final Env ENV = new Env();
 
@@ -23,8 +23,6 @@ class step4_if_fn_do {
 
   static void main(String... args) {
     String prompt = "user> ";
-
-    rep("(def! not (fn* (a) (if a false true)))");
 
     var reader = LineReaderBuilder.builder()
       .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)

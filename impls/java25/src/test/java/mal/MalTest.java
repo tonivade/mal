@@ -13,43 +13,43 @@ class MalTest {
 
   @Test
   void step0() {
-    assertEquals("hello", step0_repl.rep("hello"));
-    assertEquals("#", step0_repl.rep("#"));
-    assertEquals("$", step0_repl.rep("$"));
+    assertEquals("hello", Step0.rep("hello"));
+    assertEquals("#", Step0.rep("#"));
+    assertEquals("$", Step0.rep("$"));
   }
 
   @Test
   void step1() {
-    assertEquals("(a 1 2 3)", step1_read_print.rep("    (a    1 2 3   )"));
-    assertEquals("\"hello\"", step1_read_print.rep("\"hello\""));
-    assertEquals("\"hello\\\"hello\"", step1_read_print.rep("\"hello\\\"hello\""));
-    assertEquals("\"\"", step1_read_print.rep("\"\""));
-    assertEquals("\"\\n\"", step1_read_print.rep("\"\\n\""));
-    assertEquals("nil", step1_read_print.rep("nil"));
-    assertEquals("true", step1_read_print.rep("true"));
-    assertEquals("false", step1_read_print.rep("false"));
-    assertEquals("asdf", step1_read_print.rep("asdf"));
-    assertEquals(":asdf", step1_read_print.rep(":asdf"));
-    assertEquals("()", step1_read_print.rep("()"));
-    assertEquals("()", step1_read_print.rep("( )"));
-    assertEquals("(nil)", step1_read_print.rep("(nil)"));
-    assertEquals("((3 4))", step1_read_print.rep("((3 4))"));
-    assertThrows(MalException.class, () -> step1_read_print.rep("\""));
-    assertThrows(MalException.class, () -> step1_read_print.rep("("));
-    assertThrows(MalException.class, () -> step1_read_print.rep("["));
-    assertThrows(MalException.class, () -> step1_read_print.rep("{"));
+    assertEquals("(a 1 2 3)", Step1.rep("    (a    1 2 3   )"));
+    assertEquals("\"hello\"", Step1.rep("\"hello\""));
+    assertEquals("\"hello\\\"hello\"", Step1.rep("\"hello\\\"hello\""));
+    assertEquals("\"\"", Step1.rep("\"\""));
+    assertEquals("\"\\n\"", Step1.rep("\"\\n\""));
+    assertEquals("nil", Step1.rep("nil"));
+    assertEquals("true", Step1.rep("true"));
+    assertEquals("false", Step1.rep("false"));
+    assertEquals("asdf", Step1.rep("asdf"));
+    assertEquals(":asdf", Step1.rep(":asdf"));
+    assertEquals("()", Step1.rep("()"));
+    assertEquals("()", Step1.rep("( )"));
+    assertEquals("(nil)", Step1.rep("(nil)"));
+    assertEquals("((3 4))", Step1.rep("((3 4))"));
+    assertThrows(MalException.class, () -> Step1.rep("\""));
+    assertThrows(MalException.class, () -> Step1.rep("("));
+    assertThrows(MalException.class, () -> Step1.rep("["));
+    assertThrows(MalException.class, () -> Step1.rep("{"));
   }
 
   @Test
   void step2() {
-    assertEquals("3", step2_eval.rep("(+ 1 2)"));
-    assertEquals("-1", step2_eval.rep("(- 1 2)"));
-    assertEquals("4", step2_eval.rep("(* 2 2)"));
-    assertEquals("1", step2_eval.rep("(/ 2 2)"));
+    assertEquals("3", Step2.rep("(+ 1 2)"));
+    assertEquals("-1", Step2.rep("(- 1 2)"));
+    assertEquals("4", Step2.rep("(* 2 2)"));
+    assertEquals("1", Step2.rep("(/ 2 2)"));
   }
 
   @Test
   void stepA() {
-    assertEquals("6", stepA_mal.rep("(java-eval \"1 + 2 + 3\")"));
+    assertEquals("6", StepA.rep("(java-eval \"1 + 2 + 3\")"));
   }
 }
