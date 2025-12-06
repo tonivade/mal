@@ -12,16 +12,13 @@ public interface Strings {
 
   static List<List<String>> findMatches(String input, String regex) {
     var matcher = Pattern.compile(regex).matcher(input);
-
-    var fullResult = matcher.results().map(result -> {
+    return matcher.results().map(result -> {
       List<String> list = new ArrayList<>();
       list.add(result.group(0));
       for (int i = 1; i <= result.groupCount(); i++) {
-        var group = result.group(i);
-        list.add(group != null ? group : null);
+        list.add(result.group(i));
       }
       return list;
     }).toList();
-    return fullResult;
   }
 }
