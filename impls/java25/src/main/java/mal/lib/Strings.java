@@ -4,42 +4,24 @@
  */
 package mal.lib;
 
-import static java.util.Map.entry;
-import static mal.MalNode.NIL;
-import static mal.MalNode.function;
-import static mal.MalNode.lambda;
-import static mal.MalNode.list;
-import static mal.MalNode.string;
-
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.List;
 import java.util.regex.Pattern;
-import mal.MalNode;
-import mal.MalNode.MalLambda;
-import mal.MalNode.MalString;
 
 public interface Strings {
 
-  MalLambda FIND_MATCHES = lambda(args -> {
-    var input = (MalString) args.get(0);
-    var regex = (MalString) args.get(1);
-
-    var matcher = Pattern.compile(regex.value()).matcher(input.value());
+  static List<List<String>> findMatches(String input, String regex) {
+    var matcher = Pattern.compile(regex).matcher(input);
 
     var fullResult = matcher.results().map(result -> {
-      var list = new ArrayList<MalNode>();
-      list.add(string(result.group(0)));
+      List<String> list = new ArrayList<>();
+      list.add(result.group(0));
       for (int i = 1; i <= result.groupCount(); i++) {
         var group = result.group(i);
-        list.add(group != null ? string(group) : NIL);
+        list.add(group != null ? group : null);
       }
-      return list(list);
+      return list;
     }).toList();
-
-    return list(fullResult);
-  });
-
-  Map<String, MalNode> NS = Map.ofEntries(
-    entry("find-matches", function(FIND_MATCHES))
-  );
+    return fullResult;
+  }
 }

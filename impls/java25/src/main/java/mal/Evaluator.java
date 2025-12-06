@@ -42,12 +42,10 @@ import mal.MalNode.MalNumber;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
-import mal.lib.Strings;
 
 class Evaluator {
 
   private static final String IMPORT = "import";
-  private static final String REQUIRE = "require";
   private static final String QUASIQUOTE = "quasiquote";
   private static final String QUOTE_ = "quote";
   private static final String FN = "fn*";
@@ -56,8 +54,6 @@ class Evaluator {
   private static final String LET = "let*";
   private static final String DEFMACRO = "defmacro!";
   private static final String DEF = "def!";
-
-  private static final Map<MalSymbol, Map<String, MalNode>> LIBS = Map.of(symbol("str"), Strings.NS);
 
   static MalNode eval(MalNode ast, Env env) {
     return safeEval(ast, env).run();
@@ -166,20 +162,6 @@ class Evaluator {
 
       case MalSymbol(var name, _) when name.equals(QUASIQUOTE) -> {
         yield evalQuasiquote(values.get(1)).flatMap(result -> safeEval(result, env));
-      }
-
-      case MalSymbol(var name, _) when name.equals(REQUIRE) -> {
-        var lib = (MalSymbol) values.get(1);
-        if (LIBS.containsKey(lib)) {
-          var method = (MalSymbol) values.get(2);
-          var function = LIBS.get(lib).get(method.name());
-          if (function == null) {
-            throw new MalException("function not found: " + method.name());
-          }
-          env.set(method, function);
-          yield done(function);
-        }
-        throw new MalException("namespace not found: " + lib.name());
       }
 
       case MalSymbol(var name, _) when name.equals(IMPORT) -> {
