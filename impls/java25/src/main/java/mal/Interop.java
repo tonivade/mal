@@ -26,11 +26,15 @@ import java.util.stream.Stream;
 
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalKey;
+import mal.MalNode.MalKeyword;
 import mal.MalNode.MalLambda;
+import mal.MalNode.MalList;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalString;
+import mal.MalNode.MalSymbol;
+import mal.MalNode.MalVector;
 
 class Interop {
 
@@ -79,7 +83,12 @@ class Interop {
   static Object toJava(MalNode node) {
     return switch (node) {
       case MalString(var value, _) -> value;
+      case MalSymbol(var value, _) -> value;
+      case MalKeyword(var value, _) -> value;
       case MalNumber(var value, _) -> value;
+      case MalMap(var value, _) -> value;
+      case MalList(var value, _) -> value;
+      case MalVector(var value, _) -> value;
       case MalConstant(var value, _) when value.equals("true") -> true;
       case MalConstant(var value, _) when value.equals("false") -> false;
       case MalConstant(var value, _) when value.equals("nil") -> null;
@@ -87,7 +96,7 @@ class Interop {
     };
   }
 
-  static Object[] convertArgs(Method method, Object[] arguments) {
+  private static Object[] convertArgs(Method method, Object[] arguments) {
     var params = method.getParameterTypes();
     if (params.length != arguments.length) {
       throw new MalException("expected " + params.length + " arguments but got " + arguments.length);
