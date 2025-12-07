@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -434,7 +435,7 @@ public sealed interface MalNode {
       }
       return true;
     }
-    return first.equals(second);
+    return Objects.equals(first, second);
   }
 
   private static Map<MalKey, MalNode> toMap(Collection<MalNode> tokens) {
