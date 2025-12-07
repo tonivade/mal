@@ -72,7 +72,7 @@ public sealed interface MalNode {
     }
 
     public void setValue(MalNode value) {
-      this.value = value;
+      this.value = requireNonNull(value);
     }
 
     @Override
@@ -86,8 +86,22 @@ public sealed interface MalNode {
     }
 
     @Override
+    public int hashCode() {
+      return Objects.hash(value, meta);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null || !(obj instanceof MalAtom other)) {
+        return false;
+      }
+      return Objects.equals(this.value, other.value) &&
+          Objects.equals(this.meta, other.meta);
+    }
+
+    @Override
     public String toString() {
-      return "MalAtom[" + value + "]";
+      return "MalAtom[value=" + value + ", meta=" + meta +"]";
     }
   }
 
