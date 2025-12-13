@@ -397,6 +397,10 @@ public sealed interface MalNode {
     return new MalNumber(value, null);
   }
 
+  static MalNumber number(double value) {
+    return number((long) value);
+  }
+
   static MalString string(String value) {
     return new MalString(value, null);
   }

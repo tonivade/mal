@@ -71,6 +71,10 @@ class Interop {
       case Boolean b -> b ? TRUE : FALSE;
       case Integer i -> number(i);
       case Long l -> number(l);
+      case Byte b -> number(b);
+      case Short s -> number(s);
+      case Float f -> number(f);
+      case Double d -> number(d);
       case Collection<?> l -> listToMal(l);
       case Map<?, ?> m -> mapToMal(m);
       case Stream<?> s -> listToMal(s.toList());
@@ -102,11 +106,13 @@ class Interop {
       throw new MalException("expected " + params.length + " arguments but got " + arguments.length);
     }
     for (int i = 0; i < params.length; i++) {
-      if (params[i].isPrimitive()) {
-        if (params[i] == int.class && arguments[i] instanceof Long l) {
-          arguments[i] = l.intValue();
-        } else if (params[i] == long.class && arguments[i] instanceof Integer n) {
-          arguments[i] = n.longValue();
+      if (params[i].isPrimitive() && arguments[i] instanceof Number n) {
+        if (params[i] == int.class) {
+          arguments[i] = n.intValue();
+        } else if (params[i] == short.class) {
+          arguments[i] = n.shortValue();
+        } else if (params[i] == byte.class) {
+          arguments[i] = n.byteValue();
         }
       }
     }
