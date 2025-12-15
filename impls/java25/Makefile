@@ -1,6 +1,7 @@
 # Copyright (c) 2024-2025, Antonio Gabriel Muñoz Conejo <me AT tonivade DOT es>
 # Distributed under the terms of the MIT License
 
+SHELL := /bin/bash
 GRADLE := ./gradlew
 JAR_NAME := mal.jar
 GRADLE_JAR := build/libs/mal-0.1-SNAPSHOT-all.jar
@@ -10,12 +11,12 @@ CLASS_DIR := build/classes/java/main
 all: $(JAR_NAME)
 
 $(GRADLE_JAR):
-	$(GRADLE) build
+	source ${HOME}/.sdkman/bin/sdkman-init.sh && $(GRADLE) build
 
 $(JAR_NAME): $(GRADLE_JAR)
 	cp $< $@
 
-$(CLASS_DIR)/mal/step%.class: $(GRADLE_JAR)
+$(CLASS_DIR)/mal/step%.class: $(JAR_NAME)
 	@true
 
 .PHONY: dist
