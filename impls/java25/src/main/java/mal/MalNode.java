@@ -352,6 +352,10 @@ public sealed interface MalNode {
     return map(List.of(tokens));
   }
 
+  static MalMap map(MalSequence tokens) {
+    return map(tokens.values());
+  }
+
   static MalMap map(Collection<MalNode> tokens) {
     return map(toMap(tokens));
   }
@@ -371,6 +375,10 @@ public sealed interface MalNode {
     return vector(ImmutableList.from(tokens));
   }
 
+  static MalVector vector(MalSequence tokens) {
+    return vector(tokens.values());
+  }
+
   static MalVector vector(Collection<? extends MalNode> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_VECTOR;
@@ -384,6 +392,10 @@ public sealed interface MalNode {
 
   static MalList list(Stream<? extends MalNode> tokens) {
     return list(ImmutableList.from(tokens));
+  }
+
+  static MalList list(MalSequence tokens) {
+    return list(tokens.values());
   }
 
   static MalList list(Collection<? extends MalNode> tokens) {
