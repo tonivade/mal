@@ -1,15 +1,27 @@
 # Copyright (c) 2024-2025, Antonio Gabriel Muñoz Conejo <me AT tonivade DOT es>
 # Distributed under the terms of the MIT License
-all:
-	./gradlew build
 
-dist: mal.jar
+GRADLE := ./gradlew
+JAR_NAME := mal.jar
+GRADLE_JAR := build/libs/mal-0.1-SNAPSHOT-all.jar
+CLASS_DIR := build/classes/java/main
 
-mal.jar: all
-	cp build/libs/mal-0.1-SNAPSHOT-all.jar $@
+.PHONY: all
+all: $(JAR_NAME)
 
-build/classes/java/main/mal/step%.class:
-	echo nothing to do
+$(GRADLE_JAR):
+	$(GRADLE) build
 
+$(JAR_NAME): $(GRADLE_JAR)
+	cp $< $@
+
+$(CLASS_DIR)/mal/step%.class: $(GRADLE_JAR)
+	@true
+
+.PHONY: dist
+dist: $(JAR_NAME)
+
+.PHONY: clean
 clean:
-	rm -f mal.jar
+	rm -f $(JAR_NAME)
+	$(GRADLE) clean
