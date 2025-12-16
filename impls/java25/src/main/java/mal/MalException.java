@@ -14,12 +14,21 @@ public class MalException extends RuntimeException {
 
   private final MalNode node;
 
-  public MalException(MalNode node) {
+  public MalException(MalNode node, Throwable cause) {
+    super(cause);
     this.node = requireNonNull(node);
   }
 
+  public MalException(String message, Throwable cause) {
+    this(string(message), cause);
+  }
+
+  public MalException(MalNode node) {
+    this(node, null);
+  }
+
   public MalException(String message) {
-    this(string(message));
+    this(string(message), null);
   }
 
   @Override

@@ -419,11 +419,11 @@ interface Core {
       }
       throw new MalException("invalid definition");
     } catch (CompileException e) {
-      throw new MalException(e.getMessage());
+      throw new MalException("eval error", e);
     } catch (InvocationTargetException e) {
-      throw new MalException(e.getMessage());
+      throw new MalException("eval error", e);
     } catch (RuntimeException e) {
-      throw new MalException(e.getMessage());
+      throw new MalException("eval error", e);
     }
   }
 

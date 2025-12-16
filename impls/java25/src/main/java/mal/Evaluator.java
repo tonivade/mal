@@ -125,7 +125,7 @@ class Evaluator {
           yield done(eval(body, env));
         } catch (RuntimeException e) {
           if (values.size() < 3) {
-            throw new MalException(e.getMessage());
+            throw new MalException("invalid try definition", e);
           }
           var catch_ = (MalList) values.get(2);
           var symbol = (MalSymbol) catch_.get(1);

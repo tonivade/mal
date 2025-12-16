@@ -54,13 +54,13 @@ class Interop {
           }
           throw new MalException("expected argument for method: " + methodRef.getName());
         } catch (IllegalAccessException e) {
-          throw new MalException("error calling method: " + methodRef.getName());
+          throw new MalException("error calling method: " + methodRef.getName(), e);
         } catch (InvocationTargetException e) {
-          throw new MalException("error calling method: " + methodRef.getName());
+          throw new MalException("error calling method: " + methodRef.getName(), e);
         }
       };
     } catch (ClassNotFoundException e) {
-      throw new MalException("class not found: " + clazz);
+      throw new MalException("class not found: " + clazz, e);
     }
   }
 
