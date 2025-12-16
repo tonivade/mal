@@ -7,6 +7,8 @@ plugins {
   id 'com.gradleup.shadow' version '9.3.0'
   id 'org.graalvm.buildtools.native' version '0.11.3'
 }
+
+group = 'com.github.tonivade'
  
 repositories {
   mavenLocal()
@@ -22,10 +24,13 @@ java {
 tasks.withType(JavaCompile) {
   options.compilerArgs << '-Xlint:unchecked'
   options.compilerArgs << '-Xlint:rawtypes'
+  options.compilerArgs << "-Aproject=${project.group}/${project.name}"
   options.release = 25
 }
  
 dependencies {
+  annotationProcessor 'info.picocli:picocli-codegen:4.7.7'
+
   implementation 'org.jline:jline-terminal-ffm:3.30.6'
   implementation 'org.jline:jline-reader:3.30.6'
   implementation 'info.picocli:picocli:4.7.7'
