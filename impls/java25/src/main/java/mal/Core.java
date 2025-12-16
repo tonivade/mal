@@ -358,7 +358,7 @@ interface Core {
     return line != null ? string(line) : NIL;
   }
 
-  static MalNumber timeMs(MalList args) {
+  static MalNumber timeMs() {
     return number(System.currentTimeMillis());
   }
 
@@ -482,7 +482,7 @@ interface Core {
     entry("assoc", function(lambda(Core::assoc))),
     entry("dissoc", function(lambda(Core::dissoc))),
     entry("readline", function(lambda(Core::readLine))),
-    entry("time-ms", function(lambda(Core::timeMs))),
+    entry("time-ms", function(lambda(_ -> timeMs()))),
     entry("meta", function(lambda(Core::meta))),
     entry("with-meta", function(lambda(Core::withMeta))),
     entry("fn?", function(lambda(Core::isFunction))),
