@@ -1,0 +1,22 @@
+[
+  {
+    "name":"java.lang.String",
+    "allPublicMethods":true
+  },
+  {
+    "name":"java.lang.Integer",
+    "allPublicMethods":true
+  },
+  {
+    "name":"java.lang.Long",
+    "allPublicMethods":true
+  },
+  {
+    "name":"java.lang.Math",
+    "allPublicMethods":true
+  },
+  {
+    "name":"mal.libs.Strings",
+    "allPublicMethods":true
+  }
+]
