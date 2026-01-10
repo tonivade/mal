@@ -29,8 +29,10 @@ import static mal.Trampoline.zip;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
+import mal.MalNode.MalLazy;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
@@ -41,6 +43,7 @@ import mal.MalNode.MalVector;
 
 class Evaluator {
 
+  private static final String LAZY_SEQ = "lazy-seq";
   private static final String IMPORT = "import";
   private static final String QUASIQUOTE = "quasiquote";
   private static final String QUOTE_ = "quote";
@@ -126,7 +129,7 @@ class Evaluator {
           yield done(eval(body, env));
         } catch (RuntimeException e) {
           if (values.size() < 3) {
-            throw new MalException("invalid try definition", e);
+            throw new MalException(e.getMessage());
           }
           var catch_ = (MalList) values.get(2);
           var symbol = (MalSymbol) catch_.get(1);
@@ -167,6 +170,11 @@ class Evaluator {
         var function = function(Interop.toLambda(clazz.name(), method.name(), numberOfArgs));
         env.set(method, function);
         yield done(function);
+      }
+
+      case MalSymbol(var name, _) when name.equals(LAZY_SEQ) -> {
+        var body = values.get(1);
+        yield done(new MalLazy(() -> eval(body, env), null));
       }
 
       case MalMacro(var lambda, _) -> {

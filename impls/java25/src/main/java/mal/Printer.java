@@ -6,16 +6,22 @@ package mal;
 
 import static java.util.stream.Collectors.joining;
 import static mal.Trampoline.done;
-import static mal.Trampoline.zip;
 import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
+import static mal.Trampoline.sequence;
+import static mal.Trampoline.zip;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import mal.MalNode.MalAtom;
+import mal.MalNode.MalCons;
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalError;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKeyword;
+import mal.MalNode.MalLazy;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
@@ -54,6 +60,21 @@ class Printer {
         case MalAtom atom -> safePrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
         case MalFunction _ -> done("#function");
         case MalMacro _ -> done("#function");
+        case MalLazy _ -> done("#lazy");
+        case MalCons(var head, var tail, _) -> {
+          List<Trampoline<String>> parts = new ArrayList<>();
+          parts.add(safePrint(head, pretty));
+          MalNode current = tail;
+          while (current instanceof MalCons cons) {
+            parts.add(safePrint(cons.first(), pretty));
+            current = cons.rest();
+          }
+          if (!(current instanceof MalList) || !((MalList) current).isEmpty()) {
+            parts.add(done("."));
+            parts.add(safePrint(current, pretty));
+          }
+          yield sequence(parts).map(l -> l.stream().collect(joining(" ", "(", ")")));
+        }
         case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
         case MalError(var exception, _) -> done(exception.getMessage());
       };

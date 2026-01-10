@@ -35,6 +35,7 @@ import mal.MalNode.MalAtom;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalKeyword;
+import mal.MalNode.MalLazy;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
@@ -192,21 +193,21 @@ interface Core {
   static MalNode cons(MalList args) {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
-    return list(list.values().prepend(item));
+    return list.prepend(item);
   }
 
   static MalNode concat(MalList args) {
     var result = args.stream()
       .map(MalSequence.class::cast)
-      .map(MalSequence::values)
-      .reduce(ImmutableList.<MalNode>builder(), ImmutableList.Builder::merge, ImmutableList.Builder::merge)
+      .flatMap(MalSequence::stream)
+      .reduce(ImmutableList.<MalNode>builder(), ImmutableList.Builder::append, ImmutableList.Builder::merge)
       .build();
     return list(result);
   }
 
   static MalNode vec(MalList args) {
     var list = (MalSequence) args.get(0);
-    return vector(list.values());
+    return vector(list);
   }
 
   static MalNode isMacro(MalList args) {
@@ -241,7 +242,7 @@ interface Core {
     if (list.isEmpty()) {
       return EMPTY_LIST;
     }
-    return list(list.values().dropFirst());
+    return list.rest();
   }
 
   static MalNode raise(MalList args) {
@@ -382,6 +383,7 @@ interface Core {
     return switch (args.get(0)) {
       case MalList(var values, _) when values.isEmpty() -> NIL;
       case MalList(var values, _) -> list(values);
+      case MalLazy lazy when lazy.isEmpty() -> NIL;
       case MalVector(var values, _) when values.isEmpty() -> NIL;
       case MalVector(var values, _) -> list(values);
       case MalString(var value, _) when value.isEmpty() -> NIL;

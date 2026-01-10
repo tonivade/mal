@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public sealed interface MalNode {
@@ -197,31 +198,19 @@ public sealed interface MalNode {
 
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
-    ImmutableList<MalNode> values();
+    MalSequence prepend(MalNode node);
 
-    @Override
-    default Iterator<MalNode> iterator() {
-      return values().iterator();
-    }
+    MalNode get(int pos);
 
-    default MalNode get(int i) {
-      if (i < 0 || i >= values().size()) {
-        return NIL;
-      }
-      return values().get(i);
-    }
+    MalNode first();
 
-    default Stream<MalNode> stream() {
-      return values().stream();
-    }
+    MalSequence rest();
 
-    default boolean isEmpty() {
-      return size() == 0;
-    }
+    boolean isEmpty();
 
-    default int size() {
-      return values().size();
-    }
+    int size();
+
+    Stream<MalNode> stream();
   }
 
   record MalList(ImmutableList<MalNode> values, MalNode meta) implements MalSequence {
@@ -231,8 +220,51 @@ public sealed interface MalNode {
     }
 
     @Override
+    public MalList prepend(MalNode node) {
+      return new MalList(values.prepend(node), meta);
+    }
+
+    @Override
+    public MalNode get(int pos) {
+      if (pos < 0 || pos >= values.size()) {
+        return NIL;
+      }
+      return values.get(pos);
+    }
+
+    @Override
+    public Iterator<MalNode> iterator() {
+      return values.iterator();
+    }
+
+    @Override
+    public Stream<MalNode> stream() {
+      return values.stream();
+    }
+
+    @Override
+    public MalNode first() {
+      return values.getFirst();
+    }
+
+    @Override
+    public MalList rest() {
+      return list(values.dropFirst());
+    }
+
+    @Override
     public MalList withMeta(MalNode meta) {
       return new MalList(values, meta);
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return values.isEmpty();
+    }
+
+    @Override
+    public int size() {
+      return values.size();
     }
   }
 
@@ -243,8 +275,183 @@ public sealed interface MalNode {
     }
 
     @Override
+    public MalList prepend(MalNode node) {
+      return new MalList(values.prepend(node), meta);
+    }
+
+    @Override
+    public MalNode get(int pos) {
+      if (pos < 0 || pos >= values.size()) {
+        return NIL;
+      }
+      return values.get(pos);
+    }
+
+    @Override
+    public Iterator<MalNode> iterator() {
+      return values.iterator();
+    }
+
+    @Override
+    public Stream<MalNode> stream() {
+      return values.stream();
+    }
+
+    @Override
+    public MalNode first() {
+      return values.getFirst();
+    }
+
+    @Override
+    public MalList rest() {
+      return list(values.dropFirst());
+    }
+
+    @Override
     public MalVector withMeta(MalNode meta) {
       return new MalVector(values, meta);
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return values.isEmpty();
+    }
+
+    @Override
+    public int size() {
+      return values.size();
+    }
+  }
+
+  record MalCons(MalNode first, MalSequence rest, MalNode meta) implements MalSequence {
+
+    @Override
+    public MalSequence prepend(MalNode node) {
+      return new MalCons(node, this, meta);
+    }
+
+    @Override
+    public MalNode get(int pos) {
+      if (pos == 0) {
+        return first;
+      }
+      throw new UnsupportedOperationException("get() is not supported on cons cells");
+    }
+
+    @Override
+    public Iterator<MalNode> iterator() {
+      throw new UnsupportedOperationException("iterator() is not supported on cons cells");
+    }
+
+    @Override
+    public Stream<MalNode> stream() {
+      throw new UnsupportedOperationException("stream() is not supported on cons cells");
+    }
+
+    @Override
+    public MalNode withMeta(MalNode meta) {
+      return new MalCons(first, rest, meta);
+    }
+
+    @Override
+    public MalNode meta() {
+      return meta;
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return false;
+    }
+
+    @Override
+    public int size() {
+      throw new UnsupportedOperationException("size() is not supported on cons cells");
+    }
+  }
+
+  final class MalLazy implements MalSequence {
+
+    private final MalNode meta;
+    private Supplier<MalNode> thunk;
+    private MalSequence value;
+    private boolean realized;
+
+    public MalLazy(Supplier<MalNode> value, MalNode meta) {
+      this.thunk = value;
+      this.meta = meta;
+    }
+
+    @Override
+    public MalSequence prepend(MalNode node) {
+      return new MalCons(node, this, meta);
+    }
+
+    @Override
+    public MalNode get(int pos) {
+      if (pos == 0) {
+        return first();
+      }
+      throw new UnsupportedOperationException("get() is not supported on lazy sequences");
+    }
+
+    @Override
+    public MalNode withMeta(MalNode meta) {
+      return new MalLazy(thunk, meta);
+    }
+
+    @Override
+    public MalNode meta() {
+      return meta;
+    }
+
+    @Override
+    public Iterator<MalNode> iterator() {
+      throw new UnsupportedOperationException("iterator() is not supported on lazy sequences");
+    }
+
+    @Override
+    public Stream<MalNode> stream() {
+      throw new UnsupportedOperationException("stream() is not supported on lazy sequences");
+    }
+
+    @Override
+    public MalNode first() {
+      force();
+      return value.first();
+    }
+
+    @Override
+    public MalSequence rest() {
+      force();
+      return value.rest();
+    }
+
+    @Override
+    public boolean isEmpty() {
+      force();
+      return value.isEmpty();
+    }
+
+    @Override
+    public int size() {
+      throw new UnsupportedOperationException("size() is not supported on lazy sequences");
+    }
+
+    private void force() {
+      if (!realized) {
+        MalNode result = thunk.get();
+
+        if (result == NIL) {
+          value = EMPTY_LIST;
+        } else if (result instanceof MalSequence seq) {
+          value = seq;
+        } else {
+          throw new MalException("lazy-seq must return a sequence or nil, got: " + result);
+        }
+
+        thunk = null;
+        realized = true;
+      }
     }
   }
 
@@ -353,7 +560,7 @@ public sealed interface MalNode {
   }
 
   static MalMap map(MalSequence tokens) {
-    return map(tokens.values());
+    return map(toMap(tokens));
   }
 
   static MalMap map(Collection<MalNode> tokens) {
@@ -376,7 +583,16 @@ public sealed interface MalNode {
   }
 
   static MalVector vector(MalSequence tokens) {
-    return vector(tokens.values());
+    if (tokens.isEmpty()) {
+      return EMPTY_VECTOR;
+    }
+    if (tokens instanceof MalVector vec) {
+      return vec;
+    }
+    if (tokens instanceof MalList list) {
+      return vector(list.values());
+    }
+    return vector(tokens.stream());
   }
 
   static MalVector vector(Collection<? extends MalNode> tokens) {
@@ -395,7 +611,16 @@ public sealed interface MalNode {
   }
 
   static MalList list(MalSequence tokens) {
-    return list(tokens.values());
+    if (tokens.isEmpty()) {
+      return EMPTY_LIST;
+    }
+    if (tokens instanceof MalList list) {
+      return list;
+    }
+    if (tokens instanceof MalVector vec) {
+      return list(vec.values());
+    }
+    return list(tokens.stream());
   }
 
   static MalList list(Collection<? extends MalNode> tokens) {
@@ -468,7 +693,7 @@ public sealed interface MalNode {
     return Objects.equals(first, second);
   }
 
-  private static Map<MalKey, MalNode> toMap(Collection<MalNode> tokens) {
+  private static Map<MalKey, MalNode> toMap(Iterable<MalNode> tokens) {
     Map<MalKey, MalNode> map = new LinkedHashMap<>();
     for (var iterator = tokens.iterator(); iterator.hasNext();) {
       var key = (MalKey) iterator.next();
