@@ -27,6 +27,7 @@ import mal.MalNode.MalNumber;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalString;
 import mal.MalNode.MalSymbol;
+import mal.MalNode.MalVector;
 
 class Printer {
 
@@ -53,6 +54,10 @@ class Printer {
         case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
         case MalError(var exception, _) -> done(exception.getMessage());
         case MalLazy _ -> done("#lazy");
+        case MalVector(var list, _) -> {
+          yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
+            .map(l -> l.stream().collect(joining(" ", "[", "]")));
+        }
         case MalSequence sequence when sequence.isEmpty() -> done("()");
         case MalSequence sequence -> {
           List<Trampoline<String>> parts = new ArrayList<>();

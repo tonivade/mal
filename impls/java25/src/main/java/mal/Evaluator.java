@@ -151,7 +151,7 @@ class Evaluator {
       case MalSymbol(var name, _) when name.equals(FN) -> {
         yield done(function(args -> {
           var newEnv = new Env(env, (MalSequence) values.get(1), args);
-          return eval(values.get(2), newEnv);
+          return safeEval(values.get(2), newEnv);
         }));
       }
 
@@ -178,15 +178,16 @@ class Evaluator {
       }
 
       case MalMacro(var lambda, _) -> {
-        var next = lambda.apply(list(values.dropFirst()));
-        yield safeEval(next, env);
+        yield lambda.apply(list(values.dropFirst()))
+          .flatMap(next -> safeEval(next, env));
       }
 
       case MalFunction(var lambda, _) -> {
         var later = values.dropFirst().stream()
           .map(m -> safeEval(m, env))
           .collect(toImmutableList());
-        yield sequence(later).map(args -> lambda.apply(list(args)));
+        yield sequence(later)
+          .flatMap(args -> lambda.apply(list(args)));
       }
 
       default -> {

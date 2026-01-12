@@ -5,6 +5,7 @@
 package mal;
 
 import static mal.Evaluator.eval;
+import static mal.Evaluator.safeEval;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.function;
 import static mal.MalNode.list;
@@ -36,7 +37,7 @@ class Step9 {
     rep("(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))");
 
     ENV.set(symbol("eval"), function(args -> {
-      return eval(args.get(0), ENV);
+      return safeEval(args.get(0), ENV);
     }));
 
     ENV.set(symbol("*ARGV*"), argv(arguments));

@@ -5,6 +5,8 @@
 package mal;
 
 import static java.util.Objects.requireNonNull;
+import static mal.Trampoline.done;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -398,12 +401,12 @@ public sealed interface MalNode {
 
     @Override
     public MalNode get(int pos) {
-      return lambda.apply(list(sequence.get(0)));
+      return lambda.apply(list(sequence.get(0))).run();
     }
 
     @Override
     public MalNode first() {
-      return lambda.apply(list(sequence.first()));
+      return lambda.apply(list(sequence.first())).run();
     }
 
     @Override
@@ -575,12 +578,10 @@ public sealed interface MalNode {
 
   @FunctionalInterface
   interface MalLambda {
-
-    MalNode apply(MalList args);
+    Trampoline<MalNode> apply(MalList args);
   }
 
   sealed interface MalWithLambda extends MalNode {
-
     MalLambda lambda();
   }
 
@@ -717,6 +718,10 @@ public sealed interface MalNode {
 
   static MalAtom atom(MalNode value) {
     return new MalAtom(value, null);
+  }
+
+  static MalLambda lambda(Function<MalList, MalNode> lambda) {
+    return args -> done(lambda.apply(args));
   }
 
   static MalFunction function(MalLambda lambda) {
