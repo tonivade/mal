@@ -84,19 +84,15 @@ final class ImmutableList<E> implements Collection<E> {
   @SuppressWarnings("unchecked")
   public static <T> ImmutableList<T> from(Stream<? extends T> stream, int segmentCapacity) {
     Objects.requireNonNull(stream);
-    return (ImmutableList<T>) fromIterable(stream::iterator, segmentCapacity);
+    return (ImmutableList<T>) from(stream::iterator, segmentCapacity);
   }
 
-  public static <T> ImmutableList<T> from(Collection<? extends T> elems) {
+  public static <T> ImmutableList<T> from(Iterable<? extends T> elems) {
     return from(elems, DEFAULT_SEGMENT_SIZE);
   }
 
-  public static <T> ImmutableList<T> from(Collection<? extends T> elems, int segmentCapacity) {
-    return fromIterable(elems, segmentCapacity);
-  }
-
   @SuppressWarnings("unchecked")
-  private static <T> ImmutableList<T> fromIterable(Iterable<? extends T> elems, int segmentCapacity) {
+  public static <T> ImmutableList<T> from(Iterable<? extends T> elems, int segmentCapacity) {
     Objects.requireNonNull(elems);
     if (elems instanceof ImmutableList<?>) {
       return (ImmutableList<T>) elems;

@@ -49,14 +49,20 @@ import mal.MalNode.MalWithLambda;
 interface Core {
 
   static MalNode prn(MalList args) {
-    var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
-    IO.println(result);
+    var result = new StringBuilder();
+    for (var m : args) {
+      result.append(print(m, true)).append(" ");
+    }
+    IO.println(result.toString());
     return NIL;
   }
 
   static MalNode println(MalList args) {
-    var result = args.stream().map(m -> print(m, false)).collect(joining(" "));
-    IO.println(result);
+    var result = new StringBuilder();
+    for (var m : args) {
+      result.append(print(m, false)).append(" ");
+    }
+    IO.println(result.toString());
     return NIL;
   }
 
@@ -136,13 +142,19 @@ interface Core {
   }
 
   static MalNode prStr(MalList args) {
-    var result = args.stream().map(m -> print(m, true)).collect(joining(" "));
-    return string(result);
+    StringBuilder result = new StringBuilder();
+    for (var m : args) {
+      result.append(print(m, true));
+    }
+    return string(result.toString());
   }
 
   static MalNode str(MalList args) {
-    var result = args.stream().map(m -> print(m, false)).collect(joining(""));
-    return string(result);
+    var result = new StringBuilder();
+    for (var m : args) {
+      result.append(print(m, false));
+    }
+    return string(result.toString());
   }
 
   static MalNode readString(MalList args) {
@@ -395,11 +407,11 @@ interface Core {
   static MalNode conj(MalList args) {
     return switch (args.get(0)) {
       case MalList(var values, _) -> {
-        var newValues = values.toBuilder().prependAll(args.stream().skip(1)::iterator).build();
+        var newValues = values.toBuilder().prependAll(args.rest()).build();
         yield list(newValues);
       }
       case MalVector(var values, _) -> {
-        var newValues = values.toBuilder().appendAll(args.stream().skip(1)::iterator).build();
+        var newValues = values.toBuilder().appendAll(args.rest()).build();
         yield vector(newValues);
       }
       default -> throw new MalException("invalid definition");

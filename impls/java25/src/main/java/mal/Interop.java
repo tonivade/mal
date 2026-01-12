@@ -44,7 +44,10 @@ class Interop {
           .orElseThrow(() -> new MalException("method not found " + method));
       return args -> {
         try {
-          var arguments = args.stream().map(Interop::toJava).toArray();
+          var arguments = new Object[args.size()];
+          for (int i = 0; i < args.size(); i++) {
+            arguments[i] = toJava(args.get(i));
+          }
           if (Modifier.isStatic(methodRef.getModifiers())) {
             var result = methodRef.invoke(null, convertArgs(methodRef, arguments));
             return done(toMal(result));
