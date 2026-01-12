@@ -5,7 +5,6 @@
 package mal;
 
 import static mal.Evaluator.eval;
-import static mal.Evaluator.safeEval;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.function;
 import static mal.MalNode.list;
@@ -36,7 +35,7 @@ class Step6 {
     rep("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\\nnil)\")))))");
 
     ENV.set(symbol("eval"), function(args -> {
-      return safeEval(args.get(0), ENV);
+      return eval(args.get(0), ENV);
     }));
 
     ENV.set(symbol("*ARGV*"), argv(arguments));

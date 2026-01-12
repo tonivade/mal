@@ -16,19 +16,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import mal.MalNode.MalAtom;
-import mal.MalNode.MalCons;
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalError;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKeyword;
 import mal.MalNode.MalLazy;
-import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
+import mal.MalNode.MalSequence;
 import mal.MalNode.MalString;
 import mal.MalNode.MalSymbol;
-import mal.MalNode.MalVector;
 
 class Printer {
 
@@ -45,14 +43,6 @@ class Printer {
         case MalString(var value, _) -> done("\"" + escapeJava(value) + "\"");
         case MalKeyword(var value, _) -> done(":" + value);
         case MalNumber(var value, _) -> done(Long.toString(value));
-        case MalList(var list, _) -> {
-          yield traverse(list, m -> safePrint(m, pretty))
-            .map(l -> l.stream().collect(joining(" ", "(", ")")));
-        }
-        case MalVector(var list, _) -> {
-          yield traverse(list, m -> safePrint(m, pretty))
-            .map(l -> l.stream().collect(joining(" ", "[", "]")));
-        }
         case MalMap(var map, _) -> {
           yield traverse(map.entrySet(), entry -> zip(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), Printer::concat))
             .map(l -> l.stream().collect(joining(" ", "{", "}")));
@@ -60,23 +50,19 @@ class Printer {
         case MalAtom atom -> safePrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
         case MalFunction _ -> done("#function");
         case MalMacro _ -> done("#function");
+        case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
+        case MalError(var exception, _) -> done(exception.getMessage());
         case MalLazy _ -> done("#lazy");
-        case MalCons(var head, var tail, _) -> {
+        case MalSequence sequence when sequence.isEmpty() -> done("()");
+        case MalSequence sequence -> {
           List<Trampoline<String>> parts = new ArrayList<>();
-          parts.add(safePrint(head, pretty));
-          MalNode current = tail;
-          while (current instanceof MalCons cons) {
-            parts.add(safePrint(cons.first(), pretty));
-            current = cons.rest();
-          }
-          if (!(current instanceof MalList) || !((MalList) current).isEmpty()) {
-            parts.add(done("."));
-            parts.add(safePrint(current, pretty));
+          parts.add(safePrint(sequence.first(), pretty));
+          for (var current = sequence.rest(); !current.isEmpty();) {
+            parts.add(safePrint(current.first(), pretty));
+            current = current.rest();
           }
           yield sequence(parts).map(l -> l.stream().collect(joining(" ", "(", ")")));
         }
-        case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
-        case MalError(var exception, _) -> done(exception.getMessage());
       };
     });
   }

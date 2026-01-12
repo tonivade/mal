@@ -5,22 +5,19 @@
 package mal;
 
 import static java.util.Map.entry;
-import static java.util.stream.Collectors.joining;
 import static mal.Interop.toMal;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
 import static mal.MalNode.function;
-import static mal.MalNode.lambda;
 import static mal.MalNode.list;
-import static mal.MalNode.map;
 import static mal.MalNode.number;
 import static mal.MalNode.string;
 import static mal.MalNode.vector;
 import static mal.Printer.print;
 import static mal.Reader.read;
-import static mal.Trampoline.traverse;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -31,11 +28,11 @@ import java.util.stream.Stream;
 
 import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
+
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalKeyword;
-import mal.MalNode.MalLazy;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
@@ -192,29 +189,27 @@ interface Core {
     return newValue;
   }
 
-  static Trampoline<MalNode> swap(MalList args) {
+  static MalNode swap(MalList args) {
     var atom = (MalAtom) args.get(0);
     var function = (MalWithLambda) args.get(1);
     var newArgs = args.values().dropFirst().dropFirst().prepend(atom.getValue());
-    return function.lambda().apply(list(newArgs)).map(newValue -> {
-      atom.setValue(newValue);
-      return newValue;
-    });
+    MalNode newValue = function.lambda().apply(list(newArgs));
+    atom.setValue(newValue);
+    return newValue;
   }
 
   static MalNode cons(MalList args) {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
-    return list.prepend(item);
+    return MalNode.cons(item, list);
   }
 
   static MalNode concat(MalList args) {
-    var result = args.stream()
-      .map(MalSequence.class::cast)
-      .flatMap(MalSequence::stream)
-      .reduce(ImmutableList.<MalNode>builder(), ImmutableList.Builder::append, ImmutableList.Builder::merge)
-      .build();
-    return list(result);
+    MalSequence concat = MalNode.EMPTY_LIST;
+    for (var current : args) {
+      concat = MalNode.concat(concat, (MalSequence) current);
+    }
+    return concat;
   }
 
   static MalNode vec(MalList args) {
@@ -261,7 +256,7 @@ interface Core {
     throw new MalException(args.get(0));
   }
 
-  static Trampoline<MalNode> apply(MalList args) {
+  static MalNode apply(MalList args) {
     var function = (MalWithLambda) args.get(0);
     var arguments = list(args.values().dropFirst().stream().flatMap(m -> switch (m) {
       case MalList(var values, _) -> values.stream();
@@ -271,10 +266,10 @@ interface Core {
     return function.lambda().apply(arguments);
   }
 
-  static Trampoline<MalNode> transform(MalList args) {
-    var lambda = ((MalWithLambda) args.get(0)).lambda();
+  static MalNode map(MalList args) {
+    var function = (MalWithLambda) args.get(0);
     var elements = (MalSequence) args.get(1);
-    return traverse(elements.values(), n -> lambda.apply(list(n))).map(MalNode::list);
+    return MalNode.mapped(function.lambda(), elements);
   }
 
   static MalNode isNil(MalList args) {
@@ -350,7 +345,7 @@ interface Core {
 
   static MalNode assoc(MalList args) {
     var map = (MalMap) args.get(0);
-    var entries = map(args.values().dropFirst());
+    var entries = MalNode.map(args.values().dropFirst());
     return map.addAll(entries.map());
   }
 
@@ -392,15 +387,13 @@ interface Core {
   }
 
   static MalNode seq(MalList args) {
-    return switch (args.get(0)) {
-      case MalList(var values, _) when values.isEmpty() -> NIL;
-      case MalList(var values, _) -> list(values);
-      case MalLazy lazy when lazy.isEmpty() -> NIL;
-      case MalVector(var values, _) when values.isEmpty() -> NIL;
+    var arg = args.get(0);
+    return switch (arg) {
+      case MalSequence seq when seq.isEmpty() -> NIL;
       case MalVector(var values, _) -> list(values);
       case MalString(var value, _) when value.isEmpty() -> NIL;
       case MalString(var value, _) -> asList(value);
-      default -> args.get(0);
+      default -> arg;
     };
   }
 
@@ -437,69 +430,69 @@ interface Core {
   }
 
   Map<String, MalNode> NS = Map.ofEntries(
-    entry("prn", function(lambda(Core::prn))),
-    entry("println", function(lambda(Core::println))),
-    entry("list", function(lambda(MalNode::list))),
-    entry("list?", function(lambda(Core::isList))),
-    entry("empty?", function(lambda(Core::isEmpty))),
-    entry("count", function(lambda(Core::count))),
-    entry("+", function(lambda(Core::sum))),
-    entry("-", function(lambda(Core::sub))),
-    entry("*", function(lambda(Core::mul))),
-    entry("/", function(lambda(Core::div))),
-    entry("%", function(lambda(Core::mod))),
-    entry("=", function(lambda(Core::eq))),
-    entry(">", function(lambda(Core::gt))),
-    entry(">=", function(lambda(Core::gte))),
-    entry("<", function(lambda(Core::lt))),
-    entry("<=", function(lambda(Core::lte))),
-    entry("pr-str", function(lambda(Core::prStr))),
-    entry("str", function(lambda(Core::str))),
-    entry("read-string", function(lambda(Core::readString))),
-    entry("slurp", function(lambda(Core::slurp))),
-    entry("atom", function(lambda(Core::atom))),
-    entry("atom?", function(lambda(Core::isAtom))),
-    entry("deref", function(lambda(Core::deref))),
-    entry("reset!", function(lambda(Core::reset))),
+    entry("prn", function(Core::prn)),
+    entry("println", function(Core::println)),
+    entry("list", function(MalNode::list)),
+    entry("list?", function(Core::isList)),
+    entry("empty?", function(Core::isEmpty)),
+    entry("count", function(Core::count)),
+    entry("+", function(Core::sum)),
+    entry("-", function(Core::sub)),
+    entry("*", function(Core::mul)),
+    entry("/", function(Core::div)),
+    entry("%", function(Core::mod)),
+    entry("=", function(Core::eq)),
+    entry(">", function(Core::gt)),
+    entry(">=", function(Core::gte)),
+    entry("<", function(Core::lt)),
+    entry("<=", function(Core::lte)),
+    entry("pr-str", function(Core::prStr)),
+    entry("str", function(Core::str)),
+    entry("read-string", function(Core::readString)),
+    entry("slurp", function(Core::slurp)),
+    entry("atom", function(Core::atom)),
+    entry("atom?", function(Core::isAtom)),
+    entry("deref", function(Core::deref)),
+    entry("reset!", function(Core::reset)),
     entry("swap!", function(Core::swap)),
-    entry("cons", function(lambda(Core::cons))),
-    entry("concat", function(lambda(Core::concat))),
-    entry("vec", function(lambda(Core::vec))),
-    entry("macro?", function(lambda(Core::isMacro))),
-    entry("nth", function(lambda(Core::nth))),
-    entry("first", function(lambda(Core::first))),
-    entry("rest", function(lambda(Core::rest))),
-    entry("throw", function(lambda(Core::raise))),
+    entry("cons", function(Core::cons)),
+    entry("concat", function(Core::concat)),
+    entry("vec", function(Core::vec)),
+    entry("macro?", function(Core::isMacro)),
+    entry("nth", function(Core::nth)),
+    entry("first", function(Core::first)),
+    entry("rest", function(Core::rest)),
+    entry("throw", function(Core::raise)),
     entry("apply", function(Core::apply)),
-    entry("map", function(Core::transform)),
-    entry("nil?", function(lambda(Core::isNil))),
-    entry("true?", function(lambda(Core::isTrue))),
-    entry("false?", function(lambda(Core::isFalse))),
-    entry("symbol?", function(lambda(Core::isSymbol))),
-    entry("keyword?", function(lambda(Core::isKeyword))),
-    entry("vector?", function(lambda(Core::isVector))),
-    entry("sequential?", function(lambda(Core::isSequential))),
-    entry("map?", function(lambda(Core::isMap))),
-    entry("contains?", function(lambda(Core::contains))),
-    entry("symbol", function(lambda(Core::symbol))),
-    entry("keyword", function(lambda(Core::keyword))),
-    entry("vector", function(lambda(MalNode::vector))),
-    entry("get", function(lambda(Core::get))),
-    entry("keys", function(lambda(Core::keys))),
-    entry("vals", function(lambda(Core::vals))),
-    entry("hash-map", function(lambda(MalNode::map))),
-    entry("assoc", function(lambda(Core::assoc))),
-    entry("dissoc", function(lambda(Core::dissoc))),
-    entry("readline", function(lambda(Core::readLine))),
-    entry("time-ms", function(lambda(_ -> timeMs()))),
-    entry("meta", function(lambda(Core::meta))),
-    entry("with-meta", function(lambda(Core::withMeta))),
-    entry("fn?", function(lambda(Core::isFunction))),
-    entry("string?", function(lambda(Core::isString))),
-    entry("number?", function(lambda(Core::isNumber))),
-    entry("seq", function(lambda(Core::seq))),
-    entry("conj", function(lambda(Core::conj))),
-    entry("java-eval", function(lambda(Core::eval)))
+    entry("map", function(Core::map)),
+    entry("nil?", function(Core::isNil)),
+    entry("true?", function(Core::isTrue)),
+    entry("false?", function(Core::isFalse)),
+    entry("symbol?", function(Core::isSymbol)),
+    entry("keyword?", function(Core::isKeyword)),
+    entry("vector?", function(Core::isVector)),
+    entry("sequential?", function(Core::isSequential)),
+    entry("map?", function(Core::isMap)),
+    entry("contains?", function(Core::contains)),
+    entry("symbol", function(Core::symbol)),
+    entry("keyword", function(Core::keyword)),
+    entry("vector", function(MalNode::vector)),
+    entry("get", function(Core::get)),
+    entry("keys", function(Core::keys)),
+    entry("vals", function(Core::vals)),
+    entry("hash-map", function(MalNode::map)),
+    entry("assoc", function(Core::assoc)),
+    entry("dissoc", function(Core::dissoc)),
+    entry("readline", function(Core::readLine)),
+    entry("time-ms", function(_ -> timeMs())),
+    entry("meta", function(Core::meta)),
+    entry("with-meta", function(Core::withMeta)),
+    entry("fn?", function(Core::isFunction)),
+    entry("string?", function(Core::isString)),
+    entry("number?", function(Core::isNumber)),
+    entry("seq", function(Core::seq)),
+    entry("conj", function(Core::conj)),
+    entry("java-eval", function(Core::eval))
   );
 
   private static MalList asList(String string) {

@@ -5,7 +5,6 @@
 package mal;
 
 import static mal.Evaluator.eval;
-import static mal.Evaluator.safeEval;
 import static mal.MalNode.DEBUG_EVAL;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.function;
@@ -39,7 +38,7 @@ class StepA {
   static void main(String... arguments) {
     String prompt = "user> ";
 
-    ENV.set(symbol("eval"), function(args -> safeEval(args.get(0), ENV)));
+    ENV.set(symbol("eval"), function(args -> eval(args.get(0), ENV)));
     ENV.set(symbol("*ARGV*"), argv(arguments));
     ENV.set(symbol("*host-language*"), string("java25"));
 

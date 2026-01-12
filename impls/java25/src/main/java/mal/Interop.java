@@ -13,8 +13,6 @@ import static mal.MalNode.list;
 import static mal.MalNode.map;
 import static mal.MalNode.number;
 import static mal.MalNode.string;
-import static mal.Trampoline.done;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -50,10 +48,10 @@ class Interop {
           }
           if (Modifier.isStatic(methodRef.getModifiers())) {
             var result = methodRef.invoke(null, convertArgs(methodRef, arguments));
-            return done(toMal(result));
+            return toMal(result);
           } else if (arguments.length > 0) {
             var result = methodRef.invoke(arguments[0], convertArgs(methodRef, Arrays.copyOfRange(arguments, 1, arguments.length)));
-            return done(toMal(result));
+            return toMal(result);
           }
           throw new MalException("expected argument for method: " + methodRef.getName());
         } catch (IllegalAccessException e) {

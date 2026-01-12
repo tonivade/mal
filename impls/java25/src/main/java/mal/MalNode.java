@@ -5,8 +5,6 @@
 package mal;
 
 import static java.util.Objects.requireNonNull;
-import static mal.Trampoline.done;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -199,8 +196,6 @@ public sealed interface MalNode {
 
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
-    MalSequence prepend(MalNode node);
-
     MalNode get(int pos);
 
     MalNode first();
@@ -237,11 +232,6 @@ public sealed interface MalNode {
   sealed interface MalIterable extends MalSequence {
 
     ImmutableList<MalNode> values();
-
-    @Override
-    default MalList prepend(MalNode node) {
-      return new MalList(values().prepend(node), null);
-    }
 
     @Override
     default MalNode get(int pos) {
@@ -304,11 +294,6 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalSequence prepend(MalNode node) {
-      return new MalCons(node, this, meta);
-    }
-
-    @Override
     public MalNode get(int pos) {
       for (MalSequence seq = this; !seq.isEmpty(); seq = seq.rest()) {
         if (pos == 0) {
@@ -339,6 +324,104 @@ public sealed interface MalNode {
     }
   }
 
+  final class MalConcat implements MalSequence {
+
+    private final MalSequence first;
+    private final MalSequence second;
+    private final MalNode meta;
+
+    public MalConcat(MalSequence first, MalSequence second, MalNode meta) {
+      this.first = requireNonNull(first);
+      this.second = requireNonNull(second);
+      this.meta = meta;
+    }
+
+    @Override
+    public MalNode get(int pos) {
+      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.rest()) {
+        if (pos == 0) {
+          return seq.first();
+        }
+        pos--;
+      }
+      throw new IndexOutOfBoundsException("Index: " + pos);
+    }
+
+    @Override
+    public MalNode withMeta(MalNode meta) {
+      return new MalConcat(first, second, meta);
+    }
+
+    @Override
+    public MalNode meta() {
+      return meta;
+    }
+
+    @Override
+    public MalNode first() {
+      if (!first.isEmpty()) {
+        return first.first();
+      }
+      return second.first();
+    }
+
+    @Override
+    public MalSequence rest() {
+      if (!first.isEmpty()) {
+        return new MalConcat(first.rest(), second, null);
+      }
+      return second.rest();
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return first.isEmpty() && second.isEmpty();
+    }
+
+    @Override
+    public int size() {
+      return first.size() + second.size();
+    }
+  }
+
+  record MalMapped(MalLambda lambda, MalSequence sequence, MalNode meta) implements MalSequence {
+
+    public MalMapped {
+      requireNonNull(lambda);
+      requireNonNull(sequence);
+    }
+
+    @Override
+    public MalMapped withMeta(MalNode meta) {
+      return new MalMapped(lambda, sequence, meta);
+    }
+
+    @Override
+    public MalNode get(int pos) {
+      return lambda.apply(list(sequence.get(0)));
+    }
+
+    @Override
+    public MalNode first() {
+      return lambda.apply(list(sequence.first()));
+    }
+
+    @Override
+    public MalSequence rest() {
+      return new MalMapped(lambda, sequence.rest(), null);
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return sequence.isEmpty();
+    }
+
+    @Override
+    public int size() {
+      return sequence.size();
+    }
+  }
+
   final class MalLazy implements MalSequence {
 
     private Supplier<MalNode> thunk;
@@ -356,11 +439,6 @@ public sealed interface MalNode {
       this.value = value;
       this.realized = realized;
       this.meta = meta;
-    }
-
-    @Override
-    public MalSequence prepend(MalNode node) {
-      return new MalCons(node, this, meta);
     }
 
     @Override
@@ -498,7 +576,7 @@ public sealed interface MalNode {
   @FunctionalInterface
   interface MalLambda {
 
-    Trampoline<MalNode> apply(MalList args);
+    MalNode apply(MalList args);
   }
 
   sealed interface MalWithLambda extends MalNode {
@@ -547,6 +625,18 @@ public sealed interface MalNode {
       return EMPTY_MAP;
     }
     return new MalMap(map, null);
+  }
+
+  static MalCons cons(MalNode first, MalSequence rest) {
+    return new MalCons(first, rest, null);
+  }
+
+  static MalConcat concat(MalSequence first, MalSequence second) {
+    return new MalConcat(first, second, null);
+  }
+
+  static MalMapped mapped(MalLambda lambda, MalSequence sequence) {
+    return new MalMapped(lambda, sequence, null);
   }
 
   static MalVector vector(MalNode...tokens) {
@@ -627,10 +717,6 @@ public sealed interface MalNode {
 
   static MalAtom atom(MalNode value) {
     return new MalAtom(value, null);
-  }
-
-  static MalLambda lambda(Function<MalList, MalNode> lambda) {
-    return args -> done(lambda.apply(args));
   }
 
   static MalFunction function(MalLambda lambda) {
