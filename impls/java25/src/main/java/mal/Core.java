@@ -31,6 +31,7 @@ import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
 
 import mal.MalNode.MalAtom;
+import mal.MalNode.MalCollection;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalKeyword;
@@ -203,15 +204,22 @@ interface Core {
   static MalNode cons(MalList args) {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
+    if (list instanceof MalCollection col) {
+      return list(col.values().prepend(item));
+    }
     return MalNode.cons(item, list);
   }
 
   static MalNode concat(MalList args) {
-    MalSequence concat = MalNode.EMPTY_LIST;
+    MalSequence result = MalNode.EMPTY_LIST;
     for (var current : args) {
-      concat = MalNode.concat(concat, (MalSequence) current);
+      if (result instanceof MalCollection first && current instanceof MalCollection second) {
+        result = list(first.values().concat(second.values()));
+      } else {
+        result = MalNode.concat(result, (MalSequence) current);
+      }
     }
-    return concat;
+    return result;
   }
 
   static MalNode vec(MalList args) {
@@ -268,10 +276,17 @@ interface Core {
     return function.lambda().apply(arguments);
   }
 
-  static MalNode map(MalList args) {
+  static Trampoline<MalNode> map(MalList args) {
     var function = (MalWithLambda) args.get(0);
     var elements = (MalSequence) args.get(1);
-    return MalNode.mapped(function.lambda(), elements);
+    if (elements instanceof MalCollection col) {
+      var result = Trampoline.<MalNode>done(MalNode.EMPTY_LIST);
+      for (var current : col) {
+        result = Trampoline.zip(result, function.lambda().apply(list(current)), (acc, res) -> list(((MalList) acc).values().append(res)));
+      }
+      return result;
+    }
+    return Trampoline.done(MalNode.mapped(function.lambda(), elements));
   }
 
   static MalNode isNil(MalList args) {
@@ -466,7 +481,7 @@ interface Core {
     entry("rest", function(lambda(Core::rest))),
     entry("throw", function(lambda(Core::raise))),
     entry("apply", function(Core::apply)),
-    entry("map", function(lambda(Core::map))),
+    entry("map", function(Core::map)),
     entry("nil?", function(lambda(Core::isNil))),
     entry("true?", function(lambda(Core::isTrue))),
     entry("false?", function(lambda(Core::isFalse))),
