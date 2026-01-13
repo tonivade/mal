@@ -140,7 +140,7 @@ interface Core {
   }
 
   static MalNode prStr(MalList args) {
-    StringBuilder result = new StringBuilder();
+    var result = new StringBuilder();
     for (var m : args) {
       result.append(print(m, true)).append(" ");
     }
@@ -251,7 +251,7 @@ interface Core {
     if (list.isEmpty()) {
       return EMPTY_LIST;
     }
-    return list.rest();
+    return list.tail();
   }
 
   static MalNode raise(MalList args) {
@@ -402,11 +402,11 @@ interface Core {
   static MalNode conj(MalList args) {
     return switch (args.get(0)) {
       case MalList(var values, _) -> {
-        var newValues = values.toBuilder().prependAll(args.rest()).build();
+        var newValues = values.toBuilder().prependAll(args.tail()).build();
         yield list(newValues);
       }
       case MalVector(var values, _) -> {
-        var newValues = values.toBuilder().appendAll(args.rest()).build();
+        var newValues = values.toBuilder().appendAll(args.tail()).build();
         yield vector(newValues);
       }
       default -> throw new MalException("invalid definition");

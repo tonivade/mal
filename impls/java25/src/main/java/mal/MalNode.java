@@ -201,9 +201,9 @@ public sealed interface MalNode {
 
     MalNode get(int pos);
 
-    MalNode first();
+    MalNode head();
 
-    MalSequence rest();
+    MalSequence tail();
 
     boolean isEmpty();
 
@@ -224,15 +224,15 @@ public sealed interface MalNode {
           if (!hasNext()) {
             throw new NoSuchElementException();
           }
-          MalNode result = current.first();
-          current = current.rest();
+          MalNode result = current.head();
+          current = current.tail();
           return result;
         }
       };
     }
   }
 
-  sealed interface MalIterable extends MalSequence {
+  sealed interface MalCollection extends MalSequence {
 
     ImmutableList<MalNode> values();
 
@@ -245,12 +245,12 @@ public sealed interface MalNode {
     }
 
     @Override
-    default MalNode first() {
+    default MalNode head() {
       return values().getFirst();
     }
 
     @Override
-    default MalList rest() {
+    default MalList tail() {
       return list(values().dropFirst());
     }
 
@@ -265,7 +265,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalList(ImmutableList<MalNode> values, MalNode meta) implements MalIterable {
+  record MalList(ImmutableList<MalNode> values, MalNode meta) implements MalCollection {
 
     public MalList {
       requireNonNull(values);
@@ -277,7 +277,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalVector(ImmutableList<MalNode> values, MalNode meta) implements MalIterable {
+  record MalVector(ImmutableList<MalNode> values, MalNode meta) implements MalCollection {
 
     public MalVector {
       requireNonNull(values);
@@ -289,18 +289,18 @@ public sealed interface MalNode {
     }
   }
 
-  record MalCons(MalNode first, MalSequence rest, MalNode meta) implements MalSequence {
+  record MalCons(MalNode head, MalSequence tail, MalNode meta) implements MalSequence {
 
     public MalCons {
-      requireNonNull(first);
-      requireNonNull(rest);
+      requireNonNull(head);
+      requireNonNull(tail);
     }
 
     @Override
     public MalNode get(int pos) {
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.rest()) {
+      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
         if (pos == 0) {
-          return seq.first();
+          return seq.head();
         }
         pos--;
       }
@@ -309,7 +309,7 @@ public sealed interface MalNode {
 
     @Override
     public MalNode withMeta(MalNode meta) {
-      return new MalCons(first, rest, meta);
+      return new MalCons(head, tail, meta);
     }
 
     @Override
@@ -320,7 +320,7 @@ public sealed interface MalNode {
     @Override
     public int size() {
       int count = 0;
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.rest()) {
+      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
         count++;
       }
       return count;
@@ -341,9 +341,9 @@ public sealed interface MalNode {
 
     @Override
     public MalNode get(int pos) {
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.rest()) {
+      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
         if (pos == 0) {
-          return seq.first();
+          return seq.head();
         }
         pos--;
       }
@@ -361,19 +361,19 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode first() {
+    public MalNode head() {
       if (!first.isEmpty()) {
-        return first.first();
+        return first.head();
       }
-      return second.first();
+      return second.head();
     }
 
     @Override
-    public MalSequence rest() {
+    public MalSequence tail() {
       if (!first.isEmpty()) {
-        return new MalConcat(first.rest(), second, null);
+        return new MalConcat(first.tail(), second, null);
       }
-      return second.rest();
+      return second.tail();
     }
 
     @Override
@@ -405,13 +405,13 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode first() {
-      return lambda.apply(list(sequence.first())).run();
+    public MalNode head() {
+      return lambda.apply(list(sequence.head())).run();
     }
 
     @Override
-    public MalSequence rest() {
-      return new MalMapped(lambda, sequence.rest(), null);
+    public MalSequence tail() {
+      return new MalMapped(lambda, sequence.tail(), null);
     }
 
     @Override
@@ -447,9 +447,9 @@ public sealed interface MalNode {
     @Override
     public MalNode get(int pos) {
       force();
-      for (MalSequence seq = value; !seq.isEmpty(); seq = seq.rest()) {
+      for (MalSequence seq = value; !seq.isEmpty(); seq = seq.tail()) {
         if (pos == 0) {
-          return seq.first();
+          return seq.head();
         }
         pos--;
       }
@@ -467,15 +467,15 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode first() {
+    public MalNode head() {
       force();
-      return value.first();
+      return value.head();
     }
 
     @Override
-    public MalSequence rest() {
+    public MalSequence tail() {
       force();
-      return value.rest();
+      return value.tail();
     }
 
     @Override
@@ -487,7 +487,7 @@ public sealed interface MalNode {
     @Override
     public int size() {
       int count = 0;
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.rest()) {
+      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
         count++;
       }
       return count;

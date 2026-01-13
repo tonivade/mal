@@ -49,6 +49,13 @@ class MalTest {
   }
 
   @Test
+  void step8() {
+    Step8.rep("(defmacro! unless (fn* (pred a b) `(if ~pred ~b ~a)))");
+    assertEquals("7", Step8.rep("(unless false 7 8)"));
+    assertEquals("8", Step8.rep("(unless true 7 8)"));
+  }
+
+  @Test
   void stepA() {
     assertEquals("6", StepA.rep("(java-eval \"1 + 2 + 3\")"));
     StepA.rep("(import java.lang.String length)");
