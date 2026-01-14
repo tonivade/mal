@@ -6,7 +6,6 @@ package mal;
 
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
-import static mal.ImmutableList.toImmutableList;
 import static mal.Interop.toMal;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
@@ -21,8 +20,7 @@ import static mal.MalNode.string;
 import static mal.MalNode.vector;
 import static mal.Printer.print;
 import static mal.Reader.read;
-import static mal.Trampoline.sequence;
-
+import static mal.Trampoline.traverse;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -261,12 +259,9 @@ interface Core {
   }
 
   static Trampoline<MalNode> transform(MalList args) {
-    var function = (MalWithLambda) args.get(0);
+    var lambda = ((MalWithLambda) args.get(0)).lambda();
     var elements = (MalSequence) args.get(1);
-    var result = elements.stream()
-      .map(n -> function.lambda().apply(list(n)))
-      .collect(toImmutableList());
-    return sequence(result).map(MalNode::list);
+    return traverse(elements.values(), n -> lambda.apply(list(n))).map(MalNode::list);
   }
 
   static MalNode isNil(MalList args) {
