@@ -4,6 +4,7 @@
  */
 package mal;
 
+import static java.util.function.Function.identity;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -79,17 +80,15 @@ sealed interface Trampoline<T> {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
-  static <T> Trampoline<ImmutableList<T>> traverse(Collection<? extends T> list, Function<? super T, ? extends Trampoline<T>> mapper) {
+  static <T, R> Trampoline<ImmutableList<R>> traverse(Collection<? extends T> list, Function<? super T, ? extends Trampoline<R>> mapper) {
     return list.stream()
       .map(mapper)
-      .reduce(done(ImmutableList.<T>builder()), Trampoline::add, Trampoline::merge)
+      .reduce(done(ImmutableList.<R>builder()), Trampoline::add, Trampoline::merge)
       .map(ImmutableList.Builder::build);
   }
 
   static <T> Trampoline<ImmutableList<T>> sequence(Collection<? extends Trampoline<T>> list) {
-    return list.stream()
-      .reduce(done(ImmutableList.<T>builder()), Trampoline::add, Trampoline::merge)
-      .map(ImmutableList.Builder::build);
+    return traverse(list, identity());
   }
 
   private static <T> Trampoline<ImmutableList.Builder<T>> add(Trampoline<ImmutableList.Builder<T>> tlist, Trampoline<T> titem) {

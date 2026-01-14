@@ -23,6 +23,7 @@ import static mal.Printer.print;
 import static mal.Trampoline.done;
 import static mal.Trampoline.more;
 import static mal.Trampoline.sequence;
+import static mal.Trampoline.traverse;
 import static mal.Trampoline.zip;
 
 import java.util.ArrayList;
@@ -198,17 +199,13 @@ class Evaluator {
   }
 
   private static Trampoline<MalNode> evalVector(Env env, ImmutableList<MalNode> values) {
-    var later = values.stream()
-      .map(m -> safeEval(m, env))
-      .collect(toImmutableList());
-    return sequence(later).map(MalNode::vector);
+    return traverse(values, m -> safeEval(m, env)).map(MalNode::vector);
   }
 
   private static Trampoline<MalNode> evalMap(Env env, Map<MalKey, MalNode> map) {
-    var later = map.entrySet().stream()
-      .map(entry -> safeEval(entry.getValue(), env).map(value -> entry(entry.getKey(), value)))
-      .collect(toImmutableList());
-    return sequence(later)
+    Trampoline<ImmutableList<Map.Entry<MalKey, MalNode>>> result =
+      traverse(map.entrySet(), entry -> safeEval(entry.getValue(), env).map(value -> entry(entry.getKey(), value)));
+    return result
       .map(list -> list.stream().collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
       .map(MalNode::map);
   }

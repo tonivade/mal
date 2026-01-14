@@ -8,7 +8,7 @@ import static java.util.stream.Collectors.joining;
 import static mal.Trampoline.done;
 import static mal.Trampoline.zip;
 import static mal.Trampoline.more;
-import static mal.Trampoline.sequence;
+import static mal.Trampoline.traverse;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import mal.MalNode.MalAtom;
@@ -40,17 +40,15 @@ class Printer {
         case MalKeyword(var value, _) -> done(":" + value);
         case MalNumber(var value, _) -> done(Long.toString(value));
         case MalList(var list, _) -> {
-          yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
+          yield traverse(list, m -> safePrint(m, pretty))
             .map(l -> l.stream().collect(joining(" ", "(", ")")));
         }
         case MalVector(var list, _) -> {
-          yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
+          yield traverse(list, m -> safePrint(m, pretty))
             .map(l -> l.stream().collect(joining(" ", "[", "]")));
         }
         case MalMap(var map, _) -> {
-          yield sequence(map.entrySet().stream()
-            .map(entry -> zip(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), (a, b) -> a + " " + b))
-            .toList())
+          yield traverse(map.entrySet(), entry -> zip(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), Printer::concat))
             .map(l -> l.stream().collect(joining(" ", "{", "}")));
         }
         case MalAtom atom -> safePrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
@@ -60,5 +58,9 @@ class Printer {
         case MalError(var exception, _) -> done(exception.getMessage());
       };
     });
+  }
+
+  private static String concat(String a, String b) {
+    return a + " " + b;
   }
 }
