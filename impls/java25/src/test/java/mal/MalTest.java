@@ -4,9 +4,7 @@
  */
 package mal;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 class MalTest {
@@ -60,5 +58,23 @@ class MalTest {
     assertEquals("6", StepA.rep("(java-eval \"1 + 2 + 3\")"));
     StepA.rep("(import java.lang.String length)");
     assertEquals("5", StepA.rep("(length \"12345\")"));
+  }
+
+  @Test
+  void stepB() {
+    StepA.rep("(def! ones (fn* [] (lazy-seq (cons 1 (ones)))))");
+    StepA.rep("""
+      (def! take (fn* [i xs]
+          (if (empty? xs)
+              xs
+              (if (> i 0)
+                  (cons (first xs) (take (- i 1) (rest xs)))
+                  (list)
+              )
+          )
+      ))
+      """);
+    assertEquals("1", StepA.rep("(first (ones))"));
+    assertEquals("(1 1 1 1 1)", StepA.rep("(take 5 (ones))"));
   }
 }
