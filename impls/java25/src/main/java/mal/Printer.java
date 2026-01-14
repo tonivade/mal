@@ -13,8 +13,6 @@ import static mal.Trampoline.zip;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import java.util.ArrayList;
-import java.util.List;
-
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalError;
@@ -47,16 +45,16 @@ class Printer {
         case MalNumber(var value, _) -> done(Long.toString(value));
         case MalLazy _ -> done("#lazy");
         case MalList(var list, _) -> {
-          yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
+          yield traverse(list, m -> safePrint(m, pretty))
             .map(l -> l.stream().collect(joining(" ", "(", ")")));
         }
         case MalVector(var list, _) -> {
-          yield sequence(list.stream().map(m -> safePrint(m, pretty)).toList())
+          yield traverse(list, m -> safePrint(m, pretty))
           .map(l -> l.stream().collect(joining(" ", "[", "]")));
         }
         case MalSequence sequence when sequence.isEmpty() -> done("()");
         case MalSequence sequence -> {
-          List<Trampoline<String>> parts = new ArrayList<>();
+          var parts = new ArrayList<Trampoline<String>>();
           for (var current : sequence) {
             parts.add(safePrint(current, pretty));
           }

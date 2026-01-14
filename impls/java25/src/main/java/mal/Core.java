@@ -18,7 +18,8 @@ import static mal.MalNode.string;
 import static mal.MalNode.vector;
 import static mal.Printer.print;
 import static mal.Reader.read;
-
+import static mal.Trampoline.done;
+import static mal.Trampoline.traverse;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -280,13 +281,9 @@ interface Core {
     var function = (MalWithLambda) args.get(0);
     var elements = (MalSequence) args.get(1);
     if (elements instanceof MalCollection col) {
-      var result = Trampoline.<MalNode>done(MalNode.EMPTY_LIST);
-      for (var current : col) {
-        result = Trampoline.zip(result, function.lambda().apply(list(current)), (acc, res) -> list(((MalList) acc).values().append(res)));
-      }
-      return result;
+      return traverse(col.values(), current -> function.lambda().apply(list(current))).map(MalNode::list);
     }
-    return Trampoline.done(MalNode.mapped(function.lambda(), elements));
+    return done(MalNode.mapped(function.lambda(), elements));
   }
 
   static MalNode isNil(MalList args) {
