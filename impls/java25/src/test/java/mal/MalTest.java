@@ -65,10 +65,13 @@ class MalTest {
   @Test
   void stepB() {
     StepA.rep("(def! ones (fn* [] (lazy-seq (cons 1 (ones)))))");
+    StepA.rep("(def! range (fn* [n] (lazy-seq (cons n (range (+ n 1))))))");
     StepA.rep("(def! take (fn* [i xs] (if (empty? xs) xs (if (> i 0) (cons (first xs) (take (- i 1) (rest xs))) (list)))))");
+    StepA.rep("(def! drop (fn* [i xs] (if (empty? xs) xs (if (> i 0) (drop (- i 1) (rest xs)) xs))))");
     assertEquals("1", StepA.rep("(first (ones))"));
     assertEquals("(1 1 1 1 1)", StepA.rep("(take 5 (ones))"));
     assertEquals("(2 2 2 2 2)", StepA.rep("(map (fn* [x] (+ x 1)) (take 5 (ones)))"));
     assertEquals("(2 2 2 2 2)", StepA.rep("(take 5 (map (fn* [x] (+ x 1)) (ones)))"));
+    assertEquals("(4 5 6 7 8)", StepA.rep("(take 5 (drop 3 (range 1)))"));
   }
 }
