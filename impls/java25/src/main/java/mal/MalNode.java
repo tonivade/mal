@@ -199,7 +199,15 @@ public sealed interface MalNode {
 
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
-    MalNode get(int pos);
+    default MalNode get(int pos) {
+      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
+        if (pos == 0) {
+          return seq.head();
+        }
+        pos--;
+      }
+      throw new IndexOutOfBoundsException("Index: " + pos);
+    }
 
     MalNode head();
 
@@ -207,7 +215,13 @@ public sealed interface MalNode {
 
     boolean isEmpty();
 
-    int size();
+    default int size() {
+      int count = 0;
+      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
+        count++;
+      }
+      return count;
+    }
 
     @Override
     default Iterator<MalNode> iterator() {
@@ -297,17 +311,6 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode get(int pos) {
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
-        if (pos == 0) {
-          return seq.head();
-        }
-        pos--;
-      }
-      throw new IndexOutOfBoundsException("Index: " + pos);
-    }
-
-    @Override
     public MalNode withMeta(MalNode meta) {
       return new MalCons(head, tail, meta);
     }
@@ -315,15 +318,6 @@ public sealed interface MalNode {
     @Override
     public boolean isEmpty() {
       return false;
-    }
-
-    @Override
-    public int size() {
-      int count = 0;
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
-        count++;
-      }
-      return count;
     }
   }
 
@@ -337,17 +331,6 @@ public sealed interface MalNode {
       this.first = requireNonNull(first);
       this.second = requireNonNull(second);
       this.meta = meta;
-    }
-
-    @Override
-    public MalNode get(int pos) {
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
-        if (pos == 0) {
-          return seq.head();
-        }
-        pos--;
-      }
-      throw new IndexOutOfBoundsException("Index: " + pos);
     }
 
     @Override
@@ -401,7 +384,7 @@ public sealed interface MalNode {
 
     @Override
     public MalNode get(int pos) {
-      return lambda.apply(list(sequence.get(0))).run();
+      return lambda.apply(list(sequence.get(pos))).run();
     }
 
     @Override
@@ -447,13 +430,7 @@ public sealed interface MalNode {
     @Override
     public MalNode get(int pos) {
       force();
-      for (MalSequence seq = value; !seq.isEmpty(); seq = seq.tail()) {
-        if (pos == 0) {
-          return seq.head();
-        }
-        pos--;
-      }
-      throw new IndexOutOfBoundsException("Index: " + pos);
+      return MalSequence.super.get(pos);
     }
 
     @Override
@@ -486,11 +463,8 @@ public sealed interface MalNode {
 
     @Override
     public int size() {
-      int count = 0;
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
-        count++;
-      }
-      return count;
+      force();
+      return MalSequence.super.size();
     }
 
     private void force() {

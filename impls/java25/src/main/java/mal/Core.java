@@ -235,7 +235,7 @@ interface Core {
   static MalNode nth(MalList args) {
     var list = (MalSequence) args.get(0);
     var index = (MalNumber) args.get(1);
-    if (index.value() < 0 || index.value() >= list.size()) {
+    if (list instanceof MalCollection col && (index.value() < 0 || index.value() >= col.size())) {
       throw new MalException("index out of bounds: " + list.size());
     }
     return list.get(index.asInt());
