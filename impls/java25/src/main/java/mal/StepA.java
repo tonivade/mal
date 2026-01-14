@@ -36,9 +36,7 @@ class StepA {
     return print(eval(read(input), ENV), true);
   }
 
-  static void main(String... arguments) {
-    String prompt = "user> ";
-
+  static void init(String... arguments) {
     ENV.set(symbol("eval"), function(args -> safeEval(args.get(0), ENV)));
     ENV.set(symbol("*ARGV*"), argv(arguments));
     ENV.set(symbol("*host-language*"), string("java25"));
@@ -46,6 +44,12 @@ class StepA {
     rep("(def! not (fn* (a) (if a false true)))");
     rep("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\\nnil)\")))))");
     rep("(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))");
+  }
+
+  static void main(String... arguments) {
+    String prompt = "user> ";
+
+    init(arguments);
 
     if (arguments.length > 0) {
       rep("(load-file \"" + arguments[0] + "\")");

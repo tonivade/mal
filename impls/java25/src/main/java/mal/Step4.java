@@ -21,10 +21,14 @@ class Step4 {
     return print(eval(read(input), ENV), true);
   }
 
+  static void init() {
+    rep("(def! not (fn* (a) (if a false true)))");
+  }
+
   static void main(String... args) {
     String prompt = "user> ";
 
-    rep("(def! not (fn* (a) (if a false true)))");
+    init();
 
     var reader = LineReaderBuilder.builder()
       .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
