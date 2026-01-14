@@ -174,6 +174,9 @@ class Evaluator {
 
       case MalSymbol(var name, _) when name.equals(LAZY_SEQ) -> {
         var body = values.get(1);
+        if (!(body instanceof MalSequence)) {
+          throw new MalException("invalid lazy-seq");
+        }
         yield done(new MalLazy(() -> eval(body, env), null));
       }
 
