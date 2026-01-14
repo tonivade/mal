@@ -76,5 +76,7 @@ class MalTest {
       """);
     assertEquals("1", StepA.rep("(first (ones))"));
     assertEquals("(1 1 1 1 1)", StepA.rep("(take 5 (ones))"));
+    assertEquals("(2 2 2 2 2)", StepA.rep("(map (fn* [x] (+ x 1)) (take 5 (ones)))"));
+    assertEquals("(2 2 2 2 2)", StepA.rep("(take 5 (map (fn* [x] (+ x 1)) (ones)))"));
   }
 }
