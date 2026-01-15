@@ -467,6 +467,7 @@ class MalTest {
     assertEquals("2", Step6.rep("(deref a)"));
     assertEquals("3", Step6.rep("(reset! a 3)"));
     assertEquals("6", Step6.rep("(swap! a inc3)"));
+    assertEquals("12", Step6.rep("(swap! a (fn* (a) (* 2 a)))"));
     assertEquals("120", Step6.rep("(swap! a (fn* (a b) (* a b)) 10)"));
     assertEquals("123", Step6.rep("(swap! a + 3)"));
 
@@ -485,7 +486,7 @@ class MalTest {
     // -------- Deferrable Functionality --------
 
     // Testing read-string parsing errors via regex
-    assertStdoutMatches("(?s).*(EOF|end of input|unbalanced).*", () -> Step6.rep("(read-string \"(+ 1\")"));
+    assertThrows(MalException.class, () -> Step6.rep("(read-string \"(+ 1\")"));
 
     // Testing reading of large files
     assertEquals("nil", Step6.rep("(load-file \"../tests/computations.mal\")"));
