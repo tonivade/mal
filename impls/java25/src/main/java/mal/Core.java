@@ -267,7 +267,7 @@ interface Core {
   static Trampoline<MalNode> apply(MalList args) {
     var function = (MalWithLambda) args.get(0);
     var arguments = ImmutableList.<MalNode>builder();
-    for (var m : args.values().dropFirst()) {
+    for (var m : args.tail()) {
       if (m instanceof MalSequence seq) {
         for (var v : seq) {
           arguments.append(v);
@@ -403,13 +403,13 @@ interface Core {
   }
 
   static MalNode seq(MalList args) {
-    var arg = args.get(0);
-    return switch (arg) {
-      case MalSequence seq when seq.isEmpty() -> NIL;
-      case MalVector(var values, _) -> list(values);
+    return switch (args.get(0)) {
+      case MalList(var values, _) when values.isEmpty() -> NIL;
+      case MalVector(var values, _) when values.isEmpty() -> NIL;
       case MalString(var value, _) when value.isEmpty() -> NIL;
+      case MalVector(var values, _) -> list(values);
       case MalString(var value, _) -> asList(value);
-      default -> arg;
+      default -> args.get(0);
     };
   }
 
