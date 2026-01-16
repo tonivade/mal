@@ -6,12 +6,10 @@ package mal;
 
 import static java.util.function.Function.identity;
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import mal.ImmutableList.Builder;
 
 sealed interface Trampoline<T> {
 
@@ -80,23 +78,19 @@ sealed interface Trampoline<T> {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
-  static <T, R> Trampoline<ImmutableList<R>> traverse(Collection<? extends T> list, Function<? super T, ? extends Trampoline<R>> mapper) {
-    return list.stream()
-      .map(mapper)
-      .reduce(done(ImmutableList.<R>builder()), Trampoline::add, Trampoline::merge)
-      .map(ImmutableList.Builder::build);
+  static <T, R> Trampoline<ImmutableList<R>> traverse(Iterable<? extends T> list, Function<? super T, ? extends Trampoline<R>> mapper) {
+    var builder = done(ImmutableList.<R>builder());
+    for (T current : list) {
+      builder = Trampoline.add(builder, mapper.apply(current));
+    }
+    return builder.map(ImmutableList.Builder::build);
   }
 
-  static <T> Trampoline<ImmutableList<T>> sequence(Collection<? extends Trampoline<T>> list) {
+  static <T> Trampoline<ImmutableList<T>> sequence(Iterable<? extends Trampoline<T>> list) {
     return traverse(list, identity());
   }
 
   private static <T> Trampoline<ImmutableList.Builder<T>> add(Trampoline<ImmutableList.Builder<T>> tlist, Trampoline<T> titem) {
     return zip(tlist, titem, ImmutableList.Builder::append);
-  }
-
-  private static <T> Trampoline<ImmutableList.Builder<T>> merge(
-      Trampoline<ImmutableList.Builder<T>> tlist1, Trampoline<ImmutableList.Builder<T>> tlist2) {
-    return zip(tlist1, tlist2, Builder::merge);
   }
 }

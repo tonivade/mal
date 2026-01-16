@@ -43,6 +43,7 @@ import mal.MalNode.MalVector;
 
 class Evaluator {
 
+  private static final String DO = "do";
   private static final String LAZY_SEQ = "lazy-seq";
   private static final String IMPORT = "import";
   private static final String QUASIQUOTE = "quasiquote";
@@ -116,7 +117,7 @@ class Evaluator {
         yield sequence(later).andThen(safeEval(values.get(2), newEnv));
       }
 
-      case MalSymbol(var name, _) when name.equals("do") -> {
+      case MalSymbol(var name, _) when name.equals(DO) -> {
         var later = values.dropFirst().stream()
           .map(m -> safeEval(m, env))
           .collect(toImmutableList());

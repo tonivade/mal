@@ -8,11 +8,9 @@ import static java.util.stream.Collectors.joining;
 import static mal.Trampoline.done;
 import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
-import static mal.Trampoline.sequence;
 import static mal.Trampoline.zip;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
-import java.util.ArrayList;
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalError;
@@ -50,15 +48,12 @@ class Printer {
         }
         case MalVector(var list, _) -> {
           yield traverse(list, m -> safePrint(m, pretty))
-          .map(l -> l.stream().collect(joining(" ", "[", "]")));
+            .map(l -> l.stream().collect(joining(" ", "[", "]")));
         }
         case MalSequence sequence when sequence.isEmpty() -> done("()");
         case MalSequence sequence -> {
-          var parts = new ArrayList<Trampoline<String>>();
-          for (var current : sequence) {
-            parts.add(safePrint(current, pretty));
-          }
-          yield sequence(parts).map(l -> l.stream().collect(joining(" ", "(", ")")));
+          yield traverse(sequence, m -> safePrint(m, pretty))
+            .map(l -> l.stream().collect(joining(" ", "(", ")")));
         }
         case MalMap(var map, _) -> {
           yield traverse(map.entrySet(), entry -> zip(safePrint(entry.getKey(), pretty), safePrint(entry.getValue(), pretty), Printer::concat))

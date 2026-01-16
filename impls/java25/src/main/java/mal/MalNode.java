@@ -412,7 +412,6 @@ public sealed interface MalNode {
 
     private Supplier<MalNode> thunk;
     private MalSequence value;
-    private boolean realized;
     private final MalNode meta;
 
     public MalLazy(Supplier<MalNode> value, MalNode meta) {
@@ -420,11 +419,14 @@ public sealed interface MalNode {
       this.meta = meta;
     }
 
-    private MalLazy(Supplier<MalNode> thunk, MalSequence value, boolean realized, MalNode meta) {
+    private MalLazy(Supplier<MalNode> thunk, MalSequence value, MalNode meta) {
       this.thunk = thunk;
       this.value = value;
-      this.realized = realized;
       this.meta = meta;
+    }
+
+    public boolean isRealized() {
+      return thunk != null;
     }
 
     @Override
@@ -435,7 +437,7 @@ public sealed interface MalNode {
 
     @Override
     public MalNode withMeta(MalNode meta) {
-      return new MalLazy(thunk, value, realized, meta);
+      return new MalLazy(thunk, value, meta);
     }
 
     @Override
@@ -468,7 +470,7 @@ public sealed interface MalNode {
     }
 
     private void force() {
-      if (!realized) {
+      if (isRealized()) {
         MalNode result = thunk.get();
 
         if (result == NIL) {
@@ -480,7 +482,6 @@ public sealed interface MalNode {
         }
 
         thunk = null;
-        realized = true;
       }
     }
   }
