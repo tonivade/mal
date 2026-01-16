@@ -26,11 +26,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.stream.Stream;
-
 import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
-
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalCollection;
 import mal.MalNode.MalFunction;
@@ -269,12 +266,17 @@ interface Core {
 
   static Trampoline<MalNode> apply(MalList args) {
     var function = (MalWithLambda) args.get(0);
-    var arguments = list(args.values().dropFirst().stream().flatMap(m -> switch (m) {
-      case MalList(var values, _) -> values.stream();
-      case MalVector(var values, _) -> values.stream();
-      default -> Stream.of(m);
-    }).toList());
-    return function.lambda().apply(arguments);
+    var arguments = ImmutableList.<MalNode>builder();
+    for (var m : args.values().dropFirst()) {
+      if (m instanceof MalSequence seq) {
+        for (var v : seq) {
+          arguments.append(v);
+        }
+      } else {
+        arguments.append(m);
+      }
+    }
+    return function.lambda().apply(list(arguments.build()));
   }
 
   static Trampoline<MalNode> map(MalList args) {
