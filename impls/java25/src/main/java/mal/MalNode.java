@@ -200,7 +200,7 @@ public sealed interface MalNode {
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
     default MalNode get(int pos) {
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
+      for (var seq = this; !seq.isEmpty(); seq = seq.tail()) {
         if (pos == 0) {
           return seq.head();
         }
@@ -217,7 +217,7 @@ public sealed interface MalNode {
 
     default int size() {
       int count = 0;
-      for (MalSequence seq = this; !seq.isEmpty(); seq = seq.tail()) {
+      for (var seq = this; !seq.isEmpty(); seq = seq.tail()) {
         count++;
       }
       return count;
@@ -321,16 +321,11 @@ public sealed interface MalNode {
     }
   }
 
-  final class MalConcat implements MalSequence {
+  record MalConcat(MalSequence first, MalSequence second, MalNode meta) implements MalSequence {
 
-    private final MalSequence first;
-    private final MalSequence second;
-    private final MalNode meta;
-
-    public MalConcat(MalSequence first, MalSequence second, MalNode meta) {
-      this.first = requireNonNull(first);
-      this.second = requireNonNull(second);
-      this.meta = meta;
+    public MalConcat {
+      requireNonNull(first);
+      requireNonNull(second);
     }
 
     @Override
