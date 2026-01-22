@@ -17,7 +17,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 public sealed interface MalNode {
 
@@ -614,14 +613,7 @@ public sealed interface MalNode {
     return vector(ImmutableList.of(tokens));
   }
 
-  static MalVector vector(Stream<? extends MalNode> tokens) {
-    return vector(ImmutableList.from(tokens));
-  }
-
   static MalVector vector(MalSequence tokens) {
-    if (tokens.isEmpty()) {
-      return EMPTY_VECTOR;
-    }
     if (tokens instanceof MalVector vec) {
       return vec;
     }
@@ -642,14 +634,7 @@ public sealed interface MalNode {
     return list(ImmutableList.of(tokens));
   }
 
-  static MalList list(Stream<? extends MalNode> tokens) {
-    return list(ImmutableList.from(tokens));
-  }
-
   static MalList list(MalSequence tokens) {
-    if (tokens.isEmpty()) {
-      return EMPTY_LIST;
-    }
     if (tokens instanceof MalList list) {
       return list;
     }
