@@ -320,50 +320,6 @@ public sealed interface MalNode {
     }
   }
 
-  record MalConcat(MalSequence first, MalSequence second, MalNode meta) implements MalSequence {
-
-    public MalConcat {
-      requireNonNull(first);
-      requireNonNull(second);
-    }
-
-    @Override
-    public MalNode withMeta(MalNode meta) {
-      return new MalConcat(first, second, meta);
-    }
-
-    @Override
-    public MalNode meta() {
-      return meta;
-    }
-
-    @Override
-    public MalNode head() {
-      if (!first.isEmpty()) {
-        return first.head();
-      }
-      return second.head();
-    }
-
-    @Override
-    public MalSequence tail() {
-      if (!first.isEmpty()) {
-        return new MalConcat(first.tail(), second, null);
-      }
-      return second.tail();
-    }
-
-    @Override
-    public boolean isEmpty() {
-      return first.isEmpty() && second.isEmpty();
-    }
-
-    @Override
-    public int size() {
-      return first.size() + second.size();
-    }
-  }
-
   record MalMapped(MalLambda lambda, MalSequence sequence, MalNode meta) implements MalSequence {
 
     public MalMapped {
@@ -599,10 +555,6 @@ public sealed interface MalNode {
 
   static MalCons cons(MalNode first, MalSequence rest) {
     return new MalCons(first, rest, null);
-  }
-
-  static MalConcat concat(MalSequence first, MalSequence second) {
-    return new MalConcat(first, second, null);
   }
 
   static MalMapped mapped(MalLambda lambda, MalSequence sequence) {

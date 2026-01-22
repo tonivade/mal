@@ -743,6 +743,7 @@ class MalTest {
     assertEquals("6", Step8.rep("(first (list 6))"));
     assertEquals("7", Step8.rep("(first (list 7 8 9))"));
 
+    assertEquals("()", Step8.rep("(rest nil)"));
     assertEquals("()", Step8.rep("(rest (list))"));
     assertEquals("()", Step8.rep("(rest (list 6))"));
     assertEquals("(8 9)", Step8.rep("(rest (list 7 8 9))"));

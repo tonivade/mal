@@ -209,15 +209,34 @@ interface Core {
   }
 
   static MalNode concat(MalList args) {
-    MalSequence result = MalNode.EMPTY_LIST;
-    for (var current : args) {
-      if (result instanceof MalCollection first && current instanceof MalCollection second) {
-        result = list(first.values().concat(second.values()));
-      } else {
-        result = MalNode.concat(result, (MalSequence) current);
-      }
+    if (args.isEmpty()) {
+      return EMPTY_LIST;
     }
-    return result;
+    if (args.size() == 1 && args.get(0) instanceof MalCollection col) {
+      return list(col);
+    }
+    if (args.size() == 2 && args.get(0) instanceof MalCollection first && args.get(1) instanceof MalCollection second) {
+      return list(first.values().concat(second.values()));
+    }
+    return new MalNode.MalLazy(() -> concatStep(args), null);
+  }
+
+  private static MalNode concatStep(MalList seqs) {
+    var head = seqs.head();
+    var tail = seqs.tail();
+
+    var seq = (MalSequence) head;
+
+    if (seq.isEmpty()) {
+      return concat(tail);
+    }
+
+    return MalNode.cons(
+        seq.head(),
+        (MalSequence) concat(
+            list(tail.values().prepend(seq.tail()))
+        )
+    );
   }
 
   static MalNode vec(MalList args) {
