@@ -210,6 +210,8 @@ class MalTest {
   void step2() {
     // Testing evaluation of arithmetic operations
     assertEquals("3", Step2.rep("(+ 1 2)"));
+    assertEquals("1", Step2.rep("(% 5 2)"));
+    assertEquals("0", Step2.rep("(% 15 5)"));
     assertEquals("11", Step2.rep("(+ 5 (* 2 3))"));
     assertEquals("8", Step2.rep("(- (+ 5 (* 2 3)) 3)"));
     assertEquals("2", Step2.rep("(/ (- (+ 5 (* 2 3)) 3) 4)"));
