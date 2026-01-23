@@ -6,7 +6,6 @@ package mal;
 
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.toUnmodifiableMap;
-import static mal.ImmutableList.toImmutableList;
 import static mal.MalNode.CONCAT;
 import static mal.MalNode.CONS;
 import static mal.MalNode.EMPTY_LIST;
@@ -29,7 +28,7 @@ import static mal.Trampoline.zip;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import org.pcollections.PVector;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalLazy;
@@ -84,7 +83,7 @@ class Evaluator {
     return done(value);
   }
 
-  private static Trampoline<MalNode> evalList(Env env, ImmutableList<MalNode> values) {
+  private static Trampoline<MalNode> evalList(Env env, PVector<MalNode> values) {
     return switch (values.get(0)) {
 
       case MalSymbol(var name, _) when name.equals(DEF) -> {
@@ -119,10 +118,10 @@ class Evaluator {
       }
 
       case MalSymbol(var name, _) when name.equals(DO) -> {
-        var later = values.dropFirst().stream()
+        var later = values.minus(0).stream()
           .map(m -> safeEval(m, env))
-          .collect(toImmutableList());
-        yield sequence(later).map(ImmutableList::getLast);
+          .toList();
+        yield sequence(later).map(PVector::getLast);
       }
 
       case MalSymbol(var name, _) when name.equals(TRY) -> {
@@ -183,27 +182,27 @@ class Evaluator {
       }
 
       case MalMacro(var lambda, _) -> {
-        yield lambda.apply(list(values.dropFirst()))
+        yield lambda.apply(list(values.minus(0)))
           .flatMap(next -> safeEval(next, env));
       }
 
       case MalFunction(var lambda, _) -> {
-        var later = values.dropFirst().stream()
+        var later = values.minus(0).stream()
           .map(m -> safeEval(m, env))
-          .collect(toImmutableList());
+          .toList();
         yield sequence(later)
           .flatMap(args -> lambda.apply(list(args)));
       }
 
       default -> {
         yield safeEval(values.get(0), env)
-          .<MalNode>map(callable -> list(values.dropFirst().prepend(callable)))
+          .<MalNode>map(callable -> list(values.minus(0).plus(0, callable)))
           .flatMap(node -> safeEval(node, env));
       }
     };
   }
 
-  private static int getNumberOfArguments(ImmutableList<MalNode> values) {
+  private static int getNumberOfArguments(PVector<MalNode> values) {
     if (values.size() > 3) {
       var args = (MalNumber) values.get(3);
       return (int) args.value();
@@ -211,7 +210,7 @@ class Evaluator {
     return 0;
   }
 
-  private static Trampoline<MalNode> evalVector(Env env, ImmutableList<MalNode> values) {
+  private static Trampoline<MalNode> evalVector(Env env, PVector<MalNode> values) {
     return traverse(values, m -> safeEval(m, env)).map(MalNode::vector);
   }
 
@@ -235,17 +234,17 @@ class Evaluator {
     };
   }
 
-  private static Trampoline<MalNode> recursiveQuasiquote(ImmutableList<MalNode> values) {
+  private static Trampoline<MalNode> recursiveQuasiquote(PVector<MalNode> values) {
     if (values.isEmpty()) {
       return done(EMPTY_LIST);
     }
     return more(() -> {
       var element = values.get(0);
       if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
-        return recursiveQuasiquote(values.dropFirst())
+        return recursiveQuasiquote(values.minus(0))
           .map(result -> list(CONCAT, list.get(1), result));
       }
-      return zip(recursiveQuasiquote(values.dropFirst()), evalQuasiquote(element),
+      return zip(recursiveQuasiquote(values.minus(0)), evalQuasiquote(element),
         (next, eval) -> list(CONS, eval, next));
     });
   }

@@ -8,7 +8,6 @@ import static java.util.Objects.requireNonNull;
 import static mal.Trampoline.done;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,6 +16,11 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import org.pcollections.HashTreePMap;
+import org.pcollections.PMap;
+import org.pcollections.PVector;
+import org.pcollections.TreePVector;
 
 public sealed interface MalNode {
 
@@ -43,9 +47,9 @@ public sealed interface MalNode {
   MalNumber ZERO = new MalNumber(0, null);
   MalNumber ONE = new MalNumber(1, null);
 
-  MalList EMPTY_LIST = new MalList(ImmutableList.empty(), null);
-  MalVector EMPTY_VECTOR = new MalVector(ImmutableList.empty(), null);
-  MalMap EMPTY_MAP = new MalMap(Map.of(), null);
+  MalList EMPTY_LIST = new MalList(TreePVector.empty(), null);
+  MalVector EMPTY_VECTOR = new MalVector(TreePVector.empty(), null);
+  MalMap EMPTY_MAP = new MalMap(HashTreePMap.empty(), null);
 
   record MalConstant(String name, MalNode meta) implements MalNode {
 
@@ -248,7 +252,7 @@ public sealed interface MalNode {
 
   sealed interface MalCollection extends MalSequence {
 
-    ImmutableList<MalNode> values();
+    PVector<MalNode> values();
 
     @Override
     default MalNode get(int pos) {
@@ -265,7 +269,7 @@ public sealed interface MalNode {
 
     @Override
     default MalList tail() {
-      return list(values().dropFirst());
+      return list(values().minus(0));
     }
 
     @Override
@@ -279,7 +283,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalList(ImmutableList<MalNode> values, MalNode meta) implements MalCollection {
+  record MalList(PVector<MalNode> values, MalNode meta) implements MalCollection {
 
     public MalList {
       requireNonNull(values);
@@ -291,7 +295,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalVector(ImmutableList<MalNode> values, MalNode meta) implements MalCollection {
+  record MalVector(PVector<MalNode> values, MalNode meta) implements MalCollection {
 
     public MalVector {
       requireNonNull(values);
@@ -437,7 +441,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalMap(Map<MalKey, MalNode> map, MalNode meta) implements MalNode, Iterable<Map.Entry<MalKey, MalNode>> {
+  record MalMap(PMap<MalKey, MalNode> map, MalNode meta) implements MalNode, Iterable<Map.Entry<MalKey, MalNode>> {
 
     public MalMap {
       requireNonNull(map);
@@ -469,15 +473,11 @@ public sealed interface MalNode {
     }
 
     public MalMap addAll(Map<MalKey, MalNode> entries) {
-      var copy = new HashMap<>(map);
-      copy.putAll(entries);
-      return new MalMap(copy, null);
+      return new MalMap(map.plusAll(entries), null);
     }
 
     public MalMap removeAll(Collection<? extends MalKey> keys) {
-      var copy = new HashMap<>(map);
-      keys.forEach(copy::remove);
-      return new MalMap(copy, null);
+      return new MalMap(map.minusAll(keys), null);
     }
 
     public boolean contains(MalKey key) {
@@ -551,7 +551,7 @@ public sealed interface MalNode {
     if (map.isEmpty()) {
       return EMPTY_MAP;
     }
-    return new MalMap(map, null);
+    return new MalMap(HashTreePMap.from(map), null);
   }
 
   static MalCons cons(MalNode first, MalSequence rest) {
@@ -563,7 +563,7 @@ public sealed interface MalNode {
   }
 
   static MalVector vector(MalNode...tokens) {
-    return vector(ImmutableList.of(tokens));
+    return vector(List.of(tokens));
   }
 
   static MalVector vector(MalSequence tokens) {
@@ -573,18 +573,18 @@ public sealed interface MalNode {
     if (tokens instanceof MalList list) {
       return vector(list.values());
     }
-    return vector(ImmutableList.from(tokens));
+    return vector(List.of(tokens));
   }
 
   static MalVector vector(Collection<? extends MalNode> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_VECTOR;
     }
-    return new MalVector(ImmutableList.from(tokens), null);
+    return new MalVector(TreePVector.from(tokens), null);
   }
 
   static MalList list(MalNode...tokens) {
-    return list(ImmutableList.of(tokens));
+    return list(List.of(tokens));
   }
 
   static MalList list(MalSequence tokens) {
@@ -594,14 +594,14 @@ public sealed interface MalNode {
     if (tokens instanceof MalVector vec) {
       return list(vec.values());
     }
-    return list(ImmutableList.from(tokens));
+    return list(List.of(tokens));
   }
 
   static MalList list(Collection<? extends MalNode> tokens) {
     if (tokens.isEmpty()) {
       return EMPTY_LIST;
     }
-    return new MalList(ImmutableList.from(tokens), null);
+    return new MalList(TreePVector.from(tokens), null);
   }
 
   static MalNumber number(long value) {

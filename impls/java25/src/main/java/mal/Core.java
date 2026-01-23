@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
+import org.pcollections.TreePVector;
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalCollection;
 import mal.MalNode.MalFunction;
@@ -192,7 +193,7 @@ interface Core {
   static Trampoline<MalNode> swap(MalList args) {
     var atom = (MalAtom) args.get(0);
     var function = (MalWithLambda) args.get(1);
-    var newArgs = args.values().dropFirst().dropFirst().prepend(atom.getValue());
+    var newArgs = args.values().minus(0).minus(0).plus(0, atom.getValue());
     return function.lambda().apply(list(newArgs)).map(newValue -> {
       atom.setValue(newValue);
       return newValue;
@@ -203,7 +204,7 @@ interface Core {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
     if (list instanceof MalCollection col && !col.isEmpty()) {
-      return list(col.values().prepend(item));
+      return list(col.values().plus(0, item));
     }
     return MalNode.cons(item, list);
   }
@@ -216,7 +217,7 @@ interface Core {
       return list(col);
     }
     if (args.size() == 2 && args.get(0) instanceof MalCollection first && args.get(1) instanceof MalCollection second) {
-      return list(first.values().concat(second.values()));
+      return list(first.values().plusAll(second.values()));
     }
     return new MalNode.MalLazy(() -> concatStep(args), null);
   }
@@ -234,7 +235,7 @@ interface Core {
     return MalNode.cons(
         seq.head(),
         (MalSequence) concat(
-            list(tail.values().prepend(seq.tail()))
+            list(tail.values().plus(0, seq.tail()))
         )
     );
   }
@@ -285,17 +286,17 @@ interface Core {
 
   static Trampoline<MalNode> apply(MalList args) {
     var function = (MalWithLambda) args.get(0);
-    var arguments = ImmutableList.<MalNode>builder();
+    var arguments = TreePVector.<MalNode>empty();
     for (var m : args.tail()) {
       if (m instanceof MalSequence seq) {
         for (var v : seq) {
-          arguments.append(v);
+          arguments = arguments.plus(v);
         }
       } else {
-        arguments.append(m);
+        arguments = arguments.plus(m);
       }
     }
-    return function.lambda().apply(list(arguments.build()));
+    return function.lambda().apply(list(arguments));
   }
 
   static Trampoline<MalNode> map(MalList args) {
@@ -380,13 +381,13 @@ interface Core {
 
   static MalNode assoc(MalList args) {
     var map = (MalMap) args.get(0);
-    var entries = MalNode.map(args.values().dropFirst());
+    var entries = MalNode.map(args.values().minus(0));
     return map.addAll(entries.map());
   }
 
   static MalNode dissoc(MalList args) {
     var map = (MalMap) args.get(0);
-    var keys = args.values().dropFirst().stream().map(MalKey.class::cast).toList();
+    var keys = args.values().minus(0).stream().map(MalKey.class::cast).toList();
     return map.removeAll(keys);
   }
 
@@ -435,11 +436,17 @@ interface Core {
   static MalNode conj(MalList args) {
     return switch (args.get(0)) {
       case MalList(var values, _) -> {
-        var newValues = values.toBuilder().prependAll(args.tail()).build();
+        var newValues = values;
+        for (var i : args.tail()) {
+          newValues = newValues.plus(0, i);
+        }
         yield list(newValues);
       }
       case MalVector(var values, _) -> {
-        var newValues = values.toBuilder().appendAll(args.tail()).build();
+        var newValues = values;
+        for (var i : args.tail()) {
+          newValues = newValues.plus(i);
+        }
         yield vector(newValues);
       }
       default -> throw new MalException("invalid definition");

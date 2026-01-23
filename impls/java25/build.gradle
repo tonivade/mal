@@ -36,6 +36,7 @@ dependencies {
   implementation 'info.picocli:picocli:4.7.7'
   implementation 'org.apache.commons:commons-text:1.14.0'
   implementation 'org.codehaus.janino:janino:3.1.1'
+  implementation 'org.pcollections:pcollections:5.0.0'
  
   testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

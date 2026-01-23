@@ -10,6 +10,8 @@ import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.pcollections.PVector;
+import org.pcollections.TreePVector;
 
 sealed interface Trampoline<T> {
 
@@ -78,19 +80,19 @@ sealed interface Trampoline<T> {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
-  static <T, R> Trampoline<ImmutableList<R>> traverse(Iterable<? extends T> list, Function<? super T, ? extends Trampoline<R>> mapper) {
-    var builder = done(ImmutableList.<R>builder());
+  static <T, R> Trampoline<PVector<R>> traverse(Iterable<? extends T> list, Function<? super T, ? extends Trampoline<R>> mapper) {
+    Trampoline<PVector<R>> acc = done(TreePVector.<R>empty());
     for (T current : list) {
-      builder = Trampoline.add(builder, mapper.apply(current));
+      acc = Trampoline.add(acc, mapper.apply(current));
     }
-    return builder.map(ImmutableList.Builder::build);
+    return acc;
   }
 
-  static <T> Trampoline<ImmutableList<T>> sequence(Iterable<? extends Trampoline<T>> list) {
+  static <T> Trampoline<PVector<T>> sequence(Iterable<? extends Trampoline<T>> list) {
     return traverse(list, identity());
   }
 
-  private static <T> Trampoline<ImmutableList.Builder<T>> add(Trampoline<ImmutableList.Builder<T>> tlist, Trampoline<T> titem) {
-    return zip(tlist, titem, ImmutableList.Builder::append);
+  private static <T> Trampoline<PVector<T>> add(Trampoline<PVector<T>> tlist, Trampoline<T> titem) {
+    return zip(tlist, titem, PVector::plus);
   }
 }

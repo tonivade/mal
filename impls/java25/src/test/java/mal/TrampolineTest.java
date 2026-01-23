@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.pcollections.TreePVector;
 
 class TrampolineTest {
 
@@ -44,7 +45,7 @@ class TrampolineTest {
         Trampoline.more(() -> Trampoline.more(() -> Trampoline.done(3))))
       );
 
-    assertEquals(ImmutableList.of(1, 2, 3), trampolines.run());
+    assertEquals(TreePVector.from(List.of(1, 2, 3)), trampolines.run());
   }
 
   @Test
