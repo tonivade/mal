@@ -157,7 +157,7 @@ final class ImmutableList<E> implements Collection<E> {
   @SuppressWarnings("unchecked")
   public E get(int index) {
     if (index < 0 || index >= totalSize) {
-      throw new IndexOutOfBoundsException("index=" + index);
+      throw new IndexOutOfBoundsException(index);
     }
     int segIdx = findSegmentIndex(index);
     int segStart = segIdx == 0 ? 0 : cumulativeSizes[segIdx - 1];

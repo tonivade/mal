@@ -205,7 +205,7 @@ public sealed interface MalNode {
         }
         pos--;
       }
-      throw new IndexOutOfBoundsException("Index: " + pos);
+      throw new IndexOutOfBoundsException(pos);
     }
 
     MalNode head();
