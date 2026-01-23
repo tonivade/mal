@@ -202,7 +202,7 @@ interface Core {
   static MalNode cons(MalList args) {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
-    if (list instanceof MalCollection col) {
+    if (list instanceof MalCollection col && !col.isEmpty()) {
       return list(col.values().prepend(item));
     }
     return MalNode.cons(item, list);

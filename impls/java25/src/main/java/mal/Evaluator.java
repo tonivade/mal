@@ -15,10 +15,10 @@ import static mal.MalNode.NIL;
 import static mal.MalNode.QUOTE;
 import static mal.MalNode.SPLICE_UNQUOTE;
 import static mal.MalNode.UNQUOTE;
+import static mal.MalNode.VEC;
 import static mal.MalNode.error;
 import static mal.MalNode.function;
 import static mal.MalNode.list;
-import static mal.MalNode.symbol;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
 import static mal.Trampoline.more;
@@ -70,6 +70,7 @@ class Evaluator {
         case MalList(var values, _) when !values.isEmpty() -> evalList(env, values);
         case MalVector(var values, _) when !values.isEmpty() -> evalVector(env,values);
         case MalMap(var map, _) when !map.isEmpty() -> evalMap(env, map);
+        case MalSequence seq when !seq.isEmpty() -> evalList(env, list(seq).values());
         default -> done(ast);
       };
     });
@@ -132,7 +133,7 @@ class Evaluator {
           if (values.size() < 3) {
             throw new MalException(e.getMessage());
           }
-          var catch_ = (MalList) values.get(2);
+          var catch_ = (MalSequence) values.get(2);
           var symbol = (MalSymbol) catch_.get(1);
           var recover = catch_.get(2);
           var newEnv = new Env(env, Map.of(symbol.name(), error(e)));
@@ -215,8 +216,8 @@ class Evaluator {
   }
 
   private static Trampoline<MalNode> evalMap(Env env, Map<MalKey, MalNode> map) {
-    Trampoline<ImmutableList<Map.Entry<MalKey, MalNode>>> result =
-      traverse(map.entrySet(), entry -> safeEval(entry.getValue(), env).map(value -> entry(entry.getKey(), value)));
+    var result =
+      traverse(map.entrySet(), entry -> safeEval(entry.getValue(), env).<Map.Entry<MalKey, MalNode>>map(value -> entry(entry.getKey(), value)));
     return result
       .map(list -> list.stream().collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
       .map(MalNode::map);
@@ -229,7 +230,7 @@ class Evaluator {
       case MalList(var values, _) when values.isEmpty() -> done(value);
       case MalList(var values, _) when values.get(0).equals(UNQUOTE) -> done(values.get(1));
       case MalList(var values, _) -> recursiveQuasiquote(values);
-      case MalVector(var values, _) -> recursiveQuasiquote(values).map(next -> list(symbol("vec"), next));
+      case MalVector(var values, _) -> recursiveQuasiquote(values).map(next -> list(VEC, next));
       default -> done(value);
     };
   }

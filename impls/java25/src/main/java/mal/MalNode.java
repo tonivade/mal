@@ -34,6 +34,7 @@ public sealed interface MalNode {
 
   MalSymbol CONCAT = new MalSymbol("concat", null);
   MalSymbol CONS = new MalSymbol("cons", null);
+  MalSymbol VEC = symbol("vec");
 
   MalConstant NIL = new MalConstant("nil", null);
   MalConstant TRUE = new MalConstant("true", null);
