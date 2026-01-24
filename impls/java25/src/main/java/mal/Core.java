@@ -471,6 +471,10 @@ interface Core {
     }
   }
 
+  static MalNode typeOf(MalList args) {
+    return MalNode.string(args.get(0).getClass().getSimpleName());
+  }
+
   Map<String, MalNode> NS = Map.ofEntries(
     entry("prn", function(lambda(Core::prn))),
     entry("println", function(lambda(Core::println))),
@@ -534,7 +538,8 @@ interface Core {
     entry("number?", function(lambda(Core::isNumber))),
     entry("seq", function(lambda(Core::seq))),
     entry("conj", function(lambda(Core::conj))),
-    entry("java-eval", function(lambda(Core::eval)))
+    entry("java-eval", function(lambda(Core::eval))),
+    entry("type-of", function(lambda(Core::typeOf)))
   );
 
   private static MalList asList(String string) {

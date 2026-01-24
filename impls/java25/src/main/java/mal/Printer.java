@@ -16,7 +16,6 @@ import mal.MalNode.MalConstant;
 import mal.MalNode.MalError;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKeyword;
-import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
@@ -40,10 +39,6 @@ class Printer {
         case MalString(var value, _) -> done("\"" + escapeJava(value) + "\"");
         case MalKeyword(var value, _) -> done(":" + value);
         case MalNumber(var value, _) -> done(Long.toString(value));
-        case MalList(var list, _) -> {
-          yield traverse(list, m -> safePrint(m, pretty))
-            .map(l -> l.stream().collect(joining(" ", "(", ")")));
-        }
         case MalVector(var list, _) -> {
           yield traverse(list, m -> safePrint(m, pretty))
             .map(l -> l.stream().collect(joining(" ", "[", "]")));
