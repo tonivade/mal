@@ -34,7 +34,6 @@ import org.pcollections.PVector;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalLazy;
-import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
@@ -68,10 +67,9 @@ class Evaluator {
 
       return switch (ast) {
         case MalSymbol(var name, _) -> evalSymbol(env, name);
-        case MalList(var values, _) when !values.isEmpty() -> evalList(env, values);
         case MalVector(var values, _) when !values.isEmpty() -> evalVector(env, values);
         case MalMap(var map, _) when !map.isEmpty() -> evalMap(env, map);
-        case MalSequence seq when !seq.isEmpty() -> evalList(env, list(seq).values());
+        case MalSequence seq when !seq.isEmpty() -> evalList(env, seq);
         default -> done(ast);
       };
     });
@@ -85,7 +83,7 @@ class Evaluator {
     return done(value);
   }
 
-  private static Trampoline<MalNode> evalList(Env env, PVector<MalNode> values) {
+  private static Trampoline<MalNode> evalList(Env env, MalSequence values) {
     return switch (values.get(0)) {
 
       case MalSymbol(var name, _) when name.equals(DEF) -> {
@@ -120,7 +118,7 @@ class Evaluator {
       }
 
       case MalSymbol(var name, _) when name.equals(DO) -> {
-        yield traverse(values.minus(0), m -> safeEval(m, env))
+        yield traverse(values.tail(), m -> safeEval(m, env))
           .map(PVector::getLast);
       }
 
@@ -182,24 +180,24 @@ class Evaluator {
       }
 
       case MalMacro(var lambda, _) -> {
-        yield lambda.apply(list(values.minus(0)))
+        yield lambda.apply(list(values.tail()))
           .flatMap(next -> safeEval(next, env));
       }
 
       case MalFunction(var lambda, _) -> {
-        yield traverse(values.minus(0), m -> safeEval(m, env))
+        yield traverse(values.tail(), m -> safeEval(m, env))
           .flatMap(args -> lambda.apply(list(args)));
       }
 
       default -> {
         yield safeEval(values.get(0), env)
-          .<MalNode>map(callable -> list(values.minus(0).plus(0, callable)))
+          .<MalNode>map(callable -> values.tail().cons(callable))
           .flatMap(node -> safeEval(node, env));
       }
     };
   }
 
-  private static int getNumberOfArguments(PVector<MalNode> values) {
+  private static int getNumberOfArguments(MalSequence values) {
     if (values.size() > 3) {
       var args = (MalNumber) values.get(3);
       return (int) args.value();
@@ -223,25 +221,25 @@ class Evaluator {
     return switch (value) {
       case MalSymbol _ -> done(list(QUOTE, value));
       case MalMap _ -> done(list(QUOTE, value));
-      case MalList(var values, _) when values.isEmpty() -> done(value);
-      case MalList(var values, _) when values.get(0).equals(UNQUOTE) -> done(values.get(1));
-      case MalList(var values, _) -> recursiveQuasiquote(values);
-      case MalVector(var values, _) -> recursiveQuasiquote(values).map(next -> list(VEC, next));
+      case MalVector vec -> recursiveQuasiquote(vec).map(next -> list(VEC, next));
+      case MalSequence seq when seq.isEmpty() -> done(value);
+      case MalSequence seq when seq.get(0).equals(UNQUOTE) -> done(seq.get(1));
+      case MalSequence seq -> recursiveQuasiquote(seq);
       default -> done(value);
     };
   }
 
-  private static Trampoline<MalNode> recursiveQuasiquote(PVector<MalNode> values) {
+  private static Trampoline<MalNode> recursiveQuasiquote(MalSequence values) {
     if (values.isEmpty()) {
       return done(EMPTY_LIST);
     }
     return more(() -> {
       var element = values.get(0);
-      if (element instanceof MalList list && list.get(0).equals(SPLICE_UNQUOTE)) {
-        return recursiveQuasiquote(values.minus(0))
-          .map(result -> list(CONCAT, list.get(1), result));
+      if (element instanceof MalSequence seq && seq.get(0).equals(SPLICE_UNQUOTE)) {
+        return recursiveQuasiquote(values.tail())
+          .map(result -> list(CONCAT, seq.get(1), result));
       }
-      return zip(recursiveQuasiquote(values.minus(0)), evalQuasiquote(element),
+      return zip(recursiveQuasiquote(values.tail()), evalQuasiquote(element),
         (next, eval) -> list(CONS, eval, next));
     });
   }
