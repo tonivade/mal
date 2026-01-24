@@ -88,7 +88,7 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode withMeta(MalNode meta) {
+    public MalAtom withMeta(MalNode meta) {
       return new MalAtom(value, meta);
     }
 
@@ -349,7 +349,7 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode withMeta(MalNode meta) {
+    public MalCons withMeta(MalNode meta) {
       return new MalCons(head, tail, meta);
     }
 
@@ -425,7 +425,7 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode withMeta(MalNode meta) {
+    public MalLazy withMeta(MalNode meta) {
       return new MalLazy(thunk, value, meta);
     }
 
@@ -552,7 +552,7 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode withMeta(MalNode meta) {
+    public MalFunction withMeta(MalNode meta) {
       return new MalFunction(lambda, meta);
     }
   }
@@ -560,7 +560,7 @@ public sealed interface MalNode {
   record MalMacro(MalLambda lambda, MalNode meta) implements MalWithLambda {
 
     @Override
-    public MalNode withMeta(MalNode meta) {
+    public MalMacro withMeta(MalNode meta) {
       return new MalMacro(lambda, meta);
     }
   }
