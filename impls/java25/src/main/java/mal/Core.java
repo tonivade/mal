@@ -472,7 +472,10 @@ interface Core {
   }
 
   static MalNode typeOf(MalList args) {
-    return MalNode.string(args.get(0).getClass().getSimpleName());
+    if (args.isEmpty()) {
+      return NIL;
+    }
+    return string(args.get(0).getClass().getSimpleName());
   }
 
   Map<String, MalNode> NS = Map.ofEntries(
