@@ -120,10 +120,8 @@ class Evaluator {
       }
 
       case MalSymbol(var name, _) when name.equals(DO) -> {
-        var later = values.minus(0).stream()
-          .map(m -> safeEval(m, env))
-          .toList();
-        yield sequence(later).map(PVector::getLast);
+        yield traverse(values.minus(0), m -> safeEval(m, env))
+          .map(PVector::getLast);
       }
 
       case MalSymbol(var name, _) when name.equals(TRY) -> {
@@ -189,10 +187,7 @@ class Evaluator {
       }
 
       case MalFunction(var lambda, _) -> {
-        var later = values.minus(0).stream()
-          .map(m -> safeEval(m, env))
-          .toList();
-        yield sequence(later)
+        yield traverse(values.minus(0), m -> safeEval(m, env))
           .flatMap(args -> lambda.apply(list(args)));
       }
 
