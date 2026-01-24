@@ -17,6 +17,7 @@ import static mal.MalNode.UNQUOTE;
 import static mal.MalNode.VEC;
 import static mal.MalNode.error;
 import static mal.MalNode.function;
+import static mal.MalNode.lazy;
 import static mal.MalNode.list;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
@@ -33,7 +34,6 @@ import org.pcollections.PVector;
 
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
-import mal.MalNode.MalLazy;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
@@ -176,7 +176,7 @@ class Evaluator {
         if (!(body instanceof MalSequence)) {
           throw new MalException("invalid lazy-seq");
         }
-        yield done(new MalLazy(() -> eval(body, env), null));
+        yield done(lazy(() -> eval(body, env)));
       }
 
       case MalMacro(var lambda, _) -> {

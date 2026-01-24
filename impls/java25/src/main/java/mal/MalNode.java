@@ -572,6 +572,10 @@ public sealed interface MalNode {
     return new MalMapped(lambda, sequence, null);
   }
 
+  static MalLazy lazy(Supplier<MalNode> thunk) {
+    return new MalLazy(thunk, null);
+  }
+
   static MalVector vector(MalNode...tokens) {
     return vector(List.of(tokens));
   }

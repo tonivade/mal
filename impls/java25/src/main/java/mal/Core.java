@@ -12,6 +12,7 @@ import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
 import static mal.MalNode.function;
 import static mal.MalNode.lambda;
+import static mal.MalNode.lazy;
 import static mal.MalNode.list;
 import static mal.MalNode.number;
 import static mal.MalNode.string;
@@ -219,7 +220,7 @@ interface Core {
     if (args.size() == 2 && args.get(0) instanceof MalCollection first && args.get(1) instanceof MalCollection second) {
       return list(first.values().plusAll(second.values()));
     }
-    return new MalNode.MalLazy(() -> concatStep(args), null);
+    return lazy(() -> concatStep(args));
   }
 
   private static MalNode concatStep(MalList seqs) {
