@@ -28,24 +28,24 @@ public sealed interface MalNode {
 
   MalNode meta();
 
-  MalSymbol QUOTE = new MalSymbol("quote", null);
-  MalSymbol QUASIQUOTE = new MalSymbol("quasiquote", null);
-  MalSymbol UNQUOTE = new MalSymbol("unquote", null);
-  MalSymbol SPLICE_UNQUOTE = new MalSymbol("splice-unquote", null);
-  MalSymbol WITH_META = new MalSymbol("with-meta", null);
-  MalSymbol DEREF = new MalSymbol("deref", null);
-  MalSymbol DEBUG_EVAL = new MalSymbol("DEBUG-EVAL", null);
+  MalSymbol QUOTE = symbol("quote");
+  MalSymbol QUASIQUOTE = symbol("quasiquote");
+  MalSymbol UNQUOTE = symbol("unquote");
+  MalSymbol SPLICE_UNQUOTE = symbol("splice-unquote");
+  MalSymbol WITH_META = symbol("with-meta");
+  MalSymbol DEREF = symbol("deref");
+  MalSymbol DEBUG_EVAL = symbol("DEBUG-EVAL");
 
-  MalSymbol CONCAT = new MalSymbol("concat", null);
-  MalSymbol CONS = new MalSymbol("cons", null);
+  MalSymbol CONCAT = symbol("concat");
+  MalSymbol CONS = symbol("cons");
   MalSymbol VEC = symbol("vec");
 
   MalConstant NIL = new MalConstant("nil", null);
   MalConstant TRUE = new MalConstant("true", null);
   MalConstant FALSE = new MalConstant("false", null);
 
-  MalNumber ZERO = new MalNumber(0, null);
-  MalNumber ONE = new MalNumber(1, null);
+  MalNumber ZERO = number(0);
+  MalNumber ONE = number(1);
 
   MalList EMPTY_LIST = new MalList(TreePVector.empty(), null);
   MalVector EMPTY_VECTOR = new MalVector(TreePVector.empty(), null);

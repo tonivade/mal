@@ -28,7 +28,9 @@ import static mal.Trampoline.zip;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import org.pcollections.PVector;
+
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalLazy;
@@ -67,7 +69,7 @@ class Evaluator {
       return switch (ast) {
         case MalSymbol(var name, _) -> evalSymbol(env, name);
         case MalList(var values, _) when !values.isEmpty() -> evalList(env, values);
-        case MalVector(var values, _) when !values.isEmpty() -> evalVector(env,values);
+        case MalVector(var values, _) when !values.isEmpty() -> evalVector(env, values);
         case MalMap(var map, _) when !map.isEmpty() -> evalMap(env, map);
         case MalSequence seq when !seq.isEmpty() -> evalList(env, list(seq).values());
         default -> done(ast);

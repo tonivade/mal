@@ -5,11 +5,13 @@
 package mal;
 
 import static java.util.function.Function.identity;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 import org.pcollections.PVector;
 import org.pcollections.TreePVector;
 
@@ -65,7 +67,6 @@ sealed interface Trampoline<T> {
         if (stack.isEmpty()) {
           return (T) value; // end of program
         }
-
         current = stack.pop().apply(value);
       } else if (current instanceof More(var next)) {
         current = next.get();
@@ -83,16 +84,12 @@ sealed interface Trampoline<T> {
   static <T, R> Trampoline<PVector<R>> traverse(Iterable<? extends T> list, Function<? super T, ? extends Trampoline<R>> mapper) {
     Trampoline<PVector<R>> acc = done(TreePVector.<R>empty());
     for (T current : list) {
-      acc = Trampoline.add(acc, mapper.apply(current));
+      acc = zip(acc, mapper.apply(current), PVector::plus);
     }
     return acc;
   }
 
   static <T> Trampoline<PVector<T>> sequence(Iterable<? extends Trampoline<T>> list) {
     return traverse(list, identity());
-  }
-
-  private static <T> Trampoline<PVector<T>> add(Trampoline<PVector<T>> tlist, Trampoline<T> titem) {
-    return zip(tlist, titem, PVector::plus);
   }
 }

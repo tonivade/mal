@@ -20,15 +20,18 @@ import static mal.Printer.print;
 import static mal.Reader.read;
 import static mal.Trampoline.done;
 import static mal.Trampoline.traverse;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
+
 import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
 import org.pcollections.TreePVector;
+
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalCollection;
 import mal.MalNode.MalFunction;
@@ -203,7 +206,7 @@ interface Core {
   static MalNode cons(MalList args) {
     var item = args.get(0);
     var list = (MalSequence) args.get(1);
-    if (list instanceof MalCollection col && !col.isEmpty()) {
+    if (list instanceof MalCollection col) {
       return list(col.values().plus(0, item));
     }
     return MalNode.cons(item, list);
