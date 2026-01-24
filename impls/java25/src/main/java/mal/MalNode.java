@@ -47,7 +47,6 @@ public sealed interface MalNode {
   MalNumber ZERO = number(0);
   MalNumber ONE = number(1);
 
-  MalEmpty EMPTY_SEQ = new MalEmpty(null);
   MalList EMPTY_LIST = new MalList(TreePVector.empty(), null);
   MalVector EMPTY_VECTOR = new MalVector(TreePVector.empty(), null);
   MalMap EMPTY_MAP = new MalMap(HashTreePMap.empty(), null);
@@ -318,29 +317,6 @@ public sealed interface MalNode {
     }
   }
 
-  record MalEmpty(MalNode meta) implements MalSequence {
-
-    @Override
-    public MalEmpty withMeta(MalNode meta) {
-      return new MalEmpty(meta);
-    }
-
-    @Override
-    public MalNode head() {
-      return NIL;
-    }
-
-    @Override
-    public MalSequence tail() {
-      return this;
-    }
-
-    @Override
-    public boolean isEmpty() {
-      return true;
-    }
-  }
-
   record MalCons(MalNode head, MalSequence tail, MalNode meta) implements MalSequence {
 
     public MalCons {
@@ -463,7 +439,7 @@ public sealed interface MalNode {
         MalNode result = thunk.get();
 
         if (result == NIL) {
-          value = EMPTY_SEQ;
+          value = EMPTY_LIST;
         } else if (result instanceof MalSequence seq) {
           value = seq;
         } else {
