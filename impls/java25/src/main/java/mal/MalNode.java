@@ -335,44 +335,6 @@ public sealed interface MalNode {
     }
   }
 
-  record MalMapped(MalLambda lambda, MalSequence sequence, MalNode meta) implements MalSequence {
-
-    public MalMapped {
-      requireNonNull(lambda);
-      requireNonNull(sequence);
-    }
-
-    @Override
-    public MalMapped withMeta(MalNode meta) {
-      return new MalMapped(lambda, sequence, meta);
-    }
-
-    @Override
-    public MalNode get(int pos) {
-      return lambda.apply(list(sequence.get(pos))).run();
-    }
-
-    @Override
-    public MalNode head() {
-      return lambda.apply(list(sequence.head())).run();
-    }
-
-    @Override
-    public MalSequence tail() {
-      return new MalMapped(lambda, sequence.tail(), null);
-    }
-
-    @Override
-    public boolean isEmpty() {
-      return sequence.isEmpty();
-    }
-
-    @Override
-    public int size() {
-      return sequence.size();
-    }
-  }
-
   final class MalLazy implements MalSequence {
 
     private Supplier<MalNode> thunk;
@@ -519,6 +481,10 @@ public sealed interface MalNode {
 
   sealed interface MalWithLambda extends MalNode {
     MalLambda lambda();
+
+    default Trampoline<MalNode> apply(MalList args) {
+      return lambda().apply(args);
+    }
   }
 
   record MalFunction(MalLambda lambda, MalNode meta) implements MalWithLambda {
@@ -566,10 +532,6 @@ public sealed interface MalNode {
 
   static MalCons cons(MalNode first, MalSequence rest) {
     return new MalCons(first, rest, null);
-  }
-
-  static MalMapped mapped(MalLambda lambda, MalSequence sequence) {
-    return new MalMapped(lambda, sequence, null);
   }
 
   static MalLazy lazy(Supplier<MalNode> thunk) {

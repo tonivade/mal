@@ -297,16 +297,29 @@ interface Core {
         arguments = arguments.plus(m);
       }
     }
-    return function.lambda().apply(list(arguments));
+    return function.apply(list(arguments));
   }
 
   static Trampoline<MalNode> map(MalList args) {
     var function = (MalWithLambda) args.get(0);
     var elements = (MalSequence) args.get(1);
     if (elements instanceof MalCollection col) {
-      return traverse(col.values(), current -> function.lambda().apply(list(current))).map(MalNode::list);
+      return traverse(col.values(), current -> function.apply(list(current))).map(MalNode::list);
     }
-    return done(MalNode.mapped(function.lambda(), elements));
+    return done(mapLazy(function, elements));
+  }
+
+  private static MalNode mapLazy(MalWithLambda function, MalSequence elements) {
+    if (elements.isEmpty()) {
+      return EMPTY_LIST;
+    }
+    return lazy(() -> mapStep(function, elements));
+  }
+
+  private static MalNode mapStep(MalWithLambda function, MalSequence seq) {
+    return MalNode.cons(
+        function.apply(list(seq.head())).run(),
+        (MalSequence) mapLazy(function, seq.tail()));
   }
 
   static MalNode isNil(MalList args) {
