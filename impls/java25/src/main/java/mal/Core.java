@@ -205,11 +205,8 @@ interface Core {
 
   static MalNode cons(MalList args) {
     var item = args.get(0);
-    var list = (MalSequence) args.get(1);
-    if (list instanceof MalCollection col) {
-      return list(col.values().plus(0, item));
-    }
-    return MalNode.cons(item, list);
+    var seq = (MalSequence) args.get(1);
+    return seq.cons(item);
   }
 
   static MalNode concat(MalList args) {

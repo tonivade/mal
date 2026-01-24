@@ -217,6 +217,10 @@ public sealed interface MalNode {
 
     MalSequence tail();
 
+    default MalSequence cons(MalNode node) {
+      return new MalCons(node, this, null);
+    }
+
     boolean isEmpty();
 
     default int size() {
@@ -263,6 +267,11 @@ public sealed interface MalNode {
     }
 
     @Override
+    default MalSequence cons(MalNode node) {
+      return list(values().plus(0, node));
+    }
+
+    @Override
     default MalNode head() {
       return values().getFirst();
     }
@@ -300,6 +309,7 @@ public sealed interface MalNode {
     public MalVector {
       requireNonNull(values);
     }
+
 
     @Override
     public MalVector withMeta(MalNode meta) {
