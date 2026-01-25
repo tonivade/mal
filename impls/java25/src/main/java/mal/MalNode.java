@@ -381,7 +381,7 @@ public sealed interface MalNode {
     @Override
     public boolean isEmpty() {
       realize();
-      return value.isEmpty();
+      return value == EMPTY_LIST;
     }
 
     private void realize() {
@@ -398,7 +398,7 @@ public sealed interface MalNode {
     }
 
     private MalNode force() {
-      MalNode result = thunk.get();
+      var result = thunk.get();
       thunk = null;
       return result;
     }
