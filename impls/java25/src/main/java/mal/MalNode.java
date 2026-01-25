@@ -338,7 +338,7 @@ public sealed interface MalNode {
   final class MalLazy implements MalSequence {
 
     private Supplier<MalNode> thunk;
-    private MalSequence value;
+    private MalNode value;
     private final MalNode meta;
 
     public MalLazy(Supplier<MalNode> value, MalNode meta) {
@@ -346,7 +346,7 @@ public sealed interface MalNode {
       this.meta = meta;
     }
 
-    private MalLazy(Supplier<MalNode> thunk, MalSequence value, MalNode meta) {
+    private MalLazy(Supplier<MalNode> thunk, MalNode value, MalNode meta) {
       this.thunk = thunk;
       this.value = value;
       this.meta = meta;
@@ -369,19 +369,19 @@ public sealed interface MalNode {
     @Override
     public MalNode head() {
       realize();
-      return value.head();
+      return ((MalSequence) value).head();
     }
 
     @Override
     public MalSequence tail() {
       realize();
-      return value.tail();
+      return ((MalSequence) value).tail();
     }
 
     @Override
     public boolean isEmpty() {
       realize();
-      return value == EMPTY_LIST;
+      return ((MalSequence) value).isEmpty();
     }
 
     private void realize() {
@@ -389,18 +389,32 @@ public sealed interface MalNode {
         var result = force();
         if (result == NIL) {
           value = EMPTY_LIST;
-        } else if (result instanceof MalSequence seq) {
-          value = seq;
+        } else if (result instanceof MalSequence) {
+          value = unwrap(result);
         } else {
           throw new MalException("lazy-seq must return a sequence or nil, got: " + result);
         }
       }
     }
 
+    private MalNode unwrap(MalNode current) {
+      while (current instanceof MalLazy) {
+        current = ((MalLazy) current).force();
+      }
+      return current;
+    }
+
     private MalNode force() {
-      var result = thunk.get();
-      thunk = null;
-      return result;
+      if (!isRealized()) {
+        value = thunk.get();
+        thunk = null;
+      }
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return "MalLazy[thunk=%s,value=%s,meta=%s]".formatted(thunk, value, meta);
     }
   }
 
