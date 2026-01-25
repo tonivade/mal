@@ -357,12 +357,6 @@ public sealed interface MalNode {
     }
 
     @Override
-    public MalNode get(int pos) {
-      realize();
-      return MalSequence.super.get(pos);
-    }
-
-    @Override
     public MalLazy withMeta(MalNode meta) {
       return new MalLazy(thunk, value, meta);
     }
@@ -384,13 +378,8 @@ public sealed interface MalNode {
 
     @Override
     public boolean isEmpty() {
-      return unwrap() == EMPTY_LIST;
-    }
-
-    @Override
-    public int size() {
       realize();
-      return MalSequence.super.size();
+      return unwrap(value) == EMPTY_LIST;
     }
 
     private void realize() {
@@ -407,8 +396,7 @@ public sealed interface MalNode {
       }
     }
 
-    private MalSequence unwrap() {
-      var current = value();
+    private MalNode unwrap(MalNode current) {
       while (current instanceof MalLazy) {
         current = ((MalLazy) current).value();
       }
@@ -420,7 +408,7 @@ public sealed interface MalNode {
       return value;
     }
 
-    private MalNode force() { 
+    private MalNode force() {
       var result = thunk.get();
       thunk = null;
       return result;
