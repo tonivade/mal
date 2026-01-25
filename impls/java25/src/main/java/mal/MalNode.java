@@ -386,13 +386,12 @@ public sealed interface MalNode {
 
     private void realize() {
       if (!isRealized()) {
-        var result = force();
-        if (result == NIL) {
-          value = EMPTY_LIST;
-        } else if (result instanceof MalSequence) {
-          value = unwrap(result);
+        value = thunk.get();
+        thunk = null;
+        if (value instanceof MalSequence) {
+          value = unwrap(value);
         } else {
-          throw new MalException("lazy-seq must return a sequence or nil, got: " + result);
+          throw new MalException("lazy-seq must return a sequence or nil, got: " + value);
         }
       }
     }
