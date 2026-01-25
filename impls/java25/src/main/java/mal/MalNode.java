@@ -368,24 +368,25 @@ public sealed interface MalNode {
 
     @Override
     public MalNode head() {
-      return value().head();
+      realize();
+      return value.head();
     }
 
     @Override
     public MalSequence tail() {
-      return value().tail();
+      realize();
+      return value.tail();
     }
 
     @Override
     public boolean isEmpty() {
       realize();
-      return unwrap(value) == EMPTY_LIST;
+      return value.isEmpty();
     }
 
     private void realize() {
       if (!isRealized()) {
         var result = force();
-
         if (result == NIL) {
           value = EMPTY_LIST;
         } else if (result instanceof MalSequence seq) {
@@ -396,20 +397,8 @@ public sealed interface MalNode {
       }
     }
 
-    private MalNode unwrap(MalNode current) {
-      while (current instanceof MalLazy) {
-        current = ((MalLazy) current).value();
-      }
-      return current;
-    }
-
-    private MalSequence value() {
-      realize();
-      return value;
-    }
-
     private MalNode force() {
-      var result = thunk.get();
+      MalNode result = thunk.get();
       thunk = null;
       return result;
     }
