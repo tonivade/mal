@@ -353,12 +353,12 @@ public sealed interface MalNode {
     }
 
     public boolean isRealized() {
-      return thunk != null;
+      return thunk == null;
     }
 
     @Override
     public MalNode get(int pos) {
-      force();
+      realize();
       return MalSequence.super.get(pos);
     }
 
@@ -374,31 +374,28 @@ public sealed interface MalNode {
 
     @Override
     public MalNode head() {
-      force();
-      return value.head();
+      return value().head();
     }
 
     @Override
     public MalSequence tail() {
-      force();
-      return value.tail();
+      return value().tail();
     }
 
     @Override
     public boolean isEmpty() {
-      force();
-      return value.isEmpty();
+      return unwrap() == EMPTY_LIST;
     }
 
     @Override
     public int size() {
-      force();
+      realize();
       return MalSequence.super.size();
     }
 
-    private void force() {
-      if (isRealized()) {
-        MalNode result = thunk.get();
+    private void realize() {
+      if (!isRealized()) {
+        var result = force();
 
         if (result == NIL) {
           value = EMPTY_LIST;
@@ -407,9 +404,26 @@ public sealed interface MalNode {
         } else {
           throw new MalException("lazy-seq must return a sequence or nil, got: " + result);
         }
-
-        thunk = null;
       }
+    }
+
+    private MalSequence unwrap() {
+      var current = value();
+      while (current instanceof MalLazy) {
+        current = ((MalLazy) current).value();
+      }
+      return current;
+    }
+
+    private MalSequence value() {
+      realize();
+      return value;
+    }
+
+    private MalNode force() { 
+      var result = thunk.get();
+      thunk = null;
+      return result;
     }
   }
 
