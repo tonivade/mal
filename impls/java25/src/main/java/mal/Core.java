@@ -224,15 +224,11 @@ interface Core {
   }
 
   private static MalNode concatStep(MalList seqs) {
-    var head = seqs.head();
+    var seq = (MalSequence) seqs.head();
     var tail = seqs.tail();
-
-    var seq = (MalSequence) head;
-
     if (seq.isEmpty()) {
       return concat(tail);
     }
-
     return MalNode.cons(
         seq.head(),
         (MalSequence) concat(
