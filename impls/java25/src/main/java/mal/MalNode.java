@@ -381,7 +381,7 @@ public sealed interface MalNode {
     @Override
     public boolean isEmpty() {
       realize();
-      return ((MalSequence) value).isEmpty();
+      return value == EMPTY_LIST;
     }
 
     private void realize() {

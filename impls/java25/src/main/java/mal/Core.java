@@ -302,21 +302,21 @@ interface Core {
 
   static Trampoline<MalNode> map(MalList args) {
     var function = (MalWithLambda) args.get(0);
-    var elements = (MalSequence) args.get(1);
-    if (elements instanceof MalCollection col) {
+    var seq = (MalSequence) args.get(1);
+    if (seq instanceof MalCollection col) {
       return traverse(col.values(), current -> function.apply(list(current))).map(MalNode::list);
     }
-    return done(mapLazy(function, elements));
+    return done(mapLazy(function, seq));
   }
 
   private static MalNode mapLazy(MalWithLambda function, MalSequence elements) {
-    if (elements.isEmpty()) {
-      return EMPTY_LIST;
-    }
     return lazy(() -> mapStep(function, elements));
   }
 
   private static MalNode mapStep(MalWithLambda function, MalSequence seq) {
+    if (seq.isEmpty()) {
+      return EMPTY_LIST;
+    }
     return MalNode.cons(
         function.apply(list(seq.head())).run(),
         (MalSequence) mapLazy(function, seq.tail()));
