@@ -227,6 +227,10 @@ interface Core {
   }
 
   private static MalNode concatStep(MalList seqs) {
+    if (seqs.size() == 1) {
+      return seqs.get(0);
+    }
+
     var seq = ((MalSequence) seqs.head()).seq();
     var tail = seqs.tail();
 
