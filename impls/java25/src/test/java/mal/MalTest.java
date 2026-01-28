@@ -994,6 +994,14 @@ class MalTest {
     assertEquals("\"MalLazy\"", StepA.rep("(type-of (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
   }
 
+  @Test
+  void test() {
+    StepA.rep("(def! range (fn* [n] (lazy-seq (cons n (range (+ n 1))))))");
+    StepA.rep("(def! take (fn* [i xs] (lazy-seq (if (empty? xs) xs (if (> i 0) (cons (first xs) (take (- i 1) (rest xs))) (list))))))");
+    StepA.rep("(def! drop (fn* [i xs] (lazy-seq (if (empty? xs) xs (if (> i 0) (drop (- i 1) (rest xs)) xs)))))");
+    assertEquals("false", StepA.rep("(empty? (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
+  }
+
   /**
    * Helper method to redirect System.out, run a command, and validate the output.
    */

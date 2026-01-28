@@ -407,8 +407,7 @@ public sealed interface MalNode {
 
     @Override
     public MalSequence seq() {
-      realize();
-      return (MalSequence) value;
+      return realize().seq();
     }
 
     @Override
@@ -436,7 +435,7 @@ public sealed interface MalNode {
       return seq() == null;
     }
 
-    private void realize() {
+    private MalSequence realize() {
       if (!isRealized()) {
         value = thunk.get();
         thunk = null;
@@ -444,24 +443,14 @@ public sealed interface MalNode {
           value = unwrap(value);
         }
       }
+      return (MalSequence) value;
     }
 
     private MalNode unwrap(MalNode current) {
       while (current instanceof MalLazy lazy) {
-        current = lazy.force();
-      }
-      if (current instanceof MalSequence seq) {
-        return seq.seq();
+        current = lazy.realize();
       }
       return current;
-    }
-
-    private MalNode force() {
-      if (!isRealized()) {
-        value = thunk.get();
-        thunk = null;
-      }
-      return value;
     }
 
     @Override
