@@ -29,7 +29,7 @@ class Readline {
       "keys", "vals", "hash-map", "assoc", "dissoc", "readline", "time-ms", "meta", "with-meta",
       "fn?", "string?", "number?", "seq", "conj", "def!", "defmacro!", "let*", "do", "try*",
       "if", "fn", "quote", "quasiquote", "catch*", "eval", "import", "java-eval", "lazy-seq",
-      "type-of"))
+      "type-of", "spawn", "join"))
     .highlighter(new DefaultHighlighter())
     .parser(new DefaultParser().lineCommentDelims(new String[] { ";" }))
     .build();
