@@ -988,6 +988,7 @@ class MalTest {
     assertEquals("\"MalLazy\"", StepA.rep("(type-of (take 5 (drop 3 (range 1))))"));
     assertEquals("110", StepA.rep("(nth (range 10) 100)"));
     assertEquals("11", StepA.rep("(first (rest (range 10)))"));
+    assertEquals("(10 11 12)", StepA.rep("(concat (take 3 (range 10)))"));
     assertEquals("(10 11 12 6 7 8)", StepA.rep("(concat (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
     assertEquals("false", StepA.rep("(empty? (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
     assertEquals("\"MalLazy\"", StepA.rep("(type-of (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
