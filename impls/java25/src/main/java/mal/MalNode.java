@@ -230,9 +230,9 @@ public sealed interface MalNode {
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
 
     default MalNode get(int pos) {
-      for (var seq = this; !seq.isEmpty(); seq = seq.tail()) {
+      for (var current : this) {
         if (pos == 0) {
-          return seq.head();
+          return current;
         }
         pos--;
       }
@@ -251,7 +251,7 @@ public sealed interface MalNode {
 
     default int size() {
       int count = 0;
-      for (var seq = this; !seq.isEmpty(); seq = seq.tail()) {
+      for (var _ : this) {
         count++;
       }
       return count;
@@ -272,7 +272,7 @@ public sealed interface MalNode {
           if (!hasNext()) {
             throw new NoSuchElementException();
           }
-          MalNode result = current.head();
+          var result = current.head();
           current = current.tail();
           return result;
         }
@@ -299,11 +299,14 @@ public sealed interface MalNode {
 
     @Override
     default MalNode head() {
-      return values().getFirst();
+      return get(0);
     }
 
     @Override
     default MalList tail() {
+      if (isEmpty()) {
+        return EMPTY_LIST;
+      }
       return list(values().minus(0));
     }
 

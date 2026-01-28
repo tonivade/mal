@@ -262,9 +262,6 @@ interface Core {
       return NIL;
     }
     var list = (MalSequence) args.get(0);
-    if (list.isEmpty()) {
-      return NIL;
-    }
     return list.get(0);
   }
 
@@ -273,9 +270,6 @@ interface Core {
       return EMPTY_LIST;
     }
     var list = (MalSequence) args.get(0);
-    if (list.isEmpty()) {
-      return EMPTY_LIST;
-    }
     return list.tail();
   }
 
