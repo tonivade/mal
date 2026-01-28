@@ -448,7 +448,11 @@ public sealed interface MalNode {
 
     private MalNode unwrap(MalNode current) {
       while (current instanceof MalLazy lazy) {
-        current = lazy.realize();
+        if (lazy.isRealized()) {
+          current = lazy.value;
+        } else {
+          current = lazy.thunk.get();
+        }
       }
       return current;
     }
