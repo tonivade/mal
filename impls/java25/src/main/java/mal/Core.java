@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Map;
 
 import org.codehaus.commons.compiler.CompileException;
@@ -35,6 +36,7 @@ import org.pcollections.TreePVector;
 
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalCollection;
+import mal.MalNode.MalFiber;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalKeyword;
@@ -488,6 +490,21 @@ interface Core {
     return string(args.get(0).getClass().getSimpleName());
   }
 
+  static MalNode join(MalList args) {
+    var fiber = (MalFiber) args.get(0);
+    return fiber.join();
+  }
+
+  static MalNode sleep(MalList args) {
+    var seconds = (MalNumber) args.get(0);
+    try {
+      Thread.sleep(Duration.ofSeconds(seconds.asInt()));
+    } catch (InterruptedException e) {
+      throw new MalException("interrupted", e);
+    }
+    return NIL;
+  }
+
   Map<String, MalNode> NS = Map.ofEntries(
     entry("prn", function(lambda(Core::prn))),
     entry("println", function(lambda(Core::println))),
@@ -552,7 +569,9 @@ interface Core {
     entry("seq", function(lambda(Core::seq))),
     entry("conj", function(lambda(Core::conj))),
     entry("java-eval", function(lambda(Core::eval))),
-    entry("type-of", function(lambda(Core::typeOf)))
+    entry("type-of", function(lambda(Core::typeOf))),
+    entry("join", function(lambda(Core::join))),
+    entry("sleep", function(lambda(Core::sleep)))
   );
 
   private static MalList asList(String string) {

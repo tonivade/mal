@@ -14,6 +14,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalError;
+import mal.MalNode.MalFiber;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKeyword;
 import mal.MalNode.MalMacro;
@@ -55,6 +56,7 @@ class Printer {
         case MalAtom atom -> safePrint(atom.getValue(), pretty).map(str -> "(atom " + str + ")");
         case MalFunction _ -> done("#function");
         case MalMacro _ -> done("#function");
+        case MalFiber _ -> done("#fiber");
         case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
         case MalError(var exception, _) -> done(exception.getMessage());
       };

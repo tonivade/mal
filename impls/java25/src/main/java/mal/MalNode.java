@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -198,6 +199,31 @@ public sealed interface MalNode {
     @Override
     public MalSymbol withMeta(MalNode meta) {
       return new MalSymbol(name, meta);
+    }
+  }
+
+  final class MalFiber implements MalNode {
+
+    private final CompletableFuture<MalNode> future;
+    private final MalNode meta;
+
+    public MalFiber(CompletableFuture<MalNode> future, MalNode meta) {
+      this.future = future;
+      this.meta = meta;
+    }
+
+    public MalNode join() {
+      return future.join();
+    }
+
+    @Override
+    public MalNode withMeta(MalNode meta) {
+      return new MalFiber(future, meta);
+    }
+
+    @Override
+    public MalNode meta() {
+      return meta;
     }
   }
 
@@ -484,10 +510,15 @@ public sealed interface MalNode {
   }
 
   sealed interface MalWithLambda extends MalNode {
+
     MalLambda lambda();
 
     default Trampoline<MalNode> apply(MalList args) {
       return lambda().apply(args);
+    }
+
+    default MalNode run(MalList args) {
+      return apply(args).run();
     }
   }
 
@@ -540,6 +571,10 @@ public sealed interface MalNode {
 
   static MalLazy lazy(Supplier<MalNode> thunk) {
     return new MalLazy(thunk, null);
+  }
+
+  static MalFiber fork(CompletableFuture<MalNode> future) {
+    return new MalFiber(future, null);
   }
 
   static MalVector vector(MalNode...tokens) {

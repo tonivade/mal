@@ -16,6 +16,7 @@ import static mal.MalNode.SPLICE_UNQUOTE;
 import static mal.MalNode.UNQUOTE;
 import static mal.MalNode.VEC;
 import static mal.MalNode.error;
+import static mal.MalNode.fork;
 import static mal.MalNode.function;
 import static mal.MalNode.lazy;
 import static mal.MalNode.list;
@@ -29,7 +30,9 @@ import static mal.Trampoline.zip;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.pcollections.PVector;
 
 import mal.MalNode.MalFunction;
@@ -43,6 +46,7 @@ import mal.MalNode.MalVector;
 
 class Evaluator {
 
+  private static final String SPAWN = "spawn";
   private static final String DO = "do";
   private static final String LAZY_SEQ = "lazy-seq";
   private static final String IMPORT = "import";
@@ -54,6 +58,8 @@ class Evaluator {
   private static final String LET = "let*";
   private static final String DEFMACRO = "defmacro!";
   private static final String DEF = "def!";
+
+  private static final Executor executor = Executors.newVirtualThreadPerTaskExecutor();
 
   static MalNode eval(MalNode ast, Env env) {
     return safeEval(ast, env).run();
@@ -177,6 +183,12 @@ class Evaluator {
           throw new MalException("invalid lazy-seq");
         }
         yield done(lazy(() -> eval(body, env)));
+      }
+
+      case MalSymbol(var name, _) when name.equals(SPAWN) -> {
+        var body = values.get(1);
+        var newEnv = new Env(env);
+        yield done(fork(CompletableFuture.supplyAsync(() -> ((MalFunction) eval(body, newEnv)).run(EMPTY_LIST), executor)));
       }
 
       case MalMacro(var lambda, _) -> {
