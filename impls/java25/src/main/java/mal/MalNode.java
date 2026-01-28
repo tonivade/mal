@@ -450,7 +450,7 @@ public sealed interface MalNode {
       while (current instanceof MalLazy) {
         current = ((MalLazy) current).force();
       }
-      return current != EMPTY_LIST ? current : null;
+      return ((MalSequence) current).seq();
     }
 
     private MalNode force() {
@@ -641,6 +641,10 @@ public sealed interface MalNode {
       return EMPTY_LIST;
     }
     return new MalList(TreePVector.from(tokens), null);
+  }
+
+  static MalConstant bool(boolean value) {
+    return value ? TRUE : FALSE;
   }
 
   static MalNumber number(long value) {

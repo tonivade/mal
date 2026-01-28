@@ -10,6 +10,7 @@ import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
+import static mal.MalNode.bool;
 import static mal.MalNode.function;
 import static mal.MalNode.lambda;
 import static mal.MalNode.lazy;
@@ -71,12 +72,12 @@ interface Core {
   }
 
   static MalNode isList(MalList args) {
-    return args.get(0) instanceof MalList ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalList);
   }
 
   static MalNode isEmpty(MalList args) {
     var seq = (MalSequence) args.get(0);
-    return seq.seq() == null ? TRUE : FALSE;
+    return bool(seq.seq() == null);
   }
 
   static MalNode count(MalList args) {
@@ -88,31 +89,31 @@ interface Core {
   }
 
   static MalNode eq(MalList args) {
-    return MalNode.equals(args.get(0), args.get(1)) ? TRUE : FALSE;
+    return bool(MalNode.equals(args.get(0), args.get(1)));
   }
 
   static MalNode gt(MalList args) {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
-    return first.gt(second) ? TRUE : FALSE;
+    return bool(first.gt(second));
   }
 
   static MalNode gte(MalList args) {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
-    return first.gte(second) ? TRUE : FALSE;
+    return bool(first.gte(second));
   }
 
   static MalNode lt(MalList args) {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
-    return first.lt(second) ? TRUE : FALSE;
+    return bool(first.lt(second));
   }
 
   static MalNode lte(MalList args) {
     var first = (MalNumber) args.get(0);
     var second = (MalNumber) args.get(1);
-    return first.lte(second) ? TRUE : FALSE;
+    return bool(first.lte(second));
   }
 
   static MalNode sum(MalList args) {
@@ -181,7 +182,7 @@ interface Core {
   }
 
   static MalNode isAtom(MalList args) {
-    return args.get(0) instanceof MalAtom ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalAtom);
   }
 
   static MalNode deref(MalList args) {
@@ -226,10 +227,10 @@ interface Core {
   }
 
   private static MalNode concatStep(MalList seqs) {
-    var seq = ((MalSequence) seqs.head());
+    var seq = ((MalSequence) seqs.head()).seq();
     var tail = seqs.tail();
 
-    if (seq.isEmpty()) {
+    if (seq == null) {
       return concat(tail);
     }
 
@@ -247,7 +248,7 @@ interface Core {
   }
 
   static MalNode isMacro(MalList args) {
-    return args.get(0) instanceof MalMacro ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalMacro);
   }
 
   static MalNode nth(MalList args) {
@@ -317,35 +318,35 @@ interface Core {
   }
 
   static MalNode isNil(MalList args) {
-    return args.get(0).equals(NIL) ? TRUE : FALSE;
+    return bool(args.get(0).equals(NIL));
   }
 
   static MalNode isTrue(MalList args) {
-    return args.get(0).equals(TRUE) ? TRUE : FALSE;
+    return bool(args.get(0).equals(TRUE));
   }
 
   static MalNode isFalse(MalList args) {
-    return args.get(0).equals(FALSE) ? TRUE : FALSE;
+    return bool(args.get(0).equals(FALSE));
   }
 
   static MalNode isSymbol(MalList args) {
-    return args.get(0) instanceof MalSymbol ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalSymbol);
   }
 
   static MalNode isKeyword(MalList args) {
-    return args.get(0) instanceof MalKeyword ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalKeyword);
   }
 
   static MalNode isVector(MalList args) {
-    return args.get(0) instanceof MalVector ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalVector);
   }
 
   static MalNode isSequential(MalList args) {
-    return args.get(0) instanceof MalSequence ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalSequence);
   }
 
   static MalNode isMap(MalList args) {
-    return args.get(0) instanceof MalMap ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalMap);
   }
 
   static MalNode get(MalList args) {
@@ -360,7 +361,7 @@ interface Core {
   static MalNode contains(MalList args) {
     var map = (MalMap) args.get(0);
     var key = (MalKey) args.get(1);
-    return map.contains(key) ? TRUE : FALSE;
+    return bool(map.contains(key));
   }
 
   static MalNode keys(MalList args) {
@@ -419,15 +420,15 @@ interface Core {
   }
 
   static MalNode isFunction(MalList args) {
-    return args.get(0) instanceof MalFunction ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalFunction);
   }
 
   static MalNode isString(MalList args) {
-    return args.get(0) instanceof MalString ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalString);
   }
 
   static MalNode isNumber(MalList args) {
-    return args.get(0) instanceof MalNumber ? TRUE : FALSE;
+    return bool(args.get(0) instanceof MalNumber);
   }
 
   static MalNode seq(MalList args) {
