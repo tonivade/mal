@@ -182,7 +182,10 @@ class Evaluator {
         if (!(body instanceof MalSequence)) {
           throw new MalException("invalid lazy-seq");
         }
-        yield done(lazy(() -> eval(body, env)));
+        yield done(lazy(() -> {
+          MalNode result = eval(body, env);
+          return result != EMPTY_LIST ? result : null;
+        }));
       }
 
       case MalSymbol(var name, _) when name.equals(SPAWN) -> {

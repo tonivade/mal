@@ -225,9 +225,16 @@ public sealed interface MalNode {
     public MalNode meta() {
       return meta;
     }
+
+    @Override
+    public String toString() {
+      return "MalFiber[done=%s,cancelled=%s,error=%]".formatted(future.isDone(), future.isCancelled(), future.isCompletedExceptionally());
+    }
   }
 
   sealed interface MalSequence extends MalNode, Iterable<MalNode> {
+
+    MalSequence seq();
 
     default MalNode get(int pos) {
       for (var current : this) {
@@ -311,6 +318,14 @@ public sealed interface MalNode {
     }
 
     @Override
+    default MalSequence seq() {
+      if (isEmpty()) {
+        return null;
+      }
+      return this;
+    }
+
+    @Override
     default boolean isEmpty() {
       return size() == 0;
     }
@@ -362,6 +377,11 @@ public sealed interface MalNode {
     public boolean isEmpty() {
       return false;
     }
+
+    @Override
+    public MalSequence seq() {
+      return this;
+    }
   }
 
   final class MalLazy implements MalSequence {
@@ -386,6 +406,12 @@ public sealed interface MalNode {
     }
 
     @Override
+    public MalSequence seq() {
+      realize();
+      return (MalSequence) value;
+    }
+
+    @Override
     public MalLazy withMeta(MalNode meta) {
       return new MalLazy(thunk, value, meta);
     }
@@ -397,20 +423,17 @@ public sealed interface MalNode {
 
     @Override
     public MalNode head() {
-      realize();
-      return ((MalSequence) value).head();
+      return seq().head();
     }
 
     @Override
     public MalSequence tail() {
-      realize();
-      return ((MalSequence) value).tail();
+      return seq().tail();
     }
 
     @Override
     public boolean isEmpty() {
-      realize();
-      return value == EMPTY_LIST;
+      return seq() == null;
     }
 
     private void realize() {
@@ -419,8 +442,6 @@ public sealed interface MalNode {
         thunk = null;
         if (value instanceof MalSequence) {
           value = unwrap(value);
-        } else {
-          throw new MalException("lazy-seq must return a sequence or nil, got: " + value);
         }
       }
     }
@@ -429,7 +450,7 @@ public sealed interface MalNode {
       while (current instanceof MalLazy) {
         current = ((MalLazy) current).force();
       }
-      return current;
+      return current != EMPTY_LIST ? current : null;
     }
 
     private MalNode force() {

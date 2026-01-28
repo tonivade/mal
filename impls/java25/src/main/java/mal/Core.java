@@ -75,8 +75,8 @@ interface Core {
   }
 
   static MalNode isEmpty(MalList args) {
-    var list = (MalSequence) args.get(0);
-    return list.isEmpty() ? TRUE : FALSE;
+    var seq = (MalSequence) args.get(0);
+    return seq.seq() == null ? TRUE : FALSE;
   }
 
   static MalNode count(MalList args) {
@@ -226,11 +226,13 @@ interface Core {
   }
 
   private static MalNode concatStep(MalList seqs) {
-    var seq = (MalSequence) seqs.head();
+    var seq = ((MalSequence) seqs.head());
     var tail = seqs.tail();
+
     if (seq.isEmpty()) {
       return concat(tail);
     }
+
     return MalNode.cons(
         seq.head(),
         (MalSequence) concat(
@@ -302,12 +304,12 @@ interface Core {
   }
 
   private static MalNode mapLazy(MalWithLambda function, MalSequence elements) {
-    return lazy(() -> mapStep(function, elements));
+    return lazy(() -> mapStep(function, elements.seq()));
   }
 
   private static MalNode mapStep(MalWithLambda function, MalSequence seq) {
-    if (seq.isEmpty()) {
-      return EMPTY_LIST;
+    if (seq == null) {
+      return null;
     }
     return MalNode.cons(
         function.apply(list(seq.head())).run(),
