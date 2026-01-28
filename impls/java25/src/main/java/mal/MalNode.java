@@ -447,10 +447,13 @@ public sealed interface MalNode {
     }
 
     private MalNode unwrap(MalNode current) {
-      while (current instanceof MalLazy) {
-        current = ((MalLazy) current).force();
+      while (current instanceof MalLazy lazy) {
+        current = lazy.force();
       }
-      return ((MalSequence) current).seq();
+      if (current instanceof MalSequence seq) {
+        return seq.seq();
+      }
+      return current;
     }
 
     private MalNode force() {

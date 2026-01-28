@@ -310,7 +310,7 @@ interface Core {
 
   private static MalNode mapStep(MalWithLambda function, MalSequence seq) {
     if (seq == null) {
-      return null;
+      return EMPTY_LIST;
     }
     return MalNode.cons(
         function.apply(list(seq.head())).run(),
