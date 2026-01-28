@@ -227,8 +227,6 @@ interface Core {
   }
 
   private static MalNode concatStep(MalList seqs) {
-    System.out.println("concat:" + seqs);
-
     if (seqs.size() == 1) {
       return seqs.get(0);
     }
