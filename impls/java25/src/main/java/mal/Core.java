@@ -231,19 +231,30 @@ interface Core {
       return seqs.get(0);
     }
 
-    var seq = ((MalSequence) seqs.head()).seq();
-    var tail = seqs.tail();
+    if (seqs.size() == 2) {
+      // here in case of a lazy-seq this will unwrap only one level
+      var seq = ((MalSequence) seqs.head()).seq();
+      var tail = seqs.tail();
 
-    if (seq == null) {
-      return concat(tail);
+      // if is null means the list is empty
+      if (seq == null) {
+        return concat(tail);
+      }
+
+      return MalNode.cons(
+          seq.head(),
+          (MalSequence) concat(
+              list(tail.values().plus(0, seq.tail()))
+          )
+      );
     }
 
-    return MalNode.cons(
-        seq.head(),
-        (MalSequence) concat(
-            list(tail.values().plus(0, seq.tail()))
-        )
-    );
+    var first = ((MalSequence) seqs.head());
+    var second = ((MalSequence) seqs.tail().head());
+    var rest = seqs.tail().tail();
+
+    return concat(list(first, concat(list(second, concat(rest)))));
+
   }
 
   static MalNode vec(MalList args) {

@@ -407,6 +407,7 @@ public sealed interface MalNode {
 
     @Override
     public MalSequence seq() {
+      // only when seq is called the lazy-seq is unwrapped completely
       return unwrap(realize()).seq();
     }
 
@@ -437,6 +438,7 @@ public sealed interface MalNode {
 
     private MalSequence realize() {
       if (!isRealized()) {
+        // it realizes the lazy-seq but without unwrapping nested lazies
         value = thunk.get();
         thunk = null;
       }
