@@ -271,7 +271,7 @@ public sealed interface MalNode {
 
         @Override
         public boolean hasNext() {
-          return !current.isEmpty();
+          return current.seq() != null;
         }
 
         @Override
@@ -311,7 +311,7 @@ public sealed interface MalNode {
 
     @Override
     default MalList tail() {
-      if (isEmpty()) {
+      if (size() <= 1) {
         return EMPTY_LIST;
       }
       return list(values().minus(0));
@@ -327,7 +327,7 @@ public sealed interface MalNode {
 
     @Override
     default boolean isEmpty() {
-      return size() == 0;
+      return values().isEmpty();
     }
 
     @Override
