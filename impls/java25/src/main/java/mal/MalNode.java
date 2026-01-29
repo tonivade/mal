@@ -388,7 +388,6 @@ public sealed interface MalNode {
 
     private Supplier<MalNode> thunk;
     private MalNode value;
-    private MalSequence sequence;
     private final MalNode meta;
 
     public MalLazy(Supplier<MalNode> value, MalNode meta) {
@@ -396,10 +395,9 @@ public sealed interface MalNode {
       this.meta = meta;
     }
 
-    private MalLazy(Supplier<MalNode> thunk, MalNode value, MalSequence sequence, MalNode meta) {
+    private MalLazy(Supplier<MalNode> thunk, MalNode value, MalNode meta) {
       this.thunk = thunk;
       this.value = value;
-      this.sequence = sequence;
       this.meta = meta;
     }
 
@@ -407,22 +405,14 @@ public sealed interface MalNode {
       return thunk == null;
     }
 
-    public boolean isUnwrapped() {
-      return thunk == null && value == null;
-    }
-
     @Override
     public MalSequence seq() {
-      if (!isUnwrapped()) {
-        sequence = unwrap(realize());
-        value = null;
-      }
-      return sequence.seq();
+      return unwrap(realize()).seq();
     }
 
     @Override
     public MalLazy withMeta(MalNode meta) {
-      return new MalLazy(thunk, value, sequence, meta);
+      return new MalLazy(thunk, value, meta);
     }
 
     @Override
@@ -447,7 +437,6 @@ public sealed interface MalNode {
 
     private MalSequence realize() {
       if (!isRealized()) {
-        new Exception().printStackTrace(System.out);
         value = thunk.get();
         thunk = null;
       }
