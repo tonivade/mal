@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
 import org.pcollections.PVector;
 
 import mal.MalNode.MalFunction;
@@ -43,9 +44,11 @@ import mal.MalNode.MalNumber;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
+import mal.MalNode.MalWrapper;
 
 class Evaluator {
 
+  private static final String NEW = "new";
   private static final String SPAWN = "spawn";
   private static final String DO = "do";
   private static final String LAZY_SEQ = "lazy-seq";
@@ -177,6 +180,13 @@ class Evaluator {
         yield done(function);
       }
 
+      case MalSymbol(var name, _) when name.equals(NEW) -> {
+        var clazz = (MalSymbol) values.get(1);
+        var args = values.tail().tail();
+        var lambda = Interop.toLambda(clazz.name(), args.size());
+        yield lambda.apply(list(args));
+      }
+
       case MalSymbol(var name, _) when name.equals(LAZY_SEQ) -> {
         var body = values.get(1);
         if (!(body instanceof MalSequence)) {
@@ -199,6 +209,12 @@ class Evaluator {
       case MalFunction(var lambda, _) -> {
         yield traverse(values.tail(), m -> safeEval(m, env))
           .flatMap(args -> lambda.apply(list(args)));
+      }
+
+      case MalWrapper wrapper -> {
+        var name = (MalSymbol) values.get(1);
+        var args = values.tail().tail();
+        yield wrapper.call(name.name(), args);
       }
 
       default -> {

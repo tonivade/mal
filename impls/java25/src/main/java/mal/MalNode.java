@@ -354,7 +354,6 @@ public sealed interface MalNode {
       requireNonNull(values);
     }
 
-
     @Override
     public MalVector withMeta(MalNode meta) {
       return new MalVector(values, meta);
@@ -507,6 +506,23 @@ public sealed interface MalNode {
     }
   }
 
+  record MalWrapper(Object value, MalNode meta) implements MalNode {
+
+    public MalWrapper {
+      requireNonNull(value);
+    }
+
+    @Override
+    public MalWrapper withMeta(MalNode meta) {
+      return new MalWrapper(value, meta);
+    }
+
+    public Trampoline<MalNode> call(String name, MalSequence args) {
+      var lambda = Interop.toLambda(value.getClass().getName(), name, args.size());
+      return lambda.apply(list(args.cons(this)));
+    }
+  }
+
   record MalError(Exception exception, MalNode meta) implements MalNode {
 
     public MalError {
@@ -590,6 +606,10 @@ public sealed interface MalNode {
 
   static MalFiber fork(CompletableFuture<MalNode> future) {
     return new MalFiber(future, null);
+  }
+
+  static MalWrapper wrap(Object o) {
+    return new MalWrapper(o, null);
   }
 
   static MalVector vector(MalNode...tokens) {

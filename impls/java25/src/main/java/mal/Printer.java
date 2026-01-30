@@ -24,6 +24,7 @@ import mal.MalNode.MalSequence;
 import mal.MalNode.MalString;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
+import mal.MalNode.MalWrapper;
 
 class Printer {
 
@@ -57,6 +58,7 @@ class Printer {
         case MalFunction _ -> done("#function");
         case MalMacro _ -> done("#function");
         case MalFiber _ -> done("#fiber");
+        case MalWrapper(var wrapped, _) -> done("\"" + escapeJava(wrapped.toString()) + "\"");
         case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
         case MalError(var exception, _) -> done(exception.getMessage());
       };
