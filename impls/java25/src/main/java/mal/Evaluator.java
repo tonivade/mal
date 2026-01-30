@@ -183,7 +183,7 @@ class Evaluator {
       case MalSymbol(var name, _) when name.equals(NEW) -> {
         var clazz = (MalSymbol) values.get(1);
         var args = values.tail().tail();
-        var lambda = Interop.constructor(clazz.name(), args.size());
+        var lambda = Interop.constructorNonCached(clazz.name(), args.size());
         yield lambda.apply(list(args));
       }
 

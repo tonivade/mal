@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,52 +44,70 @@ import mal.MalNode.MalWrapper;
 
 class Interop {
 
+  private static final Map<String, Map<String, Map<Integer, MalLambda>>> CACHE = new HashMap<>();
+
   static MalLambda method(String clazz, String name, int numberOfArgs) {
-    try {
-      var method = getMethod(clazz, name, numberOfArgs)
-          .orElseThrow(() -> new MalException("method not found " + name));
+    return CACHE
+        .computeIfAbsent(clazz, _ -> new HashMap<>())
+        .computeIfAbsent(name, _ -> new HashMap<>())
+        .computeIfAbsent(numberOfArgs, _ -> methodNonCached(clazz, name, numberOfArgs));
+  }
+
+  private static MalLambda methodNonCached(String clazz, String name, int numberOfArgs) {
+    var method = getMethod(clazz, name, numberOfArgs)
+        .orElseThrow(() -> new MalException("method not found " + name));
+    if (Modifier.isStatic(method.getModifiers())) {
       return args -> {
         try {
           var arguments = toArgs(args);
-          if (Modifier.isStatic(method.getModifiers())) {
-            var result = method.invoke(null, convertArgs(method, arguments));
-            return done(toMal(result));
-          } else if (arguments.length > 0) {
-            var result = method.invoke(arguments[0], convertArgs(method, Arrays.copyOfRange(arguments, 1, arguments.length)));
-            return done(toMal(result));
-          }
-          throw new MalException("expected argument for method: " + method.getName());
+          var result = method.invoke(null, convertArgs(method, arguments));
+          return done(toMal(result));
         } catch (IllegalAccessException e) {
           throw new MalException("error calling method: " + method.getName(), e);
         } catch (InvocationTargetException e) {
           throw new MalException("error calling method: " + method.getName(), e);
         }
       };
-    } catch (ClassNotFoundException e) {
-      throw new MalException("class not found: " + clazz, e);
     }
+    return args -> {
+      try {
+        var arguments = toArgs(args);
+        if (arguments.length > 0) {
+          var result = method.invoke(arguments[0], convertArgs(method, Arrays.copyOfRange(arguments, 1, arguments.length)));
+          return done(toMal(result));
+        }
+        throw new MalException("expected argument for method: " + method.getName());
+      } catch (IllegalAccessException e) {
+        throw new MalException("error calling method: " + method.getName(), e);
+      } catch (InvocationTargetException e) {
+        throw new MalException("error calling method: " + method.getName(), e);
+      }
+    };
   }
 
   static MalLambda constructor(String clazz, int numberOfArgs) {
-    try {
-      var constructor = getConstructor(clazz, numberOfArgs)
-          .orElseThrow(() -> new MalException("constructor not found for class " + clazz));
-      return args -> {
-        try {
-          var arguments = toArgs(args);
-          var result = constructor.newInstance(convertArgs(constructor, arguments));
-          return done(wrap(result));
-        } catch (IllegalAccessException e) {
-          throw new MalException("error calling method: " + constructor.getName(), e);
-        } catch (InvocationTargetException e) {
-          throw new MalException("error calling method: " + constructor.getName(), e);
-        } catch (InstantiationException e) {
-          throw new MalException("error calling method: " + constructor.getName(), e);
-        }
-      };
-    } catch (ClassNotFoundException e) {
-      throw new MalException("class not found: " + clazz, e);
-    }
+    return CACHE
+        .computeIfAbsent(clazz, _ -> new HashMap<>())
+        .computeIfAbsent("<init>", _ -> new HashMap<>())
+        .computeIfAbsent(numberOfArgs, _ -> constructorNonCached(clazz, numberOfArgs));
+  }
+
+  static MalLambda constructorNonCached(String clazz, int numberOfArgs) {
+    var constructor = getConstructor(clazz, numberOfArgs)
+        .orElseThrow(() -> new MalException("constructor not found for class " + clazz));
+    return args -> {
+      try {
+        var arguments = toArgs(args);
+        var result = constructor.newInstance(convertArgs(constructor, arguments));
+        return done(wrap(result));
+      } catch (IllegalAccessException e) {
+        throw new MalException("error calling method: " + constructor.getName(), e);
+      } catch (InvocationTargetException e) {
+        throw new MalException("error calling method: " + constructor.getName(), e);
+      } catch (InstantiationException e) {
+        throw new MalException("error calling method: " + constructor.getName(), e);
+      }
+    };
   }
 
   static MalNode toMal(Object value) {
@@ -129,21 +148,29 @@ class Interop {
     };
   }
 
-  private static Optional<Constructor<?>> getConstructor(String clazz, int numberOfArgs) throws ClassNotFoundException {
-    var classRef = Class.forName(clazz);
-    return Stream.of(classRef.getDeclaredConstructors())
-      .filter(m -> m.getParameterCount() == numberOfArgs)
-      .filter(m -> m.trySetAccessible())
-      .findFirst();
+  private static Optional<Constructor<?>> getConstructor(String clazz, int numberOfArgs) {
+    try {
+      var classRef = Class.forName(clazz);
+      return Stream.of(classRef.getDeclaredConstructors())
+          .filter(m -> m.getParameterCount() == numberOfArgs)
+          .filter(m -> m.trySetAccessible())
+          .findFirst();
+    } catch (ClassNotFoundException e) {
+      return Optional.empty();
+    }
   }
 
-  private static Optional<Method> getMethod(String clazz, String method, int numberOfArgs) throws ClassNotFoundException {
-    var classRef = Class.forName(clazz);
-    return Stream.of(classRef.getDeclaredMethods())
-        .filter(m -> m.getParameterCount() == numberOfArgs)
-        .filter(m -> m.getName().equals(method))
-        .filter(m -> m.trySetAccessible())
-        .findFirst();
+  private static Optional<Method> getMethod(String clazz, String method, int numberOfArgs) {
+    try {
+      var classRef = Class.forName(clazz);
+      return Stream.of(classRef.getDeclaredMethods())
+          .filter(m -> m.getParameterCount() == numberOfArgs)
+          .filter(m -> m.getName().equals(method))
+          .filter(m -> m.trySetAccessible())
+          .findFirst();
+    } catch (ClassNotFoundException e) {
+      return Optional.empty();
+    }
   }
 
   private static Object[] toArgs(MalList args) {
