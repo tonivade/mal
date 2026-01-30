@@ -970,6 +970,10 @@ class MalTest {
     StepA.rep("(def! rand (new java.util.Random))");
     StepA.rep("(rand setSeed 12345)");
     assertEquals("1553932502", StepA.rep("(rand nextInt)"));
+    assertEquals("\"MalWrapper\"", StepA.rep("(type-of rand)"));
+    assertEquals("true", StepA.rep("(instance? rand \"java.lang.Object\")"));
+    assertEquals("true", StepA.rep("(instance? rand \"java.util.Random\")"));
+    assertEquals("false", StepA.rep("(instance? rand \"java.util.List\")"));
   }
 
   @Test
@@ -996,6 +1000,12 @@ class MalTest {
     assertEquals("(10 11 12 6 7 8)", StepA.rep("(concat (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
     assertEquals("false", StepA.rep("(empty? (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
     assertEquals("\"MalLazy\"", StepA.rep("(type-of (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
+  }
+
+  @Test
+  void stepC() {
+    StepA.rep("(def! task (spawn (fn* [] (do (sleep 1) 1234))))");
+    assertEquals("1234", StepA.rep("(join task)"));
   }
 
   /**
