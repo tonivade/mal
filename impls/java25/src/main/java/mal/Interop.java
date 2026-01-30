@@ -49,12 +49,12 @@ class Interop {
           .orElseThrow(() -> new MalException("method not found " + name));
       return args -> {
         try {
-          var arguments = convertArguments(method, args);
+          var arguments = toArgs(args);
           if (Modifier.isStatic(method.getModifiers())) {
-            var result = method.invoke(null, arguments);
+            var result = method.invoke(null, convertArgs(method, arguments));
             return done(toMal(result));
           } else if (arguments.length > 0) {
-            var result = method.invoke(arguments[0], Arrays.copyOfRange(arguments, 1, arguments.length));
+            var result = method.invoke(arguments[0], convertArgs(method, Arrays.copyOfRange(arguments, 1, arguments.length)));
             return done(toMal(result));
           }
           throw new MalException("expected argument for method: " + method.getName());
@@ -75,7 +75,8 @@ class Interop {
           .orElseThrow(() -> new MalException("constructor not found for class " + clazz));
       return args -> {
         try {
-          var result = constructor.newInstance(convertArguments(constructor, args));
+          var arguments = toArgs(args);
+          var result = constructor.newInstance(convertArgs(constructor, arguments));
           return done(toMal(result));
         } catch (IllegalAccessException e) {
           throw new MalException("error calling method: " + constructor.getName(), e);
@@ -145,12 +146,12 @@ class Interop {
         .findFirst();
   }
 
-  private static Object[] convertArguments(Executable executable, MalList args) {
+  private static Object[] toArgs(MalList args) {
     var arguments = new Object[args.size()];
     for (int i = 0; i < args.size(); i++) {
       arguments[i] = toJava(args.get(i));
     }
-    return convertArgs(executable, arguments);
+    return arguments;
   }
 
   private static Object[] convertArgs(Executable executable, Object[] arguments) {

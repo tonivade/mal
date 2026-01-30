@@ -50,6 +50,7 @@ import mal.MalNode.MalString;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalVector;
 import mal.MalNode.MalWithLambda;
+import mal.MalNode.MalWrapper;
 
 interface Core {
 
@@ -517,6 +518,17 @@ interface Core {
     return NIL;
   }
 
+  static MalNode isInstance(MalList args) {
+    var obj = (MalWrapper) args.get(0);
+    var className = (MalString) args.get(1);
+    try {
+      var clazz = Class.forName(className.value());
+      return bool(clazz.isInstance(obj.value()));
+    } catch (ClassNotFoundException e) {
+      throw new MalException("class not found: " + className.value(), e);
+    }
+  }
+
   Map<String, MalNode> NS = Map.ofEntries(
     entry("prn", function(lambda(Core::prn))),
     entry("println", function(lambda(Core::println))),
@@ -583,7 +595,8 @@ interface Core {
     entry("java-eval", function(lambda(Core::eval))),
     entry("type-of", function(lambda(Core::typeOf))),
     entry("join", function(lambda(Core::join))),
-    entry("sleep", function(lambda(Core::sleep)))
+    entry("sleep", function(lambda(Core::sleep))),
+    entry("instance?", function(lambda(Core::isInstance)))
   );
 
   private static MalList asList(String string) {
