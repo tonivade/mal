@@ -175,7 +175,7 @@ class Evaluator {
         var clazz = (MalSymbol) values.get(1);
         var method = (MalSymbol) values.get(2);
         int numberOfArgs = getNumberOfArguments(values);
-        var function = function(Interop.toLambda(clazz.name(), method.name(), numberOfArgs));
+        var function = function(Interop.method(clazz.name(), method.name(), numberOfArgs));
         env.set(method, function);
         yield done(function);
       }
@@ -183,7 +183,7 @@ class Evaluator {
       case MalSymbol(var name, _) when name.equals(NEW) -> {
         var clazz = (MalSymbol) values.get(1);
         var args = values.tail().tail();
-        var lambda = Interop.toLambda(clazz.name(), args.size());
+        var lambda = Interop.constructor(clazz.name(), args.size());
         yield lambda.apply(list(args));
       }
 

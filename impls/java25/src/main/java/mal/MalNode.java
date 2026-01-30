@@ -518,7 +518,7 @@ public sealed interface MalNode {
     }
 
     public Trampoline<MalNode> call(String name, MalSequence args) {
-      var lambda = Interop.toLambda(value.getClass().getName(), name, args.size());
+      var lambda = Interop.method(value.getClass().getName(), name, args.size());
       return lambda.apply(list(args.cons(this)));
     }
   }

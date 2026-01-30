@@ -43,21 +43,18 @@ import mal.MalNode.MalWrapper;
 
 class Interop {
 
-  static MalLambda toLambda(String clazz, String name, int numberOfArgs) {
+  static MalLambda method(String clazz, String name, int numberOfArgs) {
     try {
       var method = getMethod(clazz, name, numberOfArgs)
           .orElseThrow(() -> new MalException("method not found " + name));
       return args -> {
         try {
-          var arguments = new Object[args.size()];
-          for (int i = 0; i < args.size(); i++) {
-            arguments[i] = toJava(args.get(i));
-          }
+          var arguments = convertArguments(method, args);
           if (Modifier.isStatic(method.getModifiers())) {
-            var result = method.invoke(null, convertArgs(method, arguments));
+            var result = method.invoke(null, arguments);
             return done(toMal(result));
           } else if (arguments.length > 0) {
-            var result = method.invoke(arguments[0], convertArgs(method, Arrays.copyOfRange(arguments, 1, arguments.length)));
+            var result = method.invoke(arguments[0], Arrays.copyOfRange(arguments, 1, arguments.length));
             return done(toMal(result));
           }
           throw new MalException("expected argument for method: " + method.getName());
@@ -72,17 +69,13 @@ class Interop {
     }
   }
 
-  static MalLambda toLambda(String clazz, int numberOfArgs) {
+  static MalLambda constructor(String clazz, int numberOfArgs) {
     try {
       var constructor = getConstructor(clazz, numberOfArgs)
           .orElseThrow(() -> new MalException("constructor not found for class " + clazz));
       return args -> {
         try {
-          var arguments = new Object[args.size()];
-          for (int i = 0; i < args.size(); i++) {
-            arguments[i] = toJava(args.get(i));
-          }
-          var result = constructor.newInstance(convertArgs(constructor, arguments));
+          var result = constructor.newInstance(convertArguments(constructor, args));
           return done(toMal(result));
         } catch (IllegalAccessException e) {
           throw new MalException("error calling method: " + constructor.getName(), e);
@@ -118,7 +111,7 @@ class Interop {
     };
   }
 
-  static Object toJava(MalNode node) {
+  private static Object toJava(MalNode node) {
     return switch (node) {
       case MalString(var value, _) -> value;
       case MalSymbol(var value, _) -> value;
@@ -152,8 +145,16 @@ class Interop {
         .findFirst();
   }
 
-  private static Object[] convertArgs(Executable method, Object[] arguments) {
-    var params = method.getParameterTypes();
+  private static Object[] convertArguments(Executable executable, MalList args) {
+    var arguments = new Object[args.size()];
+    for (int i = 0; i < args.size(); i++) {
+      arguments[i] = toJava(args.get(i));
+    }
+    return convertArgs(executable, arguments);
+  }
+
+  private static Object[] convertArgs(Executable executable, Object[] arguments) {
+    var params = executable.getParameterTypes();
     if (params.length != arguments.length) {
       throw new MalException("expected " + params.length + " arguments but got " + arguments.length);
     }
