@@ -20,6 +20,7 @@ import static mal.MalNode.fork;
 import static mal.MalNode.function;
 import static mal.MalNode.lazy;
 import static mal.MalNode.list;
+import static mal.MalNode.symbol;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
 import static mal.Trampoline.more;
@@ -176,7 +177,7 @@ class Evaluator {
         var method = (MalSymbol) values.get(2);
         int numberOfArgs = getNumberOfArguments(values);
         var function = function(Interop.method(clazz.name(), method.name(), numberOfArgs));
-        env.set(method, function);
+        env.set(numberOfArgs > 0 ? symbol(method.name() + "/" + numberOfArgs) : method, function);
         yield done(function);
       }
 

@@ -6,9 +6,12 @@ package mal;
 
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.toUnmodifiableMap;
+import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
 import static mal.MalNode.TRUE;
+import static mal.MalNode.cons;
+import static mal.MalNode.lazy;
 import static mal.MalNode.list;
 import static mal.MalNode.map;
 import static mal.MalNode.number;
@@ -24,10 +27,12 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalKey;
@@ -123,7 +128,7 @@ class Interop {
       case Double d -> number(d);
       case Collection<?> l -> listToMal(l);
       case Map<?, ?> m -> mapToMal(m);
-      case Stream<?> s -> listToMal(s.toList());
+      case Stream<?> s -> streamToMal(s.iterator());
       case Object[] a -> listToMal(List.of(a));
       case Character c -> string(c.toString());
       case Enum<?> e -> string(e.name());
@@ -144,6 +149,7 @@ class Interop {
       case MalConstant(var value, _) when value.equals("false") -> false;
       case MalConstant(var value, _) when value.equals("nil") -> null;
       case MalWrapper(var value, _) -> value;
+      case MalSequence seq -> StreamSupport.stream(seq.spliterator(), false).map(Interop::toJava);
       default -> throw new MalException("not supported " + node);
     };
   }
@@ -202,6 +208,15 @@ class Interop {
 
   private static MalSequence listToMal(Collection<?> list) {
     return list(list.stream().map(Interop::toMal).toList());
+  }
+
+  private static MalNode streamToMal(Iterator<?> i) {
+    return lazy(() -> {
+      if (i.hasNext()) {
+        return cons(toMal(i.next()), (MalSequence) streamToMal(i));
+      }
+      return EMPTY_LIST;
+    });
   }
 
   private static MalMap mapToMal(Map<?, ?> map) {

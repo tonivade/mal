@@ -965,7 +965,11 @@ class MalTest {
     StepA.rep("(import java.lang.String length)");
     assertEquals("5", StepA.rep("(length \"12345\")"));
     StepA.rep("(import java.lang.String split 1)");
-    assertEquals("(\"1\" \"2\" \"3\" \"4\")", StepA.rep("(split \"1 2 3 4\" \" \")"));
+    assertEquals("(\"1\" \"2\" \"3\" \"4\")", StepA.rep("(split/1 \"1 2 3 4\" \" \")"));
+
+    StepA.rep("(import java.lang.String lines)");
+    assertEquals("(\"1\" \"2\" \"3\" \"4\")", StepA.rep("(lines \"1\n2\n3\n4\")"));
+    assertEquals("\"MalLazy\"", StepA.rep("(type-of (lines \"1\n2\n3\n4\"))"));
 
     StepA.rep("(def! rand (new java.util.Random))");
     StepA.rep("(rand setSeed 12345)");
@@ -982,9 +986,11 @@ class MalTest {
     StepA.rep("(def! range (fn* [n] (lazy-seq (cons n (range (+ n 1))))))");
     StepA.rep("(def! take (fn* [i xs] (lazy-seq (if (empty? xs) xs (if (> i 0) (cons (first xs) (take (- i 1) (rest xs))) (list))))))");
     StepA.rep("(def! drop (fn* [i xs] (lazy-seq (if (empty? xs) xs (if (> i 0) (drop (- i 1) (rest xs)) xs)))))");
+
     assertThrows(MalException.class, () -> StepA.rep("(lazy-seq nil)"));
     assertThrows(MalException.class, () -> StepA.rep("(lazy-seq 1)"));
     assertThrows(MalException.class, () -> StepA.rep("(lazy-seq \"hello\")"));
+
     assertEquals("1", StepA.rep("(first (ones))"));
     assertEquals("(1 1 1 1 1)", StepA.rep("(take 5 (ones))"));
     assertEquals("\"MalLazy\"", StepA.rep("(type-of (take 5 (ones)))"));
@@ -1000,6 +1006,9 @@ class MalTest {
     assertEquals("(10 11 12 6 7 8)", StepA.rep("(concat (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
     assertEquals("false", StepA.rep("(empty? (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
     assertEquals("\"MalLazy\"", StepA.rep("(type-of (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
+
+    StepA.rep("(import java.util.stream.Stream concat 2)");
+    assertEquals("(10 11 12 6 7 8)", StepA.rep("(concat/2 (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
   }
 
   @Test
