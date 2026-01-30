@@ -27,10 +27,10 @@ Next steps:
 
 ## Getting Started
 
-To run the Mal interpreter, ensure you have Java 25 installed on your system. The easiest way is using sdkman:
+To run the Mal interpreter, ensure you have Java 25 installed on your system. The easiest way is using [SDKMAN](https://sdkman.io/):
 
 ```
-sdk install java 25.0.2-tem
+sdk install java
 ```
 
 You can then compile and run the project using make:
