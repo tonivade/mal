@@ -77,7 +77,7 @@ class Interop {
         try {
           var arguments = toArgs(args);
           var result = constructor.newInstance(convertArgs(constructor, arguments));
-          return done(toMal(result));
+          return done(wrap(result));
         } catch (IllegalAccessException e) {
           throw new MalException("error calling method: " + constructor.getName(), e);
         } catch (InvocationTargetException e) {

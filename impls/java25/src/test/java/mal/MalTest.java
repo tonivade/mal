@@ -966,6 +966,10 @@ class MalTest {
     assertEquals("5", StepA.rep("(length \"12345\")"));
     StepA.rep("(import java.lang.String split 1)");
     assertEquals("(\"1\" \"2\" \"3\" \"4\")", StepA.rep("(split \"1 2 3 4\" \" \")"));
+
+    StepA.rep("(def! rand (new java.util.Random))");
+    StepA.rep("(rand setSeed 12345)");
+    assertEquals("1553932502", StepA.rep("(rand nextInt)"));
   }
 
   @Test
