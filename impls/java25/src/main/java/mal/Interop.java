@@ -60,7 +60,7 @@ class Interop {
 
   private static MalLambda methodNonCached(String clazz, String name, int numberOfArgs) {
     var method = getMethod(clazz, name, numberOfArgs)
-        .orElseThrow(() -> new MalException("method not found " + name));
+        .orElseThrow(() -> new MalException("method not found " + clazz + "." + name));
     if (Modifier.isStatic(method.getModifiers())) {
       return args -> {
         try {
@@ -68,9 +68,9 @@ class Interop {
           var result = method.invoke(null, convertArgs(method, arguments));
           return done(toMal(result));
         } catch (IllegalAccessException e) {
-          throw new MalException("error calling method: " + method.getName(), e);
+          throw new MalException("error calling method: " + clazz + "." + name, e);
         } catch (InvocationTargetException e) {
-          throw new MalException("error calling method: " + method.getName(), e);
+          throw new MalException("error calling method: " + clazz + "." + name, e);
         }
       };
     }
@@ -83,9 +83,9 @@ class Interop {
         }
         throw new MalException("expected argument for method: " + method.getName());
       } catch (IllegalAccessException e) {
-        throw new MalException("error calling method: " + method.getName(), e);
+        throw new MalException("error calling method: " + clazz + "." + name, e);
       } catch (InvocationTargetException e) {
-        throw new MalException("error calling method: " + method.getName(), e);
+        throw new MalException("error calling method: " + clazz + "." + name, e);
       }
     };
   }
@@ -106,11 +106,11 @@ class Interop {
         var result = constructor.newInstance(convertArgs(constructor, arguments));
         return done(wrap(result));
       } catch (IllegalAccessException e) {
-        throw new MalException("error calling method: " + constructor.getName(), e);
+        throw new MalException("error calling constructor: " + clazz + ".<init>", e);
       } catch (InvocationTargetException e) {
-        throw new MalException("error calling method: " + constructor.getName(), e);
+        throw new MalException("error calling constructor: " + clazz + ".<init>", e);
       } catch (InstantiationException e) {
-        throw new MalException("error calling method: " + constructor.getName(), e);
+        throw new MalException("error calling constructor: " + clazz + ".<init>", e);
       }
     };
   }
@@ -173,7 +173,10 @@ class Interop {
           .filter(m -> m.getParameterCount() == numberOfArgs)
           .filter(m -> m.getName().equals(method))
           .filter(m -> m.trySetAccessible())
-          .findFirst();
+          .findFirst()
+          .or(() -> Stream.of(classRef.getInterfaces())
+              .flatMap(interfaceRef -> getMethod(interfaceRef.getName(), method, numberOfArgs).stream())
+              .findFirst());
     } catch (ClassNotFoundException e) {
       return Optional.empty();
     }

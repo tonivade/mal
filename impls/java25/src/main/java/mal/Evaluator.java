@@ -214,8 +214,8 @@ class Evaluator {
 
       case MalWrapper wrapper -> {
         var name = (MalSymbol) values.get(1);
-        var args = values.tail().tail();
-        yield wrapper.call(name.name(), args);
+        yield traverse(values.tail().tail(), m -> safeEval(m, env))
+          .flatMap(args -> wrapper.call(name.name(), list(args)));
       }
 
       default -> {

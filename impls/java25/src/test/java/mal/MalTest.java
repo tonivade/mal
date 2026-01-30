@@ -1009,6 +1009,10 @@ class MalTest {
 
     StepA.rep("(import java.util.stream.Stream concat 2)");
     assertEquals("(10 11 12 6 7 8)", StepA.rep("(concat/2 (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
+
+    StepA.rep("(import java.util.regex.Pattern compile 1)");
+    StepA.rep("(def! regex (compile/1 \"(\\\\w{3})\"))");
+    assertEquals("(\"abc\" \"def\" \"ghi\")", StepA.rep("(map (fn* [r] (r group)) ((regex matcher \"abc def ghi\") results))"));
   }
 
   @Test

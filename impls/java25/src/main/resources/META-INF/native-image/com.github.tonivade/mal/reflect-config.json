@@ -14,9 +14,5 @@
   {
     "name":"java.lang.Math",
     "allPublicMethods":true
-  },
-  {
-    "name":"mal.libs.Strings",
-    "allPublicMethods":true
   }
 ]
