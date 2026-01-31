@@ -49,6 +49,7 @@ import mal.MalNode.MalWrapper;
 
 class Evaluator {
 
+  private static final String DOT = ".";
   private static final String NEW = "new";
   private static final String SPAWN = "spawn";
   private static final String DO = "do";
@@ -202,7 +203,7 @@ class Evaluator {
         yield done(fork(CompletableFuture.supplyAsync(() -> ((MalFunction) eval(body, newEnv)).run(EMPTY_LIST), executor)));
       }
 
-      case MalSymbol(var name, _) when name.startsWith(".") -> {
+      case MalSymbol(var name, _) when name.startsWith(DOT) -> {
         var method = name.substring(1);
         yield traverse(values.tail(), m -> safeEval(m, env))
           .flatMap(args -> {
@@ -230,10 +231,10 @@ class Evaluator {
   }
 
   private static MalSymbol methodName(String clazz, String method, int numberOfArgs) {
-    int lastDotIndex = clazz.lastIndexOf(".");
+    int lastDotIndex = clazz.lastIndexOf(DOT);
     return numberOfArgs > 0 ?
-        symbol(clazz.substring(lastDotIndex + 1) + "." + method + "/" + numberOfArgs) :
-          symbol(clazz.substring(lastDotIndex + 1) + "." + method);
+        symbol(clazz.substring(lastDotIndex + 1) + DOT + method + "/" + numberOfArgs) :
+          symbol(clazz.substring(lastDotIndex + 1) + DOT + method);
   }
 
   private static int getNumberOfArguments(MalSequence values) {

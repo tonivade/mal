@@ -1013,6 +1013,7 @@ class MalTest {
 
     StepA.rep("(import java.util.stream.Stream concat 2)");
     assertEquals("(10 11 12 6 7 8)", StepA.rep("(Stream.concat/2 (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
+    assertEquals("\"MalLazy\"", StepA.rep("(type-of (Stream.concat/2 (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
   }
 
   @Test
