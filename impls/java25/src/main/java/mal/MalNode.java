@@ -64,6 +64,15 @@ public sealed interface MalNode {
     }
   }
 
+  sealed interface MalValue<T> extends MalNode {
+    T value();
+
+    default Trampoline<MalNode> call(String name, MalSequence args) {
+      var lambda = Interop.method(value().getClass().getName(), name, args.size());
+      return lambda.apply(list(args.cons(this)));
+    }
+  }
+
   final class MalAtom implements MalNode {
 
     private MalNode value;
@@ -112,7 +121,11 @@ public sealed interface MalNode {
     }
   }
 
-  record MalNumber(long value, MalNode meta) implements MalNode {
+  record MalNumber(Long value, MalNode meta) implements MalValue<Long> {
+
+    public MalNumber {
+      requireNonNull(value);
+    }
 
     public MalNumber sum(MalNumber other) {
       return new MalNumber(this.value + other.value, null);
@@ -155,7 +168,7 @@ public sealed interface MalNode {
     }
 
     public int asInt() {
-      return (int) value;
+      return value.intValue();
     }
 
     @Override
@@ -166,7 +179,7 @@ public sealed interface MalNode {
 
   sealed interface MalKey extends MalNode {}
 
-  record MalString(String value, MalNode meta) implements MalKey {
+  record MalString(String value, MalNode meta) implements MalValue<String>, MalKey {
 
     public MalString {
       requireNonNull(value);
@@ -178,7 +191,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalKeyword(String value, MalNode meta) implements MalKey {
+  record MalKeyword(String value, MalNode meta) implements MalValue<String>, MalKey {
 
     public MalKeyword {
       requireNonNull(value);
@@ -506,7 +519,7 @@ public sealed interface MalNode {
     }
   }
 
-  record MalWrapper(Object value, MalNode meta) implements MalNode {
+  record MalWrapper(Object value, MalNode meta) implements MalValue<Object> {
 
     public MalWrapper {
       requireNonNull(value);
@@ -515,11 +528,6 @@ public sealed interface MalNode {
     @Override
     public MalWrapper withMeta(MalNode meta) {
       return new MalWrapper(value, meta);
-    }
-
-    public Trampoline<MalNode> call(String name, MalSequence args) {
-      var lambda = Interop.method(value.getClass().getName(), name, args.size());
-      return lambda.apply(list(args.cons(this)));
     }
   }
 

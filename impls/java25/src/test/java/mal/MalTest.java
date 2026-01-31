@@ -981,7 +981,10 @@ class MalTest {
 
     StepA.rep("(import java.util.regex.Pattern compile 1)");
     StepA.rep("(def! regex (Pattern.compile/1 \"(\\\\w{3})\"))");
+    assertEquals("\"MalWrapper\"", StepA.rep("(type-of regex)"));
     assertEquals("(\"abc\" \"def\" \"ghi\")", StepA.rep("(map (fn* [r] (.group r)) (.results (.matcher regex \"abc def ghi\")))"));
+
+    assertEquals("(\"a\" \"b\" \"c\")", StepA.rep("(.split \"a b c\" \" \")"));
   }
 
   @Test

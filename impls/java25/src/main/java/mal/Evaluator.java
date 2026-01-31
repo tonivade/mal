@@ -44,6 +44,7 @@ import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalSymbol;
+import mal.MalNode.MalValue;
 import mal.MalNode.MalVector;
 import mal.MalNode.MalWrapper;
 
@@ -207,8 +208,8 @@ class Evaluator {
         var method = name.substring(1);
         yield traverse(values.tail(), m -> safeEval(m, env))
           .flatMap(args -> {
-            var wrapper = (MalWrapper) args.get(0);
-            return wrapper.call(method, list(args.minus(0)));
+            var value = (MalValue<?>) args.get(0);
+            return value.call(method, list(args.minus(0)));
           });
       }
 
@@ -240,7 +241,7 @@ class Evaluator {
   private static int getNumberOfArguments(MalSequence values) {
     if (values.size() > 3) {
       var args = (MalNumber) values.get(3);
-      return (int) args.value();
+      return args.asInt();
     }
     return 0;
   }
