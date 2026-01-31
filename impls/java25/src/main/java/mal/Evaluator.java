@@ -177,7 +177,7 @@ class Evaluator {
         var method = (MalSymbol) values.get(2);
         int numberOfArgs = getNumberOfArguments(values);
         var function = function(Interop.method(clazz.name(), method.name(), numberOfArgs));
-        env.set(numberOfArgs > 0 ? symbol(method.name() + "/" + numberOfArgs) : method, function);
+        env.set(methodName(clazz.name(), method.name(), numberOfArgs), function);
         yield done(function);
       }
 
@@ -202,6 +202,15 @@ class Evaluator {
         yield done(fork(CompletableFuture.supplyAsync(() -> ((MalFunction) eval(body, newEnv)).run(EMPTY_LIST), executor)));
       }
 
+      case MalSymbol(var name, _) when name.startsWith(".") -> {
+        var method = name.substring(1);
+        yield traverse(values.tail(), m -> safeEval(m, env))
+          .flatMap(args -> {
+            var wrapper = (MalWrapper) args.get(0);
+            return wrapper.call(method, list(args.minus(0)));
+          });
+      }
+
       case MalMacro(var lambda, _) -> {
         yield lambda.apply(list(values.tail()))
           .flatMap(next -> safeEval(next, env));
@@ -212,18 +221,19 @@ class Evaluator {
           .flatMap(args -> lambda.apply(list(args)));
       }
 
-      case MalWrapper wrapper -> {
-        var name = (MalSymbol) values.get(1);
-        yield traverse(values.tail().tail(), m -> safeEval(m, env))
-          .flatMap(args -> wrapper.call(name.name(), list(args)));
-      }
-
       default -> {
         yield safeEval(values.get(0), env)
           .<MalNode>map(callable -> values.tail().cons(callable))
           .flatMap(node -> safeEval(node, env));
       }
     };
+  }
+
+  private static MalSymbol methodName(String clazz, String method, int numberOfArgs) {
+    int lastDotIndex = clazz.lastIndexOf(".");
+    return numberOfArgs > 0 ?
+        symbol(clazz.substring(lastDotIndex + 1) + "." + method + "/" + numberOfArgs) :
+          symbol(clazz.substring(lastDotIndex + 1) + "." + method);
   }
 
   private static int getNumberOfArguments(MalSequence values) {

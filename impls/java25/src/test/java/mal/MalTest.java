@@ -963,25 +963,25 @@ class MalTest {
     // interop
     assertEquals("6", StepA.rep("(java-eval \"1 + 2 + 3\")"));
     StepA.rep("(import java.lang.String length)");
-    assertEquals("5", StepA.rep("(length \"12345\")"));
+    assertEquals("5", StepA.rep("(String.length \"12345\")"));
     StepA.rep("(import java.lang.String split 1)");
-    assertEquals("(\"1\" \"2\" \"3\" \"4\")", StepA.rep("(split/1 \"1 2 3 4\" \" \")"));
+    assertEquals("(\"1\" \"2\" \"3\" \"4\")", StepA.rep("(String.split/1 \"1 2 3 4\" \" \")"));
 
     StepA.rep("(import java.lang.String lines)");
-    assertEquals("(\"1\" \"2\" \"3\" \"4\")", StepA.rep("(lines \"1\n2\n3\n4\")"));
-    assertEquals("\"MalLazy\"", StepA.rep("(type-of (lines \"1\n2\n3\n4\"))"));
+    assertEquals("(\"1\" \"2\" \"3\" \"4\")", StepA.rep("(String.lines \"1\n2\n3\n4\")"));
+    assertEquals("\"MalLazy\"", StepA.rep("(type-of (String.lines \"1\n2\n3\n4\"))"));
 
     StepA.rep("(def! rand (new java.util.Random))");
-    StepA.rep("(rand setSeed 12345)");
-    assertEquals("1553932502", StepA.rep("(rand nextInt)"));
+    StepA.rep("(.setSeed rand 12345)");
+    assertEquals("1553932502", StepA.rep("(.nextInt rand)"));
     assertEquals("\"MalWrapper\"", StepA.rep("(type-of rand)"));
     assertEquals("true", StepA.rep("(instance? rand \"java.lang.Object\")"));
     assertEquals("true", StepA.rep("(instance? rand \"java.util.Random\")"));
     assertEquals("false", StepA.rep("(instance? rand \"java.util.List\")"));
 
     StepA.rep("(import java.util.regex.Pattern compile 1)");
-    StepA.rep("(def! regex (compile/1 \"(\\\\w{3})\"))");
-    assertEquals("(\"abc\" \"def\" \"ghi\")", StepA.rep("(map (fn* [r] (r group)) ((regex matcher \"abc def ghi\") results))"));
+    StepA.rep("(def! regex (Pattern.compile/1 \"(\\\\w{3})\"))");
+    assertEquals("(\"abc\" \"def\" \"ghi\")", StepA.rep("(map (fn* [r] (.group r)) (.results (.matcher regex \"abc def ghi\")))"));
   }
 
   @Test
@@ -1012,7 +1012,7 @@ class MalTest {
     assertEquals("\"MalLazy\"", StepA.rep("(type-of (concat (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
 
     StepA.rep("(import java.util.stream.Stream concat 2)");
-    assertEquals("(10 11 12 6 7 8)", StepA.rep("(concat/2 (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
+    assertEquals("(10 11 12 6 7 8)", StepA.rep("(Stream.concat/2 (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
   }
 
   @Test

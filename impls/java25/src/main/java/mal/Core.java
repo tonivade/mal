@@ -86,6 +86,9 @@ interface Core {
     if (first == NIL) {
       return number(0);
     }
+    if (first instanceof MalString(var value, _)) {
+      return number(value.length());
+    }
     return number(((MalSequence) first).size());
   }
 
@@ -268,12 +271,16 @@ interface Core {
   }
 
   static MalNode nth(MalList args) {
-    var list = (MalSequence) args.get(0);
+    var item = args.get(0);
     var index = (MalNumber) args.get(1);
-    if (list instanceof MalCollection col && (index.value() < 0 || index.value() >= col.size())) {
-      throw new MalException("index out of bounds: " + list.size());
+    if (item instanceof MalString(var value, _)) {
+      var ch = value.charAt(index.asInt());
+      return string(Character.toString(ch));
     }
-    return list.get(index.asInt());
+    if (item instanceof MalCollection col && (index.value() < 0 || index.value() >= col.size())) {
+      throw new MalException("index out of bounds: " + col.size());
+    }
+    return ((MalSequence) item).get(index.asInt());
   }
 
   static MalNode first(MalList args) {
