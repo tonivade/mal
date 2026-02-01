@@ -985,6 +985,9 @@ class MalTest {
     assertEquals("(\"abc\" \"def\" \"ghi\")", StepA.rep("(map (fn* [r] (.group r)) (.results (.matcher regex \"abc def ghi\")))"));
 
     assertEquals("(\"a\" \"b\" \"c\")", StepA.rep("(.split \"a b c\" \" \")"));
+
+    assertEquals("\"MalFunction\"", StepA.rep("(type-of .trim)"));
+    assertEquals("(\"a b c\")", StepA.rep("(map .trim (list \"  a b c  \"))"));
   }
 
   @Test

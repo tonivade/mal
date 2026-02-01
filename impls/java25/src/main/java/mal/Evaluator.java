@@ -46,7 +46,6 @@ import mal.MalNode.MalSequence;
 import mal.MalNode.MalSymbol;
 import mal.MalNode.MalValue;
 import mal.MalNode.MalVector;
-import mal.MalNode.MalWrapper;
 
 class Evaluator {
 
@@ -88,6 +87,12 @@ class Evaluator {
   }
 
   private static Trampoline<MalNode> evalSymbol(Env env, String name) {
+    if (name.startsWith(DOT)) {
+      return done(function(args -> {
+        var value = (MalValue<?>) args.get(0);
+        return value.call(name.substring(1), list(args.tail()));
+      }));
+    }
     var value = env.get(name);
     if (value == null) {
       throw new MalException(name + " not found");
