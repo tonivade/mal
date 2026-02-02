@@ -19,6 +19,7 @@ import static mal.MalNode.string;
 import static mal.MalNode.wrap;
 import static mal.Trampoline.done;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
@@ -146,9 +147,10 @@ class Interop {
       case MalSymbol(var value, _) -> value;
       case MalKeyword(var value, _) -> value;
       case MalNumber(var value, _) -> value;
-      case MalMap(var value, _) -> value;
-      case MalList(var value, _) -> value;
-      case MalVector(var value, _) -> value;
+      case MalMap(var value, _) ->
+        value.entrySet().stream().collect(toUnmodifiableMap(entry -> toJava(entry.getKey()), entry -> toJava(entry.getValue())));
+      case MalList(var value, _) -> value.stream().map(Interop::toJava).toList();
+      case MalVector(var value, _) -> value.stream().map(Interop::toJava).toList();
       case MalConstant(var value, _) when value.equals("true") -> true;
       case MalConstant(var value, _) when value.equals("false") -> false;
       case MalConstant(var value, _) when value.equals("nil") -> null;
@@ -212,6 +214,14 @@ class Interop {
       } else if (params[i].isEnum() && arguments[i] instanceof String s) {
         arguments[i] = Stream.of(params[i].getEnumConstants())
             .filter(e -> e.toString().equals(s)).findFirst().orElseThrow();
+      } else if (params[i].isArray() && arguments[i] instanceof List<?> list) {
+        var type = params[i].getComponentType();
+        var array = Array.newInstance(type, list.size());
+        int j = 0;
+        for (var item : list) {
+          Array.set(array, j++, item);
+        }
+        arguments[i] = array;
       }
     }
     return arguments;

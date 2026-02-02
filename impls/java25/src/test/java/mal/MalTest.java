@@ -988,6 +988,10 @@ class MalTest {
 
     assertEquals("\"MalFunction\"", StepA.rep("(type-of .trim)"));
     assertEquals("(\"a b c\")", StepA.rep("(map .trim (list \"  a b c  \"))"));
+
+    // check varargs
+    StepA.rep("(import java.lang.String format 2)");
+    assertEquals("\"hola toni\"", StepA.rep("(String.format/2 \"hola %s\" (list \"toni\"))"));
   }
 
   @Test

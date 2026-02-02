@@ -190,9 +190,11 @@ class Evaluator {
 
       case MalSymbol(var name, _) when name.equals(NEW) -> {
         var clazz = (MalSymbol) values.get(1);
-        var args = values.tail().tail();
-        var lambda = Interop.constructorNonCached(clazz.name(), args.size());
-        yield lambda.apply(list(args));
+        yield traverse(values.tail().tail(), m -> safeEval(m, env))
+          .flatMap(args -> {
+            var lambda = Interop.constructorNonCached(clazz.name(), args.size());
+            return lambda.apply(list(args));
+          });
       }
 
       case MalSymbol(var name, _) when name.equals(LAZY_SEQ) -> {
