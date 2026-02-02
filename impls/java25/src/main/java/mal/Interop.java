@@ -176,7 +176,13 @@ class Interop {
           .findFirst()
           .or(() -> Stream.of(classRef.getInterfaces())
               .flatMap(interfaceRef -> getMethod(interfaceRef.getName(), method, numberOfArgs).stream())
-              .findFirst());
+              .findFirst())
+          .or(() -> {
+            if (classRef.getSuperclass() == null) {
+              return Optional.empty();
+            }
+            return getMethod(classRef.getSuperclass().getName(), method, numberOfArgs);
+          });
     } catch (ClassNotFoundException e) {
       return Optional.empty();
     }
@@ -204,6 +210,9 @@ class Interop {
         } else if (params[i] == byte.class) {
           arguments[i] = n.byteValue();
         }
+      } else if (params[i].isEnum() && arguments[i] instanceof String s) {
+        arguments[i] = Stream.of(params[i].getEnumConstants())
+            .filter(e -> e.toString().equals(s)).findFirst().orElseThrow();
       }
     }
     return arguments;
