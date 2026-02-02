@@ -77,6 +77,12 @@ interface Core {
   }
 
   static MalNode isEmpty(MalList args) {
+    if (args.get(0) instanceof MalString(var value, _)) {
+      return bool(value.isEmpty());
+    }
+    if (args.get(0) instanceof MalMap(var values, _)) {
+      return bool(values.isEmpty());
+    }
     var seq = (MalSequence) args.get(0);
     return bool(seq.seq() == null);
   }
