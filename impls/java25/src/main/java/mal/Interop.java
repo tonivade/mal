@@ -31,13 +31,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import mal.MalNode.MalConstant;
+import mal.MalNode.MalFiber;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalKeyword;
 import mal.MalNode.MalLambda;
+import mal.MalNode.MalLazy;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMap;
 import mal.MalNode.MalNumber;
@@ -59,7 +62,7 @@ class Interop {
   }
 
   private static MalLambda methodNonCached(String clazz, String name, int numberOfArgs) {
-    var method = getMethod(clazz, name, numberOfArgs)
+    var method = getClass(clazz).flatMap(c -> getMethod(c, name, numberOfArgs))
         .orElseThrow(() -> new MalException("method not found " + clazz + "." + name));
     if (Modifier.isStatic(method.getModifiers())) {
       return args -> {
@@ -98,7 +101,7 @@ class Interop {
   }
 
   static MalLambda constructorNonCached(String clazz, int numberOfArgs) {
-    var constructor = getConstructor(clazz, numberOfArgs)
+    var constructor = getClass(clazz).flatMap(c -> getConstructor(c, numberOfArgs))
         .orElseThrow(() -> new MalException("constructor not found for class " + clazz));
     return args -> {
       try {
@@ -132,6 +135,7 @@ class Interop {
       case Object[] a -> listToMal(List.of(a));
       case Character c -> string(c.toString());
       case Enum<?> e -> string(e.name());
+      case CompletableFuture<?> f -> wrap(f.thenApply(Interop::toMal));
       case Object o -> wrap(o);
     };
   }
@@ -150,35 +154,34 @@ class Interop {
       case MalConstant(var value, _) when value.equals("nil") -> null;
       case MalWrapper(var value, _) -> value;
       case MalSequence seq -> StreamSupport.stream(seq.spliterator(), false).map(Interop::toJava);
+      case MalFiber(var future, _) -> future.thenApply(Interop::toJava);
       default -> throw new MalException("not supported " + node);
     };
   }
 
-  private static Optional<Constructor<?>> getConstructor(String clazz, int numberOfArgs) {
-    try {
-      var classRef = Class.forName(clazz);
-      return Stream.of(classRef.getDeclaredConstructors())
-          .filter(m -> m.getParameterCount() == numberOfArgs)
-          .filter(m -> m.trySetAccessible())
-          .findFirst();
-    } catch (ClassNotFoundException e) {
-      return Optional.empty();
-    }
+  private static Optional<Constructor<?>> getConstructor(Class<?> clazz, int numberOfArgs) {
+    return Stream.of(clazz.getDeclaredConstructors())
+        .filter(m -> m.getParameterCount() == numberOfArgs)
+        .filter(m -> m.trySetAccessible())
+        .findFirst();
   }
 
-  private static Optional<Method> getMethod(String clazz, String method, int numberOfArgs) {
+  private static Optional<Method> getMethod(Class<?> clazz, String method, int numberOfArgs) {
+    return Stream.of(clazz.getDeclaredMethods())
+        .filter(m -> m.getParameterCount() == numberOfArgs)
+        .filter(m -> m.getName().equals(method))
+        .filter(m -> m.trySetAccessible())
+        .findFirst()
+        .or(() -> Stream.of(clazz.getInterfaces())
+            .flatMap(interfaceRef -> getMethod(interfaceRef, method, numberOfArgs).stream())
+            .findFirst())
+        .or(() -> Optional.ofNullable(clazz.getSuperclass())
+              .flatMap(superclass -> getMethod(superclass, method, numberOfArgs)));
+  }
+
+  private static Optional<Class<?>> getClass(String clazz) {
     try {
-      var classRef = Class.forName(clazz);
-      return Stream.of(classRef.getDeclaredMethods())
-          .filter(m -> m.getParameterCount() == numberOfArgs)
-          .filter(m -> m.getName().equals(method))
-          .filter(m -> m.trySetAccessible())
-          .findFirst()
-          .or(() -> Stream.of(classRef.getInterfaces())
-              .flatMap(interfaceRef -> getMethod(interfaceRef.getName(), method, numberOfArgs).stream())
-              .findFirst())
-          .or(() -> Optional.ofNullable(classRef.getSuperclass())
-                .flatMap(superclass -> getMethod(superclass.getName(), method, numberOfArgs)));
+      return Optional.of(Class.forName(clazz));
     } catch (ClassNotFoundException e) {
       return Optional.empty();
     }
@@ -214,14 +217,14 @@ class Interop {
     return arguments;
   }
 
-  private static MalSequence listToMal(Collection<?> list) {
+  private static MalList listToMal(Collection<?> list) {
     return list(list.stream().map(Interop::toMal).toList());
   }
 
-  private static MalNode streamToMal(Iterator<?> i) {
+  private static MalLazy streamToMal(Iterator<?> i) {
     return lazy(() -> {
       if (i.hasNext()) {
-        return cons(toMal(i.next()), (MalSequence) streamToMal(i));
+        return cons(toMal(i.next()), streamToMal(i));
       }
       return EMPTY_LIST;
     });

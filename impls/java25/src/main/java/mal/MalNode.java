@@ -215,14 +215,10 @@ public sealed interface MalNode {
     }
   }
 
-  final class MalFiber implements MalNode {
+  record MalFiber(CompletableFuture<MalNode> future, MalNode meta) implements MalNode {
 
-    private final CompletableFuture<MalNode> future;
-    private final MalNode meta;
-
-    public MalFiber(CompletableFuture<MalNode> future, MalNode meta) {
-      this.future = future;
-      this.meta = meta;
+    public MalFiber {
+      requireNonNull(future);
     }
 
     public MalNode join() {
@@ -232,16 +228,6 @@ public sealed interface MalNode {
     @Override
     public MalNode withMeta(MalNode meta) {
       return new MalFiber(future, meta);
-    }
-
-    @Override
-    public MalNode meta() {
-      return meta;
-    }
-
-    @Override
-    public String toString() {
-      return "MalFiber[done=%s,cancelled=%s,error=%]".formatted(future.isDone(), future.isCancelled(), future.isCompletedExceptionally());
     }
   }
 
