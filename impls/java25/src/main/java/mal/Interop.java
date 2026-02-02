@@ -177,12 +177,8 @@ class Interop {
           .or(() -> Stream.of(classRef.getInterfaces())
               .flatMap(interfaceRef -> getMethod(interfaceRef.getName(), method, numberOfArgs).stream())
               .findFirst())
-          .or(() -> {
-            if (classRef.getSuperclass() == null) {
-              return Optional.empty();
-            }
-            return getMethod(classRef.getSuperclass().getName(), method, numberOfArgs);
-          });
+          .or(() -> Optional.ofNullable(classRef.getSuperclass())
+                .flatMap(superclass -> getMethod(superclass.getName(), method, numberOfArgs)));
     } catch (ClassNotFoundException e) {
       return Optional.empty();
     }

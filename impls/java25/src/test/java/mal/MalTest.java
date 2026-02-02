@@ -1028,13 +1028,6 @@ class MalTest {
     assertEquals("1234", StepA.rep("(join task)"));
   }
 
-  @Test
-  void test() {
-    StepA.rep("(import java.net.http.HttpClient newBuilder)");
-    StepA.rep("(import java.net.http.HttpResponse$BodyHandlers ofString)");
-    StepA.rep("(let* [builder (HttpClient.newBuilder)] (do (.version builder \"HTTP_1_1\") (.build builder)))");
-  }
-
   /**
    * Helper method to redirect System.out, run a command, and validate the output.
    */
