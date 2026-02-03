@@ -33,6 +33,7 @@ import java.util.Map;
 
 import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
+import org.pcollections.PMap;
 import org.pcollections.TreePVector;
 
 import mal.MalNode.MalAtom;
@@ -94,6 +95,9 @@ interface Core {
     }
     if (first instanceof MalString(var value, _)) {
       return number(value.length());
+    }
+    if (first instanceof MalMap(var values, _)) {
+      return number(values.size());
     }
     return number(((MalSequence) first).size());
   }
@@ -293,6 +297,20 @@ interface Core {
     if (args.get(0).equals(NIL)) {
       return NIL;
     }
+    if (args.get(0) instanceof MalString(var value, _) && value.isEmpty()) {
+      return NIL;
+    }
+    if (args.get(0) instanceof MalString(var value, _)) {
+      var ch = value.charAt(0);
+      return string(Character.toString(ch));
+    }
+    if (args.get(0) instanceof MalMap(var values, _) && values.isEmpty()) {
+      return NIL;
+    }
+    if (args.get(0) instanceof MalMap(var values, _)) {
+      var firstKey = values.keySet().iterator().next();
+      return vector(firstKey, values.get(firstKey));
+    }
     var list = (MalSequence) args.get(0);
     return list.get(0);
   }
@@ -300,6 +318,19 @@ interface Core {
   static MalNode rest(MalList args) {
     if (args.get(0).equals(NIL)) {
       return EMPTY_LIST;
+    }
+    if (args.get(0) instanceof MalString(var value, _) && value.isEmpty()) {
+      return EMPTY_LIST;
+    }
+    if (args.get(0) instanceof MalString(var value, _)) {
+      return asList(value.substring(1));
+    }
+    if (args.get(0) instanceof MalMap(var values, _) && values.isEmpty()) {
+      return EMPTY_LIST;
+    }
+    if (args.get(0) instanceof MalMap(var values, _)) {
+      var firstKey = values.keySet().iterator().next();
+      return asList(values.minus(firstKey));
     }
     var list = (MalSequence) args.get(0);
     return list.tail();
@@ -465,8 +496,10 @@ interface Core {
       case MalList(var values, _) when values.isEmpty() -> NIL;
       case MalVector(var values, _) when values.isEmpty() -> NIL;
       case MalString(var value, _) when value.isEmpty() -> NIL;
+      case MalMap(var values, _) when values.isEmpty() -> NIL;
       case MalVector(var values, _) -> list(values);
       case MalString(var value, _) -> asList(value);
+      case MalMap(var values, _) -> asList(values);
       default -> args.get(0);
     };
   }
@@ -614,5 +647,10 @@ interface Core {
 
   private static MalList asList(String string) {
     return list(string.chars().mapToObj(Character::toString).map(MalNode::string).toList());
+  }
+
+  private static MalList asList(PMap<MalKey, MalNode> map) {
+    return list(map.entrySet().stream()
+      .map(entry -> vector(entry.getKey(), entry.getValue())).toList());
   }
 }

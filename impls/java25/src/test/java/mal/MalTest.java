@@ -1030,6 +1030,29 @@ class MalTest {
   void stepC() {
     StepA.rep("(def! task (spawn (fn* [] (do (sleep 1) 1234))))");
     assertEquals("1234", StepA.rep("(join task)"));
+
+    assertEquals("nil", StepA.rep("(get nil)"));
+
+    assertEquals("false", StepA.rep("(empty? \"abc\")"));
+    assertEquals("true", StepA.rep("(empty? \"\")"));
+    assertEquals("\"a\"", StepA.rep("(first \"abc\")"));
+    assertEquals("nil", StepA.rep("(first \"\")"));
+    assertEquals("\"b\"", StepA.rep("(nth \"abc\" 1)"));
+    assertEquals("(\"b\" \"c\")", StepA.rep("(rest \"abc\")"));
+    assertEquals("(\"a\" \"b\" \"c\")", StepA.rep("(seq \"abc\")"));
+    assertEquals("0", StepA.rep("(count \"\")"));
+    assertEquals("3", StepA.rep("(count \"abc\")"));
+    assertEquals("()", StepA.rep("(rest \"\")"));
+
+    assertEquals("false", StepA.rep("(empty? {:a \"A\" :b \"B\"})"));
+    assertEquals("true", StepA.rep("(empty? {})"));
+    assertEquals("[:a \"A\"]", StepA.rep("(first {:a \"A\" :b \"B\"})"));
+    assertEquals("nil", StepA.rep("(first {})"));
+    assertEquals("([:a \"A\"] [:b \"B\"])", StepA.rep("(seq {:a \"A\" :b \"B\"})"));
+    assertEquals("2", StepA.rep("(count {:a \"A\" :b \"B\"})"));
+    assertEquals("([:b \"B\"])", StepA.rep("(rest {:a \"A\" :b \"B\"})"));
+    assertEquals("()", StepA.rep("(rest {})"));
+    assertEquals("0", StepA.rep("(count {})"));
   }
 
   /**
