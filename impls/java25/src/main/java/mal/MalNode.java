@@ -65,6 +65,7 @@ public sealed interface MalNode {
   }
 
   sealed interface MalValue<T> extends MalNode {
+
     T value();
 
     default Trampoline<MalNode> call(String name, MalSequence args) {

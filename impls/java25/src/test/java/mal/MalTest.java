@@ -1053,6 +1053,15 @@ class MalTest {
     assertEquals("([:b \"B\"])", StepA.rep("(rest {:a \"A\" :b \"B\"})"));
     assertEquals("()", StepA.rep("(rest {})"));
     assertEquals("0", StepA.rep("(count {})"));
+
+    assertEquals("()", StepA.rep("(concat \"\")"));
+    assertEquals("()", StepA.rep("(concat \"\" \"\")"));
+    assertEquals("(\"a\" \"b\" \"c\")", StepA.rep("(concat \"abc\")"));
+
+    assertEquals("()", StepA.rep("(concat {})"));
+    assertEquals("()", StepA.rep("(concat {} {})"));
+    assertEquals("([:a \"A\"] [:b \"B\"])", StepA.rep("(concat {:a \"A\" :b \"B\"})"));
+    assertEquals("([:a \"A\"] [:b \"B\"] [:c \"C\"])", StepA.rep("(concat {:a \"A\" :b \"B\"} {:c \"C\"})"));
   }
 
   /**

@@ -30,10 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
-
 import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
 import org.pcollections.PMap;
+import org.pcollections.PVector;
 import org.pcollections.TreePVector;
 
 import mal.MalNode.MalAtom;
@@ -231,12 +231,34 @@ interface Core {
     if (args.isEmpty()) {
       return EMPTY_LIST;
     }
-    if (args.size() == 1 && args.get(0) instanceof MalCollection col) {
-      return list(col);
+
+    if (args.values().stream().allMatch(MalCollection.class::isInstance)) {
+      var result = args.values().stream()
+          .map(MalCollection.class::cast)
+          .map(MalCollection::values)
+          .reduce(PVector::plusAll)
+          .orElseThrow();
+      return list(result);
     }
-    if (args.size() == 2 && args.get(0) instanceof MalCollection first && args.get(1) instanceof MalCollection second) {
-      return list(first.values().plusAll(second.values()));
+
+    if (args.values().stream().allMatch(MalString.class::isInstance)) {
+      var result = args.values().stream()
+          .map(MalString.class::cast)
+          .map(MalString::value)
+          .reduce(String::concat)
+          .orElseThrow();
+      return asList(result);
     }
+
+    if (args.values().stream().allMatch(MalMap.class::isInstance)) {
+      var result = args.values().stream()
+          .map(MalMap.class::cast)
+          .map(MalMap::map)
+          .map(Map::entrySet)
+          .reduce(TreePVector.<MalVector>empty(), (acc, entries) -> acc.plusAll(entries.stream().map(Core::entryToVector).toList()), TreePVector::plusAll);
+      return list(result);
+    }
+
     return lazy(() -> concatStep(args));
   }
 
@@ -650,7 +672,10 @@ interface Core {
   }
 
   private static MalList asList(PMap<MalKey, MalNode> map) {
-    return list(map.entrySet().stream()
-      .map(entry -> vector(entry.getKey(), entry.getValue())).toList());
+    return list(map.entrySet().stream().map(Core::entryToVector).toList());
+  }
+
+  private static MalVector entryToVector(Map.Entry<MalKey, MalNode> entry) {
+    return vector(entry.getKey(), entry.getValue());
   }
 }
