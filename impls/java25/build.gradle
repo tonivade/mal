@@ -31,8 +31,8 @@ tasks.withType(JavaCompile) {
 dependencies {
   annotationProcessor 'info.picocli:picocli-codegen:4.7.7'
 
-  implementation 'org.jline:jline-terminal-ffm:3.30.9'
-  implementation 'org.jline:jline-reader:3.30.9'
+  implementation 'org.jline:jline-terminal-ffm:4.0.9'
+  implementation 'org.jline:jline-reader:4.0.9'
   implementation 'info.picocli:picocli:4.7.7'
   implementation 'org.apache.commons:commons-text:1.15.0'
   implementation 'org.codehaus.janino:janino:3.1.12'
@@ -43,7 +43,7 @@ dependencies {
   testImplementation 'org.mockito:mockito-core:5.23.0'
   testImplementation 'org.mockito:mockito-junit-jupiter:5.23.0'
 }
- 
+   
 test {
   useJUnitPlatform()
 }
