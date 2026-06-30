@@ -961,7 +961,6 @@ class MalTest {
     assertEquals("{\"b\" 2}", StepA.rep("(meta l-wm)"));
 
     // interop
-    assertEquals("6", StepA.rep("(java-eval \"1 + 2 + 3\")"));
     StepA.rep("(import java.lang.String length)");
     assertEquals("5", StepA.rep("(String.length \"12345\")"));
     StepA.rep("(import java.lang.String split 1)");

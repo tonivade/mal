@@ -5,7 +5,6 @@
 package mal;
 
 import static java.util.Map.entry;
-import static mal.Interop.toMal;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
@@ -25,13 +24,10 @@ import static mal.Trampoline.traverse;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
-import org.codehaus.commons.compiler.CompileException;
-import org.codehaus.janino.ExpressionEvaluator;
 import org.pcollections.PMap;
 import org.pcollections.PVector;
 import org.pcollections.TreePVector;
@@ -546,24 +542,6 @@ interface Core {
     };
   }
 
-  static MalNode eval(MalList args) {
-    try {
-      if (args.get(0) instanceof MalString(var value, _)) {
-        var evaluator = new ExpressionEvaluator();
-        evaluator.setReturnType(Object.class);
-        evaluator.cook(value);
-        return toMal(evaluator.evaluate(new Object[] {}));
-      }
-      throw new MalException("invalid definition");
-    } catch (CompileException e) {
-      throw new MalException("eval error", e);
-    } catch (InvocationTargetException e) {
-      throw new MalException("eval error", e);
-    } catch (RuntimeException e) {
-      throw new MalException("eval error", e);
-    }
-  }
-
   static MalNode typeOf(MalList args) {
     if (args.isEmpty()) {
       return NIL;
@@ -660,7 +638,6 @@ interface Core {
     entry("number?", function(lambda(Core::isNumber))),
     entry("seq", function(lambda(Core::seq))),
     entry("conj", function(lambda(Core::conj))),
-    entry("java-eval", function(lambda(Core::eval))),
     entry("type-of", function(lambda(Core::typeOf))),
     entry("join", function(lambda(Core::join))),
     entry("sleep", function(lambda(Core::sleep))),
