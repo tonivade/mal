@@ -286,7 +286,6 @@ interface Core {
     var rest = seqs.tail().tail();
 
     return concat(list(first, concat(list(second, concat(rest)))));
-
   }
 
   static MalNode vec(MalList args) {
