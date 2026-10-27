@@ -334,6 +334,11 @@ public sealed interface MalNode {
     default int size() {
       return values().size();
     }
+
+    @Override
+    default Iterator<MalNode> iterator() {
+      return values().iterator();
+    }
   }
 
   record MalList(PVector<MalNode> values, MalNode meta) implements MalCollection {

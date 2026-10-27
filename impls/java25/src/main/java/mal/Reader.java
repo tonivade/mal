@@ -22,20 +22,25 @@ import static mal.MalNode.number;
 import static mal.MalNode.string;
 import static mal.MalNode.symbol;
 import static mal.Trampoline.done;
-import static mal.Trampoline.zip;
 import static mal.Trampoline.more;
+import static mal.Trampoline.zip;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 class Reader {
 
-  record Token(String value) { }
-
   private static final Pattern PATTERN =
-    Pattern.compile("[\\s,]*(~@|[\\[\\]{}()'`~^@]|\"(?:\\\\.|[^\\\\\"])*\"?|;.*|[^\\s\\[\\]{}('\"`,;)]*)");
+      Pattern.compile("[\\s,]*(~@|[\\[\\]{}()'`~^@]|\"(?:\\\\.|[^\\\\\"])*\"?|;.*|[^\\s\\[\\]{}('\"`,;)]*)");
+
+  private static final Predicate<String> NUMBER_PATTERN = Pattern.compile("-?\\d+").asMatchPredicate();
+  private static final Predicate<String> EOF_PATTERN = Pattern.compile("\"(?:\\\\.|[^\\\\\"])*").asMatchPredicate();
+  private static final Predicate<String> STRING_PATTERN = Pattern.compile("\"(?:\\\\.|[^\\\\\"])*\"").asMatchPredicate();
+
+  record Token(String value) { }
 
   private final List<Token> tokens;
   private int position;
@@ -160,11 +165,11 @@ class Reader {
       case Token(var value) when value.equals("nil") -> NIL;
       case Token(var value) when value.equals("true") -> TRUE;
       case Token(var value) when value.equals("false") -> FALSE;
-      case Token(var value) when value.matches("-?\\d+") ->
+      case Token(var value) when NUMBER_PATTERN.test(value) ->
         number(Long.parseLong(value));
-      case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*") ->
+      case Token(var value) when EOF_PATTERN.test(value) ->
         throw new MalException("EOF");
-      case Token(var value) when value.matches("\"(?:\\\\.|[^\\\\\"])*\"") ->
+      case Token(var value) when STRING_PATTERN.test(value) ->
         string(unescapeJava(value.substring(1, value.length() - 1)));
       case Token(var value) when value.startsWith(":") ->
         keyword(value.substring(1));
