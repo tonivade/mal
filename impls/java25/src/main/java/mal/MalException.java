@@ -31,6 +31,10 @@ public class MalException extends RuntimeException {
     this(string(message), null);
   }
 
+  public MalNode getNode() {
+    return node;
+  }
+
   @Override
   public String getMessage() {
     return getMessage(false);

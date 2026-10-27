@@ -793,6 +793,8 @@ class MalTest {
   void step9() {
     Step9.init();
 
+    assertThrows(MalException.class, () -> Step9.rep("(1 2 3)"));
+
     // Testing throw
     assertThrows(MalException.class, () -> Step9.rep("(throw \"err1\")"));
 
