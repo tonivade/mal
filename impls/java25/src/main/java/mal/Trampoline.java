@@ -101,7 +101,7 @@ sealed interface Trampoline<T> {
               throw e;
             }
             case Recover(_, var nextFn) -> {
-              current = ((Function<RuntimeException, Trampoline<?>>) nextFn).apply(e);
+              current = more(() -> ((Function<RuntimeException, Trampoline<?>>) nextFn).apply(e));
               resumed = true;
             }
             default -> {}

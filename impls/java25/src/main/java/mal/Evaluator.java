@@ -200,7 +200,7 @@ class Evaluator {
   private static Trampoline<MalNode> evalTry(MalSequence form, Env env) {
     arity(form, 1, 2);
     var body = form.get(1);
-    return safeEval(body, env).recover(e -> {
+    return more(() -> safeEval(body, env)).recover(e -> {
       if (form.size() < 3) {
         throw e;
       }
