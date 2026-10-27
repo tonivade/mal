@@ -20,7 +20,7 @@ sealed interface Trampoline<T> {
   record Done<T>(T value) implements Trampoline<T> {}
   record More<T>(Supplier<? extends Trampoline<T>> next) implements Trampoline<T> {}
   record FlatMap<T, R>(Trampoline<T> current, Function<? super T, ? extends Trampoline<R>> mapper) implements Trampoline<R> {}
-  record Recover<T, R>(Trampoline<T> current, Function<? super RuntimeException, ? extends Trampoline<R>> recover) implements Trampoline<R> {}
+  record Recover<T>(Trampoline<T> current, Function<? super RuntimeException, ? extends Trampoline<T>> recover) implements Trampoline<T> {}
 
   static <T> Trampoline<T> done(T value) {
     return new Done<>(value);
@@ -42,7 +42,7 @@ sealed interface Trampoline<T> {
     return new FlatMap<>(this, mapper);
   }
 
-  default <R> Trampoline<R> recover(Function<? super RuntimeException, ? extends Trampoline<R>> mapper) {
+  default Trampoline<T> recover(Function<? super RuntimeException, ? extends Trampoline<T>> mapper) {
     return new Recover<>(this, mapper);
   }
 
