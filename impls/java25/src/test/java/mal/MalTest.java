@@ -817,6 +817,9 @@ class MalTest {
     // Test that throw is a function
     assertEquals("\"my err\"", Step9.rep("(try* (map throw (list \"my err\")) (catch* exc exc))"));
 
+    // deep recursion
+    assertEquals("42", Step9.rep("(do (def! loop (fn* (n) (if (= n 0) 42 (try* (loop (- n 1)))))) (loop 100000))"));
+
     // Testing builtin functions
     assertEquals("true", Step9.rep("(symbol? 'abc)"));
     assertEquals("false", Step9.rep("(symbol? \"abc\")"));

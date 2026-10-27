@@ -39,6 +39,60 @@ class TrampolineTest {
   }
 
   @Test
+  void recoverExceptionFromFlatMap() {
+    var result = Trampoline.done(1)
+      .flatMap(_ -> Trampoline.more(() -> {
+        throw new UnsupportedOperationException("boom");
+      }))
+      .recover(_ -> Trampoline.done(42))
+      .run();
+
+    assertEquals(42, result);
+  }
+
+  @Test
+  void recoverUsesNearestHandler() {
+    var result = Trampoline.<Integer>more(() -> {
+        throw new UnsupportedOperationException("boom");
+      })
+      .recover(_ -> Trampoline.done(10))
+      .flatMap(value -> Trampoline.done(value + 1))
+      .recover(_ -> Trampoline.done(99))
+      .run();
+
+    assertEquals(11, result);
+  }
+
+  @Test
+  void nestedRecoverUsesInnerHandler() {
+    var inner = Trampoline.<Integer>more(() -> {
+      throw new UnsupportedOperationException("boom");
+    }).recover(_ -> Trampoline.done(10));
+
+    var result = inner
+      .flatMap(value -> Trampoline.done(value + 1))
+      .recover(_ -> Trampoline.done(99))
+      .run();
+
+    assertEquals(11, result);
+  }
+
+  @Test
+  void recoverHandlerCanBeRecoveredByOuterHandler() {
+    var result = Trampoline.<Integer>more(() -> {
+        throw new UnsupportedOperationException("original");
+      })
+      .recover(_ -> {
+        throw new IllegalStateException("from handler");
+      })
+      .recover(e -> Trampoline.done(
+          e instanceof IllegalStateException ? 42 : -1))
+      .run();
+
+    assertEquals(42, result);
+  }
+
+  @Test
   void throwsException() {
     var recover = Trampoline.more(() -> {
       throw new UnsupportedOperationException();
