@@ -200,9 +200,7 @@ class Evaluator {
   private static Trampoline<MalNode> evalTry(MalSequence form, Env env) {
     arity(form, 1, 2);
     var body = form.get(1);
-    try {
-      return done(eval(body, env));
-    } catch (RuntimeException e) {
+    return safeEval(body, env).recover(e -> {
       if (form.size() < 3) {
         throw e;
       }
@@ -214,7 +212,7 @@ class Evaluator {
       MalNode thrown = e instanceof MalException me ? me.getNode() : error(e);
       var newEnv = new Env(env, Map.of(binding.name(), thrown));
       return safeEval(catchForm.get(2), newEnv);
-    }
+    });
   }
 
   private static Trampoline<MalNode> evalIf(MalSequence form, Env env) {

@@ -20,6 +20,7 @@ sealed interface Trampoline<T> {
   record Done<T>(T value) implements Trampoline<T> {}
   record More<T>(Supplier<? extends Trampoline<T>> next) implements Trampoline<T> {}
   record FlatMap<T, R>(Trampoline<T> current, Function<? super T, ? extends Trampoline<R>> mapper) implements Trampoline<R> {}
+  record Recover<T, R>(Trampoline<T> current, Function<? super RuntimeException, ? extends Trampoline<R>> recover) implements Trampoline<R> {}
 
   static <T> Trampoline<T> done(T value) {
     return new Done<>(value);
@@ -41,6 +42,10 @@ sealed interface Trampoline<T> {
     return new FlatMap<>(this, mapper);
   }
 
+  default <R> Trampoline<R> recover(Function<? super RuntimeException, ? extends Trampoline<R>> mapper) {
+    return new Recover<>(this, mapper);
+  }
+
   /**
    * Runs the computation and returns the final result.
    *
@@ -60,19 +65,48 @@ sealed interface Trampoline<T> {
   @SuppressWarnings("unchecked")
   default T run() {
     Trampoline<?> current = this;
-    Deque<Function<Object, Trampoline<?>>> stack = new ArrayDeque<>();
+    Deque<Trampoline<?>> stack = new ArrayDeque<>();
 
     while (true) {
-      if (current instanceof Done(var value)) {
-        if (stack.isEmpty()) {
-          return (T) value; // end of program
+      try {
+        if (current instanceof Done(var value)) {
+          boolean resumed = false;
+          while (!resumed) {
+            switch (stack.poll()) {
+              case null -> {
+                return (T) value;
+              }
+              case FlatMap(_, var nextFn) -> {
+                current = ((Function<Object, Trampoline<?>>) nextFn).apply(value);
+                resumed = true;
+              }
+              default -> {}
+            }
+          }
+        } else if (current instanceof More(var next)) {
+          current = next.get();
+        } else if (current instanceof FlatMap(var source, _)) {
+          stack.push(current);
+          current = source;
+        } else if (current instanceof Recover(var source, _)) {
+          stack.push(current);
+          current = source;
         }
-        current = stack.pop().apply(value);
-      } else if (current instanceof More(var next)) {
-        current = next.get();
-      } else if (current instanceof FlatMap(var source, var nextFn)) {
-        stack.push((Function<Object, Trampoline<?>>) nextFn);
-        current = source;
+
+      } catch (RuntimeException e) {
+        boolean resumed = false;
+        while (!resumed) {
+          switch (stack.poll()) {
+            case null -> {
+              throw e;
+            }
+            case Recover(_, var nextFn) -> {
+              current = ((Function<RuntimeException, Trampoline<?>>) nextFn).apply(e);
+              resumed = true;
+            }
+            default -> {}
+          }
+        }
       }
     }
   }

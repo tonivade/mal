@@ -6,6 +6,7 @@ package mal;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -26,6 +27,24 @@ class TrampolineTest {
     var more = Trampoline.more(() -> Trampoline.done("done"));
 
     assertEquals("done", more.run());
+  }
+
+  @Test
+  void recover() {
+    var recover = Trampoline.more(() -> {
+      throw new UnsupportedOperationException();
+    }).recover(_ -> Trampoline.done("recovered"));
+
+    assertEquals("recovered", recover.run());
+  }
+
+  @Test
+  void throwsException() {
+    var recover = Trampoline.more(() -> {
+      throw new UnsupportedOperationException();
+    });
+
+    assertThrows(UnsupportedOperationException.class, recover::run);
   }
 
   @Test
