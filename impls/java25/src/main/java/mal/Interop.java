@@ -27,12 +27,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -53,12 +53,12 @@ import mal.MalNode.MalWrapper;
 
 class Interop {
 
-  private static final Map<String, Map<String, Map<Integer, MalLambda>>> CACHE = new HashMap<>();
+  private static final Map<String, Map<String, Map<Integer, MalLambda>>> CACHE = new ConcurrentHashMap<>();
 
   static MalLambda method(String clazz, String name, int numberOfArgs) {
     return CACHE
-        .computeIfAbsent(clazz, _ -> new HashMap<>())
-        .computeIfAbsent(name, _ -> new HashMap<>())
+        .computeIfAbsent(clazz, _ -> new ConcurrentHashMap<>())
+        .computeIfAbsent(name, _ -> new ConcurrentHashMap<>())
         .computeIfAbsent(numberOfArgs, _ -> methodNonCached(clazz, name, numberOfArgs));
   }
 
@@ -96,8 +96,8 @@ class Interop {
 
   static MalLambda constructor(String clazz, int numberOfArgs) {
     return CACHE
-        .computeIfAbsent(clazz, _ -> new HashMap<>())
-        .computeIfAbsent("<init>", _ -> new HashMap<>())
+        .computeIfAbsent(clazz, _ -> new ConcurrentHashMap<>())
+        .computeIfAbsent("<init>", _ -> new ConcurrentHashMap<>())
         .computeIfAbsent(numberOfArgs, _ -> constructorNonCached(clazz, numberOfArgs));
   }
 
