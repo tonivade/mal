@@ -28,6 +28,7 @@ import static mal.Trampoline.traverse;
 import static mal.Trampoline.zip;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -210,7 +211,7 @@ class Evaluator {
       }
       var binding = symbolAt(catchForm, 1);
       MalNode thrown = e instanceof MalException me ? me.getNode() : error(e);
-      var newEnv = new Env(env, Map.of(binding.name(), thrown));
+      var newEnv = new Env(env, new HashMap<>(Map.of(binding.name(), thrown)));
       return safeEval(catchForm.get(2), newEnv);
     });
   }
