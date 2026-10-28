@@ -63,7 +63,20 @@ public class App implements Runnable {
   }
 
   public static void main(String... args) {
-    var result = new CommandLine(new App()).execute(args);
+    var app = new App();
+    var result = new CommandLine(app)
+      // arguments after the script file go to *ARGV*, even if they look like options
+      .setStopAtPositional(true)
+      // uncaught errors are printed like in the REPL, with the stack trace only in debug mode
+      .setExecutionExceptionHandler((e, _, _) -> {
+        if (app.debug) {
+          e.printStackTrace(System.err);
+        } else {
+          System.err.println("ERROR: " + e.getMessage());
+        }
+        return 1;
+      })
+      .execute(args);
     System.exit(result);
   }
 }
