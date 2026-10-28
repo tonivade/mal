@@ -9,6 +9,8 @@
 .lein
 .local
 .m2
+.gradle
+.malhistory
 .ivy2
 .sbt
 .npm
