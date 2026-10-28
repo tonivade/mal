@@ -392,6 +392,8 @@ public sealed interface MalNode {
 
     private Supplier<MalNode> thunk;
     private MalNode value;
+    private MalSequence sequence;
+    private boolean unwrapped;
     private final MalNode meta;
 
     public MalLazy(Supplier<MalNode> value, MalNode meta) {
@@ -411,8 +413,12 @@ public sealed interface MalNode {
 
     @Override
     public MalSequence seq() {
-      // only when seq is called the lazy-seq is unwrapped completely
-      return unwrap(realize()).seq();
+      if (!unwrapped) {
+        // only when seq is called the lazy-seq is unwrapped completely
+        sequence = unwrap(realize()).seq();
+        unwrapped = true;
+      }
+      return sequence;
     }
 
     @Override

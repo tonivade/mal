@@ -359,16 +359,22 @@ interface Core {
 
   static Trampoline<MalNode> apply(MalList args) {
     var function = (MalWithLambda) args.get(0);
+    var remaining = args.tail();
     var arguments = TreePVector.<MalNode>empty();
-    for (var m : args.tail()) {
-      if (m instanceof MalSequence seq) {
-        for (var v : seq) {
-          arguments = arguments.plus(v);
-        }
-      } else {
-        arguments = arguments.plus(m);
-      }
+
+    for (var i = 0; i < remaining.size() - 1; i++) {
+      arguments = arguments.plus(remaining.get(i));
     }
+
+    var last = remaining.get(remaining.size() - 1);
+    if (last instanceof MalSequence seq) {
+      for (var value : seq) {
+        arguments = arguments.plus(value);
+      }
+    } else {
+      arguments = arguments.plus(last);
+    }
+
     return function.apply(list(arguments));
   }
 
