@@ -2,23 +2,17 @@
 # Distributed under the terms of the MIT License
 FROM ubuntu:24.04
 
-USER root
-
 RUN apt-get -y update
 
 # Required for running tests
-RUN apt-get -y install make python3 zip unzip curl
+RUN apt-get -y install make python3
 RUN ln -fs /usr/bin/python3 /usr/local/bin/python
 
-RUN mkdir /mal
-RUN chown ubuntu:ubuntu /mal
+RUN mkdir -p /mal
 WORKDIR /mal
 
-USER ubuntu
+# Installed system-wide because the tests run as the host user, not as a user of this image
+RUN apt-get -y install openjdk-25-jdk-headless
 
-# Downloading SDKMAN!
-RUN curl -s "https://get.sdkman.io" | bash
-RUN bash -c "source $HOME/.sdkman/bin/sdkman-init.sh && \
-    yes | sdk install java 25.0.4-tem && \
-    rm -rf $HOME/.sdkman/archives/* && \
-    rm -rf $HOME/.sdkman/tmp/*"
+# Gradle and the REPL history write to the home directory, which must be writable by any user
+ENV HOME=/mal
