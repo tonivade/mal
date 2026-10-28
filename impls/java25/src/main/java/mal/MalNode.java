@@ -79,11 +79,9 @@ public sealed interface MalNode {
 
     // atoms can be shared between fibers
     private final AtomicReference<MalNode> value;
-    private final MalNode meta;
 
-    public MalAtom(MalNode value, MalNode meta) {
+    public MalAtom(MalNode value) {
       this.value = new AtomicReference<>(requireNonNull(value));
-      this.meta = meta;
     }
 
     public MalNode getValue() {
@@ -100,17 +98,18 @@ public sealed interface MalNode {
 
     @Override
     public MalNode meta() {
-      return meta;
+      return NIL;
     }
 
     @Override
     public MalAtom withMeta(MalNode meta) {
-      return new MalAtom(value.get(), meta);
+      // a copy would be a different atom with its own state, like clojure atoms don't support it
+      throw new MalException("with-meta: not supported for atoms");
     }
 
     @Override
     public String toString() {
-      return "MalAtom[value=" + value.get() + ", meta=" + meta +"]";
+      return "MalAtom[value=" + value.get() + "]";
     }
   }
 
@@ -699,7 +698,7 @@ public sealed interface MalNode {
   }
 
   static MalAtom atom(MalNode value) {
-    return new MalAtom(value, null);
+    return new MalAtom(value);
   }
 
   static MalLambda lambda(Function<MalList, MalNode> lambda) {
