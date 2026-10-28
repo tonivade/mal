@@ -56,7 +56,10 @@ application {
 
 shadowJar {
   manifest {
-    attributes 'Main-Class': 'mal.App'
+    attributes(
+      'Main-Class': 'mal.App', 
+      'Enable-Native-Access': 'ALL-UNNAMED'
+    )
   }
 }
 
