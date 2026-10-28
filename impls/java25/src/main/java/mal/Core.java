@@ -210,10 +210,18 @@ interface Core {
   static Trampoline<MalNode> swap(MalList args) {
     var atom = (MalAtom) args.get(0);
     var function = (MalWithLambda) args.get(1);
-    var newArgs = args.values().minus(0).minus(0).plus(0, atom.getValue());
-    return function.lambda().apply(list(newArgs)).map(newValue -> {
-      atom.setValue(newValue);
-      return newValue;
+    return swapLoop(atom, function, args.values().minus(0).minus(0));
+  }
+
+  // compare-and-set loop: if another fiber changed the atom while the function was running,
+  // the function is applied again to the new value
+  private static Trampoline<MalNode> swapLoop(MalAtom atom, MalWithLambda function, PVector<MalNode> extraArgs) {
+    var current = atom.getValue();
+    return function.lambda().apply(list(extraArgs.plus(0, current))).flatMap(newValue -> {
+      if (atom.compareAndSet(current, newValue)) {
+        return done(newValue);
+      }
+      return swapLoop(atom, function, extraArgs);
     });
   }
 

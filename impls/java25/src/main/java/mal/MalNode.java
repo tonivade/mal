@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -76,20 +78,25 @@ public sealed interface MalNode {
 
   final class MalAtom implements MalNode {
 
-    private MalNode value;
+    // atoms can be shared between fibers
+    private final AtomicReference<MalNode> value;
     private final MalNode meta;
 
     public MalAtom(MalNode value, MalNode meta) {
-      this.value = requireNonNull(value);
+      this.value = new AtomicReference<>(requireNonNull(value));
       this.meta = meta;
     }
 
     public MalNode getValue() {
-      return value;
+      return value.get();
     }
 
     public void setValue(MalNode value) {
-      this.value = requireNonNull(value);
+      this.value.set(requireNonNull(value));
+    }
+
+    public boolean compareAndSet(MalNode expected, MalNode newValue) {
+      return value.compareAndSet(expected, requireNonNull(newValue));
     }
 
     @Override
@@ -99,12 +106,12 @@ public sealed interface MalNode {
 
     @Override
     public MalAtom withMeta(MalNode meta) {
-      return new MalAtom(value, meta);
+      return new MalAtom(value.get(), meta);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(value, meta);
+      return Objects.hash(value.get(), meta);
     }
 
     @Override
@@ -112,13 +119,13 @@ public sealed interface MalNode {
       if (obj == null || !(obj instanceof MalAtom other)) {
         return false;
       }
-      return Objects.equals(this.value, other.value) &&
+      return Objects.equals(this.value.get(), other.value.get()) &&
           Objects.equals(this.meta, other.meta);
     }
 
     @Override
     public String toString() {
-      return "MalAtom[value=" + value + ", meta=" + meta +"]";
+      return "MalAtom[value=" + value.get() + ", meta=" + meta +"]";
     }
   }
 
@@ -390,10 +397,14 @@ public sealed interface MalNode {
 
   final class MalLazy implements MalSequence {
 
+    // a lazy-seq can be realized by several fibers at the same time, the lock makes the thunk
+    // run only once, and the volatile flags let realized seqs be read without locking
+    private final ReentrantLock lock = new ReentrantLock();
     private Supplier<MalNode> thunk;
     private MalNode value;
+    private volatile boolean realized;
     private MalSequence sequence;
-    private boolean unwrapped;
+    private volatile boolean unwrapped;
     private final MalNode meta;
 
     public MalLazy(Supplier<MalNode> value, MalNode meta) {
@@ -401,29 +412,31 @@ public sealed interface MalNode {
       this.meta = meta;
     }
 
-    private MalLazy(Supplier<MalNode> thunk, MalNode value, MalNode meta) {
-      this.thunk = thunk;
-      this.value = value;
-      this.meta = meta;
-    }
-
     public boolean isRealized() {
-      return thunk == null;
+      return realized;
     }
 
     @Override
     public MalSequence seq() {
       if (!unwrapped) {
-        // only when seq is called the lazy-seq is unwrapped completely
-        sequence = unwrap(realize()).seq();
-        unwrapped = true;
+        lock.lock();
+        try {
+          if (!unwrapped) {
+            // only when seq is called the lazy-seq is unwrapped completely
+            sequence = unwrap(realize()).seq();
+            unwrapped = true;
+          }
+        } finally {
+          lock.unlock();
+        }
       }
       return sequence;
     }
 
     @Override
     public MalLazy withMeta(MalNode meta) {
-      return new MalLazy(thunk, value, meta);
+      // the copy realizes this lazy-seq, so the thunk is shared and still runs only once
+      return new MalLazy(this::realize, meta);
     }
 
     @Override
@@ -447,10 +460,18 @@ public sealed interface MalNode {
     }
 
     private MalSequence realize() {
-      if (!isRealized()) {
-        // it realizes the lazy-seq but without unwrapping nested lazies
-        value = thunk.get();
-        thunk = null;
+      if (!realized) {
+        lock.lock();
+        try {
+          if (!realized) {
+            // it realizes the lazy-seq but without unwrapping nested lazies
+            value = thunk.get();
+            thunk = null;
+            realized = true;
+          }
+        } finally {
+          lock.unlock();
+        }
       }
       return (MalSequence) value;
     }

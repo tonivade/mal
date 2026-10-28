@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalSymbol;
@@ -21,8 +22,10 @@ class Env {
   private final Env outer;
   private final Map<String, MalNode> map;
 
+  // the global env is concurrent because fibers created with spawn can read it,
+  // and define into it with eval, while other threads are running
   public Env() {
-    this(DEFAULT, new HashMap<>());
+    this(DEFAULT, new ConcurrentHashMap<>());
   }
 
   public Env(Map<String, MalNode> map) {
