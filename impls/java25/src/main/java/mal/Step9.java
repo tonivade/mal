@@ -63,7 +63,7 @@ class Step9 {
       try {
         IO.println(rep(line));
       } catch (RuntimeException e) {
-        System.err.println("ERROR: " + e.getMessage());
+        System.err.println("ERROR: " + Printer.message(e));
       }
     }
   }

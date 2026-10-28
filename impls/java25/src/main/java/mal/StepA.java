@@ -74,7 +74,7 @@ class StepA {
         if (ENV.isDebugEval()) {
           e.printStackTrace(System.err);
         } else {
-          System.err.println("ERROR: " + e.getMessage());
+          System.err.println("ERROR: " + Printer.message(e));
         }
       }
     }

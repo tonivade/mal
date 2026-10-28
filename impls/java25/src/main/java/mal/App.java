@@ -72,7 +72,7 @@ public class App implements Runnable {
         if (app.debug) {
           e.printStackTrace(System.err);
         } else {
-          System.err.println("ERROR: " + e.getMessage());
+          System.err.println("ERROR: " + Printer.message(e));
         }
         return 1;
       })

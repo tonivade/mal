@@ -39,7 +39,7 @@ class Step3 {
       try {
         IO.println(rep(line));
       } catch (RuntimeException e) {
-        System.err.println(e.getMessage());
+        System.err.println(Printer.message(e));
       }
     }
   }

@@ -4,6 +4,7 @@
  */
 package mal;
 
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.joining;
 import static mal.Trampoline.done;
 import static mal.Trampoline.more;
@@ -59,9 +60,14 @@ class Printer {
         case MalFiber _ -> done("#fiber");
         case MalWrapper(var wrapped, _) -> done("\"" + escape(wrapped.toString()) + "\"");
         case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
-        case MalError(var exception, _) -> done(exception.getMessage());
+        case MalError(var exception, _) -> done(message(exception));
       };
     });
+  }
+
+  // some java exceptions have no message, the class name is better than printing null
+  static String message(Throwable e) {
+    return requireNonNullElse(e.getMessage(), e.getClass().getName());
   }
 
   private static String concat(String a, String b) {
