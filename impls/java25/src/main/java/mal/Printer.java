@@ -9,7 +9,6 @@ import static mal.Trampoline.done;
 import static mal.Trampoline.more;
 import static mal.Trampoline.traverse;
 import static mal.Trampoline.zip;
-import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalConstant;
@@ -38,7 +37,7 @@ class Printer {
         case MalConstant(var name, _) -> done(name);
         case MalSymbol(var name, _) -> done(name);
         case MalString(var value, _) when !pretty -> done(value);
-        case MalString(var value, _) -> done("\"" + escapeJava(value) + "\"");
+        case MalString(var value, _) -> done("\"" + escape(value) + "\"");
         case MalKeyword(var value, _) -> done(":" + value);
         case MalNumber(var value, _) -> done(Long.toString(value));
         case MalVector(var list, _) -> {
@@ -58,7 +57,7 @@ class Printer {
         case MalFunction _ -> done("#function");
         case MalMacro _ -> done("#function");
         case MalFiber _ -> done("#fiber");
-        case MalWrapper(var wrapped, _) -> done("\"" + escapeJava(wrapped.toString()) + "\"");
+        case MalWrapper(var wrapped, _) -> done("\"" + escape(wrapped.toString()) + "\"");
         case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
         case MalError(var exception, _) -> done(exception.getMessage());
       };
@@ -67,5 +66,10 @@ class Printer {
 
   private static String concat(String a, String b) {
     return a + " " + b;
+  }
+
+  // mal only escapes backslash, double quote and newline, any other character is printed as is
+  private static String escape(String value) {
+    return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
   }
 }
