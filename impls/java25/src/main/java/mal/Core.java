@@ -328,8 +328,9 @@ interface Core {
       var firstKey = values.keySet().iterator().next();
       return vector(firstKey, values.get(firstKey));
     }
-    var list = (MalSequence) args.get(0);
-    return list.get(0);
+    // seq() is null for empty sequences, including lazy ones
+    var seq = ((MalSequence) args.get(0)).seq();
+    return seq != null ? seq.head() : NIL;
   }
 
   static MalNode rest(MalList args) {
@@ -349,8 +350,8 @@ interface Core {
       var firstKey = values.keySet().iterator().next();
       return asList(values.minus(firstKey));
     }
-    var list = (MalSequence) args.get(0);
-    return list.tail();
+    var seq = ((MalSequence) args.get(0)).seq();
+    return seq != null ? seq.tail() : EMPTY_LIST;
   }
 
   static MalNode raise(MalList args) {
@@ -522,6 +523,7 @@ interface Core {
       case MalVector(var values, _) -> list(values);
       case MalString(var value, _) -> asList(value);
       case MalMap(var values, _) -> asList(values);
+      case MalSequence seq when seq.seq() == null -> NIL;
       default -> args.get(0);
     };
   }
