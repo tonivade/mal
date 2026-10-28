@@ -63,6 +63,17 @@ public sealed interface MalNode {
     public MalConstant withMeta(MalNode meta) {
       return new MalConstant(name, meta);
     }
+
+    // metadata doesn't take part in equality
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof MalConstant(var other, _) && name.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+      return name.hashCode();
+    }
   }
 
   sealed interface MalValue<T> extends MalNode {
@@ -167,6 +178,17 @@ public sealed interface MalNode {
     public MalNumber withMeta(MalNode meta) {
       return new MalNumber(value, meta);
     }
+
+    // metadata doesn't take part in equality
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof MalNumber(var other, _) && value.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+      return value.hashCode();
+    }
   }
 
   sealed interface MalKey extends MalNode {}
@@ -181,6 +203,17 @@ public sealed interface MalNode {
     public MalString withMeta(MalNode meta) {
       return new MalString(value, meta);
     }
+
+    // metadata doesn't take part in equality
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof MalString(var other, _) && value.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+      return value.hashCode();
+    }
   }
 
   record MalKeyword(String value, MalNode meta) implements MalValue<String>, MalKey {
@@ -193,6 +226,17 @@ public sealed interface MalNode {
     public MalKeyword withMeta(MalNode meta) {
       return new MalKeyword(value, meta);
     }
+
+    // metadata doesn't take part in equality
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof MalKeyword(var other, _) && value.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+      return value.hashCode();
+    }
   }
 
   record MalSymbol(String name, MalNode meta) implements MalKey {
@@ -204,6 +248,17 @@ public sealed interface MalNode {
     @Override
     public MalSymbol withMeta(MalNode meta) {
       return new MalSymbol(name, meta);
+    }
+
+    // metadata doesn't take part in equality
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof MalSymbol(var other, _) && name.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+      return name.hashCode();
     }
   }
 
@@ -740,7 +795,10 @@ public sealed interface MalNode {
   private static Map<MalKey, MalNode> toMap(Iterable<MalNode> tokens) {
     Map<MalKey, MalNode> map = new LinkedHashMap<>();
     for (var iterator = tokens.iterator(); iterator.hasNext();) {
-      var key = (MalKey) iterator.next();
+      var next = iterator.next();
+      if (!(next instanceof MalKey key)) {
+        throw new MalException("invalid map key: " + Printer.print(next, true));
+      }
       if (!iterator.hasNext()) {
         throw new MalException("missing value for key " + Printer.print(key, true));
       }
