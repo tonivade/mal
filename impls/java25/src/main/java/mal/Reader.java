@@ -17,7 +17,7 @@ import static mal.MalNode.TRUE;
 import static mal.MalNode.UNQUOTE;
 import static mal.MalNode.WITH_META;
 import static mal.MalNode.keyword;
-import static mal.MalNode.list;
+import static mal.MalNode.listOf;
 import static mal.MalNode.number;
 import static mal.MalNode.string;
 import static mal.MalNode.symbol;
@@ -76,29 +76,29 @@ class Reader {
       case null -> done(NIL);
 
       case Token(var value) when value.charAt(0) == '\'' -> {
-        yield nextAndParse(reader).map(next -> list(QUOTE, next));
+        yield nextAndParse(reader).map(next -> listOf(QUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '`' -> {
-        yield nextAndParse(reader).map(next -> list(QUASIQUOTE, next));
+        yield nextAndParse(reader).map(next -> listOf(QUASIQUOTE, next));
       }
 
       case Token(var value) when value.equals("~") -> {
-        yield nextAndParse(reader).map(next -> list(UNQUOTE, next));
+        yield nextAndParse(reader).map(next -> listOf(UNQUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '~' -> {
-        yield nextAndParse(reader).map(next -> list(SPLICE_UNQUOTE, next));
+        yield nextAndParse(reader).map(next -> listOf(SPLICE_UNQUOTE, next));
       }
 
       case Token(var value) when value.charAt(0) == '^' -> {
         yield zip(nextAndParse(reader), more(() -> parse(reader)), (meta, next) -> {
-          return list(WITH_META, next, meta);
+          return listOf(WITH_META, next, meta);
         });
       }
 
       case Token(var value) when value.charAt(0) == '@' -> {
-        yield nextAndParse(reader).map(next -> list(DEREF, next));
+        yield nextAndParse(reader).map(next -> listOf(DEREF, next));
       }
 
       case Token(var value) when value.charAt(0) == '(' -> readList(reader);

@@ -6,6 +6,7 @@ package mal;
 
 import static java.util.Objects.requireNonNull;
 import static mal.Trampoline.done;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -82,7 +83,7 @@ public sealed interface MalNode {
 
     default Trampoline<MalNode> call(String name, MalSequence args) {
       var lambda = Interop.method(value().getClass().getName(), name, args.size());
-      return lambda.apply(list(args.cons(this)));
+      return lambda.apply(toList(args.cons(this)));
     }
   }
 
@@ -686,18 +687,18 @@ public sealed interface MalNode {
     return new MalWrapper(o, null);
   }
 
-  static MalVector vector(MalNode...tokens) {
+  static MalVector vectorOf(MalNode...tokens) {
     return vector(List.of(tokens));
   }
 
-  static MalVector vector(MalSequence tokens) {
+  static MalVector toVector(MalSequence tokens) {
     if (tokens instanceof MalVector vec) {
       return vec;
     }
     if (tokens instanceof MalList list) {
       return vector(list.values());
     }
-    return vector(List.of(tokens));
+    return vector(elements(tokens));
   }
 
   static MalVector vector(Collection<? extends MalNode> tokens) {
@@ -707,18 +708,18 @@ public sealed interface MalNode {
     return new MalVector(TreePVector.from(tokens), null);
   }
 
-  static MalList list(MalNode...tokens) {
+  static MalList listOf(MalNode...tokens) {
     return list(List.of(tokens));
   }
 
-  static MalList list(MalSequence tokens) {
+  static MalList toList(MalSequence tokens) {
     if (tokens instanceof MalList list) {
       return list;
     }
     if (tokens instanceof MalVector vec) {
       return list(vec.values());
     }
-    return list(List.of(tokens));
+    return list(elements(tokens));
   }
 
   static MalList list(Collection<? extends MalNode> tokens) {
@@ -790,6 +791,13 @@ public sealed interface MalNode {
       return true;
     }
     return Objects.equals(first, second);
+  }
+
+  // cons and lazy-seqs have to be walked to collect their elements
+  private static List<MalNode> elements(MalSequence tokens) {
+    var values = new ArrayList<MalNode>();
+    tokens.forEach(values::add);
+    return values;
   }
 
   private static Map<MalKey, MalNode> toMap(Iterable<MalNode> tokens) {

@@ -19,7 +19,9 @@ import static mal.MalNode.fork;
 import static mal.MalNode.function;
 import static mal.MalNode.lazy;
 import static mal.MalNode.list;
+import static mal.MalNode.listOf;
 import static mal.MalNode.symbol;
+import static mal.MalNode.toList;
 import static mal.Printer.print;
 import static mal.Trampoline.done;
 import static mal.Trampoline.more;
@@ -96,7 +98,7 @@ class Evaluator {
     if (name.startsWith(DOT) && name.length() > 1) {
       return done(function(args -> {
         var value = (MalValue<?>) args.get(0);
-        return value.call(name.substring(1), list(args.tail()));
+        return value.call(name.substring(1), toList(args.tail()));
       }));
     }
     var value = env.get(name);
@@ -122,7 +124,7 @@ class Evaluator {
   private static Trampoline<MalNode> evalApply(MalSequence form, Env env) {
     return safeEval(form.get(0), env).<MalNode>flatMap(callable -> switch (callable) {
       case MalMacro(var lambda, _) ->
-        lambda.apply(list(form.tail())).flatMap(next -> safeEval(next, env));
+        lambda.apply(toList(form.tail())).flatMap(next -> safeEval(next, env));
       case MalFunction(var lambda, _) ->
         traverse(form.tail(), m -> safeEval(m, env)).flatMap(args -> lambda.apply(list(args)));
       default -> throw new MalException("not a function: " + print(callable, true));
@@ -333,9 +335,9 @@ class Evaluator {
 
   private static Trampoline<MalNode> evalQuasiquote(MalNode value) {
     return switch (value) {
-      case MalSymbol _ -> done(list(QUOTE, value));
-      case MalMap _ -> done(list(QUOTE, value));
-      case MalVector vec -> recursiveQuasiquote(vec).map(next -> list(VEC, next));
+      case MalSymbol _ -> done(listOf(QUOTE, value));
+      case MalMap _ -> done(listOf(QUOTE, value));
+      case MalVector vec -> recursiveQuasiquote(vec).map(next -> listOf(VEC, next));
       case MalSequence seq when seq.isEmpty() -> done(value);
       case MalSequence seq when seq.get(0).equals(UNQUOTE) -> done(seq.get(1));
       case MalSequence seq -> recursiveQuasiquote(seq);
@@ -351,10 +353,10 @@ class Evaluator {
       var element = values.get(0);
       if (element instanceof MalSequence seq && !seq.isEmpty() && seq.get(0).equals(SPLICE_UNQUOTE)) {
         return recursiveQuasiquote(values.tail())
-          .map(result -> list(CONCAT, seq.get(1), result));
+          .map(result -> listOf(CONCAT, seq.get(1), result));
       }
       return zip(recursiveQuasiquote(values.tail()), evalQuasiquote(element),
-        (next, eval) -> list(CONS, eval, next));
+        (next, eval) -> listOf(CONS, eval, next));
     });
   }
 }

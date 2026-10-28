@@ -15,9 +15,12 @@ import static mal.MalNode.function;
 import static mal.MalNode.lambda;
 import static mal.MalNode.lazy;
 import static mal.MalNode.list;
+import static mal.MalNode.listOf;
 import static mal.MalNode.number;
 import static mal.MalNode.string;
+import static mal.MalNode.toVector;
 import static mal.MalNode.vector;
+import static mal.MalNode.vectorOf;
 import static mal.Printer.print;
 import static mal.Reader.read;
 import static mal.Trampoline.done;
@@ -297,12 +300,12 @@ interface Core {
     var second = ((MalSequence) seqs.tail().head());
     var rest = seqs.tail().tail();
 
-    return concat(list(first, concat(list(second, concat(rest)))));
+    return concat(listOf(first, concat(listOf(second, concat(rest)))));
   }
 
   static MalNode vec(MalList args) {
     var list = (MalSequence) args.get(0);
-    return vector(list);
+    return toVector(list);
   }
 
   static MalNode isMacro(MalList args) {
@@ -343,7 +346,7 @@ interface Core {
     }
     if (args.get(0) instanceof MalMap(var values, _)) {
       var firstKey = values.keySet().iterator().next();
-      return vector(firstKey, values.get(firstKey));
+      return vectorOf(firstKey, values.get(firstKey));
     }
     // seq() is null for empty sequences, including lazy ones
     var seq = ((MalSequence) args.get(0)).seq();
@@ -400,7 +403,7 @@ interface Core {
     var function = (MalWithLambda) args.get(0);
     var seq = (MalSequence) args.get(1);
     if (seq instanceof MalCollection col) {
-      return traverse(col.values(), current -> function.apply(list(current))).map(MalNode::list);
+      return traverse(col.values(), current -> function.apply(listOf(current))).map(MalNode::list);
     }
     return done(mapLazy(function, seq));
   }
@@ -414,7 +417,7 @@ interface Core {
       return EMPTY_LIST;
     }
     return MalNode.cons(
-        function.apply(list(seq.head())).run(),
+        function.apply(listOf(seq.head())).run(),
         (MalSequence) mapLazy(function, seq.tail()));
   }
 
@@ -604,7 +607,7 @@ interface Core {
   Map<String, MalNode> NS = Map.ofEntries(
     def("prn", 0, MANY, lambda(Core::prn)),
     def("println", 0, MANY, lambda(Core::println)),
-    def("list", 0, MANY, lambda(MalNode::list)),
+    def("list", 0, MANY, lambda(MalNode::toList)),
     def("list?", 1, 1, lambda(Core::isList)),
     def("empty?", 1, 1, lambda(Core::isEmpty)),
     def("count", 1, 1, lambda(Core::count)),
@@ -648,7 +651,7 @@ interface Core {
     def("contains?", 2, 2, lambda(Core::contains)),
     def("symbol", 1, 1, lambda(Core::symbol)),
     def("keyword", 1, 1, lambda(Core::keyword)),
-    def("vector", 0, MANY, lambda(MalNode::vector)),
+    def("vector", 0, MANY, lambda(MalNode::toVector)),
     def("get", 1, 2, lambda(Core::get)),
     def("keys", 1, 1, lambda(Core::keys)),
     def("vals", 1, 1, lambda(Core::vals)),
@@ -727,6 +730,6 @@ interface Core {
   }
 
   private static MalVector entryToVector(Map.Entry<MalKey, MalNode> entry) {
-    return vector(entry.getKey(), entry.getValue());
+    return vectorOf(entry.getKey(), entry.getValue());
   }
 }
