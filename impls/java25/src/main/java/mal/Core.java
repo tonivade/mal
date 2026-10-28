@@ -59,20 +59,12 @@ import mal.MalNode.MalWrapper;
 interface Core {
 
   static MalNode prn(MalList args) {
-    var result = new StringBuilder();
-    for (var m : args) {
-      result.append(print(m, true)).append(" ");
-    }
-    IO.println(result.toString().trim());
+    IO.println(args.values().stream().map(m -> print(m, true)).collect(joining(" ")));
     return NIL;
   }
 
   static MalNode println(MalList args) {
-    var result = new StringBuilder();
-    for (var m : args) {
-      result.append(print(m, false)).append(" ");
-    }
-    IO.println(result.toString().trim());
+    IO.println(args.values().stream().map(m -> print(m, false)).collect(joining(" ")));
     return NIL;
   }
 
