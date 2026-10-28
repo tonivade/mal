@@ -26,7 +26,6 @@ import static mal.Trampoline.more;
 import static mal.Trampoline.sequence;
 import static mal.Trampoline.traverse;
 import static mal.Trampoline.zip;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,9 +33,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
 import org.pcollections.PVector;
-
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
@@ -280,7 +277,8 @@ class Evaluator {
   }
 
   static boolean isTruthy(MalNode node) {
-    return !(node instanceof MalConstant(var name, _) && (name.equals("nil") || name.equals("false")));
+    return !(node instanceof MalConstant(var name, _)
+      && (name.equals("nil") || name.equals("false")));
   }
 
   private static void arity(MalSequence form, int min, int max) {

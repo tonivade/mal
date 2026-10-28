@@ -4,7 +4,6 @@
  */
 package mal;
 
-import static mal.MalNode.FALSE;
 import static mal.MalNode.list;
 
 import java.util.ArrayList;
@@ -44,17 +43,23 @@ class Env {
   }
 
   public boolean isDebugEval() {
-    var debugEval = map.get(MalNode.DEBUG_EVAL.name());
-    return debugEval != null && debugEval != FALSE;
+    // looked up through the outer envs, so tracing also works inside function bodies,
+    // but DEFAULT is skipped because the core namespace never defines DEBUG-EVAL
+    for (var env = this; env != null && env != DEFAULT; env = env.outer) {
+      var debugEval = env.map.get(MalNode.DEBUG_EVAL.name());
+      if (debugEval != null) {
+        return Evaluator.isTruthy(debugEval);
+      }
+    }
+    return false;
   }
 
   public MalNode get(String key) {
-    var value = map.get(key);
-    if (value != null) {
-      return value;
-    }
-    if (outer != null) {
-      return outer.get(key);
+    for (var env = this; env != null; env = env.outer) {
+      var value = env.map.get(key);
+      if (value != null) {
+        return value;
+      }
     }
     return null;
   }
