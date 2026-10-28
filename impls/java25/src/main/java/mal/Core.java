@@ -485,8 +485,7 @@ interface Core {
 
   static MalNode readLine(MalList args) {
     var prompt = (MalString) args.get(0);
-    var line = Readline.readline(prompt.value());
-    return line != null ? string(line) : NIL;
+    return Readline.safeReadline(prompt.value());
   }
 
   static MalNumber timeMs() {

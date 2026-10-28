@@ -4,11 +4,15 @@
  */
 package mal;
 
+import static mal.MalNode.string;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultHighlighter;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.StringsCompleter;
@@ -46,5 +50,13 @@ class Readline {
 
   static String readline(String prompt) {
     return reader.readLine(prompt);
+  }
+
+  static MalNode safeReadline(String prompt) {
+    try {
+      return string(reader.readLine(prompt));
+    } catch (UserInterruptException | EndOfFileException e) {
+      return MalNode.NIL;
+    }
   }
 }

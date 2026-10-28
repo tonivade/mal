@@ -55,7 +55,7 @@ class Step6 {
       try {
         line = reader.readLine(prompt);
       } catch (UserInterruptException e) {
-        // Ignore
+        continue;
       } catch (EndOfFileException e) {
         return;
       }

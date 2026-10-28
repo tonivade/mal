@@ -64,6 +64,7 @@ class StepA {
         line = readline(prompt);
       } catch (UserInterruptException e) {
         // Ignore
+        continue;
       } catch (EndOfFileException e) {
         return;
       }
