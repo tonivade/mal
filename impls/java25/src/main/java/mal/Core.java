@@ -5,6 +5,7 @@
 package mal;
 
 import static java.util.Map.entry;
+import static java.util.stream.Collectors.joining;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
@@ -34,10 +35,13 @@ import org.pcollections.TreePVector;
 
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalCollection;
+import mal.MalNode.MalConstant;
+import mal.MalNode.MalError;
 import mal.MalNode.MalFiber;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
 import mal.MalNode.MalKeyword;
+import mal.MalNode.MalLambda;
 import mal.MalNode.MalList;
 import mal.MalNode.MalMacro;
 import mal.MalNode.MalMap;
@@ -308,14 +312,19 @@ interface Core {
   static MalNode nth(MalList args) {
     var item = args.get(0);
     var index = (MalNumber) args.get(1);
-    if (item instanceof MalString(var value, _)) {
-      var ch = value.charAt(index.asInt());
-      return string(Character.toString(ch));
+    // same error for strings, lists, vectors and lazy seqs, reporting the requested index
+    try {
+      if (item instanceof MalString(var value, _)) {
+        var ch = value.charAt(index.asInt());
+        return string(Character.toString(ch));
+      }
+      if (item instanceof MalCollection col && (index.value() < 0 || index.value() >= col.size())) {
+        throw new IndexOutOfBoundsException();
+      }
+      return ((MalSequence) item).get(index.asInt());
+    } catch (IndexOutOfBoundsException e) {
+      throw new MalException("nth: index out of bounds: " + index.value());
     }
-    if (item instanceof MalCollection col && (index.value() < 0 || index.value() >= col.size())) {
-      throw new MalException("index out of bounds: " + col.size());
-    }
-    return ((MalSequence) item).get(index.asInt());
   }
 
   static MalNode first(MalList args) {
@@ -589,74 +598,125 @@ interface Core {
     }
   }
 
+  // max number of arguments for functions that accept any number of them
+  int MANY = Integer.MAX_VALUE;
+
   Map<String, MalNode> NS = Map.ofEntries(
-    entry("prn", function(lambda(Core::prn))),
-    entry("println", function(lambda(Core::println))),
-    entry("list", function(lambda(MalNode::list))),
-    entry("list?", function(lambda(Core::isList))),
-    entry("empty?", function(lambda(Core::isEmpty))),
-    entry("count", function(lambda(Core::count))),
-    entry("+", function(lambda(Core::sum))),
-    entry("-", function(lambda(Core::sub))),
-    entry("*", function(lambda(Core::mul))),
-    entry("/", function(lambda(Core::div))),
-    entry("%", function(lambda(Core::mod))),
-    entry("=", function(lambda(Core::eq))),
-    entry(">", function(lambda(Core::gt))),
-    entry(">=", function(lambda(Core::gte))),
-    entry("<", function(lambda(Core::lt))),
-    entry("<=", function(lambda(Core::lte))),
-    entry("pr-str", function(lambda(Core::prStr))),
-    entry("str", function(lambda(Core::str))),
-    entry("read-string", function(lambda(Core::readString))),
-    entry("slurp", function(lambda(Core::slurp))),
-    entry("atom", function(lambda(Core::atom))),
-    entry("atom?", function(lambda(Core::isAtom))),
-    entry("deref", function(lambda(Core::deref))),
-    entry("reset!", function(lambda(Core::reset))),
-    entry("swap!", function(Core::swap)),
-    entry("cons", function(lambda(Core::cons))),
-    entry("concat", function(lambda(Core::concat))),
-    entry("vec", function(lambda(Core::vec))),
-    entry("macro?", function(lambda(Core::isMacro))),
-    entry("nth", function(lambda(Core::nth))),
-    entry("first", function(lambda(Core::first))),
-    entry("rest", function(lambda(Core::rest))),
-    entry("throw", function(lambda(Core::raise))),
-    entry("apply", function(Core::apply)),
-    entry("map", function(Core::map)),
-    entry("nil?", function(lambda(Core::isNil))),
-    entry("true?", function(lambda(Core::isTrue))),
-    entry("false?", function(lambda(Core::isFalse))),
-    entry("symbol?", function(lambda(Core::isSymbol))),
-    entry("keyword?", function(lambda(Core::isKeyword))),
-    entry("vector?", function(lambda(Core::isVector))),
-    entry("sequential?", function(lambda(Core::isSequential))),
-    entry("map?", function(lambda(Core::isMap))),
-    entry("contains?", function(lambda(Core::contains))),
-    entry("symbol", function(lambda(Core::symbol))),
-    entry("keyword", function(lambda(Core::keyword))),
-    entry("vector", function(lambda(MalNode::vector))),
-    entry("get", function(lambda(Core::get))),
-    entry("keys", function(lambda(Core::keys))),
-    entry("vals", function(lambda(Core::vals))),
-    entry("hash-map", function(lambda(MalNode::map))),
-    entry("assoc", function(lambda(Core::assoc))),
-    entry("dissoc", function(lambda(Core::dissoc))),
-    entry("readline", function(lambda(Core::readLine))),
-    entry("time-ms", function(lambda(_ -> timeMs()))),
-    entry("meta", function(lambda(Core::meta))),
-    entry("with-meta", function(lambda(Core::withMeta))),
-    entry("fn?", function(lambda(Core::isFunction))),
-    entry("string?", function(lambda(Core::isString))),
-    entry("number?", function(lambda(Core::isNumber))),
-    entry("seq", function(lambda(Core::seq))),
-    entry("conj", function(lambda(Core::conj))),
-    entry("type-of", function(lambda(Core::typeOf))),
-    entry("join", function(lambda(Core::join))),
-    entry("sleep", function(lambda(Core::sleep))),
-    entry("instance?", function(lambda(Core::isInstance)))
+    def("prn", 0, MANY, lambda(Core::prn)),
+    def("println", 0, MANY, lambda(Core::println)),
+    def("list", 0, MANY, lambda(MalNode::list)),
+    def("list?", 1, 1, lambda(Core::isList)),
+    def("empty?", 1, 1, lambda(Core::isEmpty)),
+    def("count", 1, 1, lambda(Core::count)),
+    def("+", 2, 2, lambda(Core::sum)),
+    def("-", 2, 2, lambda(Core::sub)),
+    def("*", 2, 2, lambda(Core::mul)),
+    def("/", 2, 2, lambda(Core::div)),
+    def("%", 2, 2, lambda(Core::mod)),
+    def("=", 2, 2, lambda(Core::eq)),
+    def(">", 2, 2, lambda(Core::gt)),
+    def(">=", 2, 2, lambda(Core::gte)),
+    def("<", 2, 2, lambda(Core::lt)),
+    def("<=", 2, 2, lambda(Core::lte)),
+    def("pr-str", 0, MANY, lambda(Core::prStr)),
+    def("str", 0, MANY, lambda(Core::str)),
+    def("read-string", 1, 1, lambda(Core::readString)),
+    def("slurp", 1, 1, lambda(Core::slurp)),
+    def("atom", 1, 1, lambda(Core::atom)),
+    def("atom?", 1, 1, lambda(Core::isAtom)),
+    def("deref", 1, 1, lambda(Core::deref)),
+    def("reset!", 2, 2, lambda(Core::reset)),
+    def("swap!", 2, MANY, Core::swap),
+    def("cons", 2, 2, lambda(Core::cons)),
+    def("concat", 0, MANY, lambda(Core::concat)),
+    def("vec", 1, 1, lambda(Core::vec)),
+    def("macro?", 1, 1, lambda(Core::isMacro)),
+    def("nth", 2, 2, lambda(Core::nth)),
+    def("first", 1, 1, lambda(Core::first)),
+    def("rest", 1, 1, lambda(Core::rest)),
+    def("throw", 1, 1, lambda(Core::raise)),
+    def("apply", 2, MANY, Core::apply),
+    def("map", 2, 2, Core::map),
+    def("nil?", 1, 1, lambda(Core::isNil)),
+    def("true?", 1, 1, lambda(Core::isTrue)),
+    def("false?", 1, 1, lambda(Core::isFalse)),
+    def("symbol?", 1, 1, lambda(Core::isSymbol)),
+    def("keyword?", 1, 1, lambda(Core::isKeyword)),
+    def("vector?", 1, 1, lambda(Core::isVector)),
+    def("sequential?", 1, 1, lambda(Core::isSequential)),
+    def("map?", 1, 1, lambda(Core::isMap)),
+    def("contains?", 2, 2, lambda(Core::contains)),
+    def("symbol", 1, 1, lambda(Core::symbol)),
+    def("keyword", 1, 1, lambda(Core::keyword)),
+    def("vector", 0, MANY, lambda(MalNode::vector)),
+    def("get", 1, 2, lambda(Core::get)),
+    def("keys", 1, 1, lambda(Core::keys)),
+    def("vals", 1, 1, lambda(Core::vals)),
+    def("hash-map", 0, MANY, lambda(MalNode::map)),
+    def("assoc", 1, MANY, lambda(Core::assoc)),
+    def("dissoc", 1, MANY, lambda(Core::dissoc)),
+    def("readline", 1, 1, lambda(Core::readLine)),
+    def("time-ms", 0, 0, lambda(_ -> timeMs())),
+    def("meta", 1, 1, lambda(Core::meta)),
+    def("with-meta", 2, 2, lambda(Core::withMeta)),
+    def("fn?", 1, 1, lambda(Core::isFunction)),
+    def("string?", 1, 1, lambda(Core::isString)),
+    def("number?", 1, 1, lambda(Core::isNumber)),
+    def("seq", 1, 1, lambda(Core::seq)),
+    def("conj", 1, MANY, lambda(Core::conj)),
+    def("type-of", 1, 1, lambda(Core::typeOf)),
+    def("join", 1, 1, lambda(Core::join)),
+    def("sleep", 1, 1, lambda(Core::sleep)),
+    def("instance?", 2, 2, lambda(Core::isInstance))
   );
+
+  // checks the number of arguments, and reports wrong argument types as a mal error
+  // instead of the java ClassCastException thrown by the casts in the functions above
+  private static Map.Entry<String, MalNode> def(String name, int min, int max, MalLambda lambda) {
+    return entry(name, function(args -> {
+      int n = args.size();
+      if (n < min || n > max) {
+        throw new MalException(name + ": expected " + expectedArgs(min, max) + " argument(s) but got " + n);
+      }
+      try {
+        return lambda.apply(args);
+      } catch (ClassCastException e) {
+        var types = args.values().stream().map(Core::typeName).collect(joining(", "));
+        throw new MalException(name + ": invalid argument types: " + types, e);
+      }
+    }));
+  }
+
+  private static String expectedArgs(int min, int max) {
+    if (min == max) {
+      return String.valueOf(min);
+    }
+    if (max == MANY) {
+      return "at least " + min;
+    }
+    return min + ".." + max;
+  }
+
+  private static String typeName(MalNode node) {
+    return switch (node) {
+      case MalConstant(var name, _) when name.equals("nil") -> "nil";
+      case MalConstant _ -> "boolean";
+      case MalNumber _ -> "number";
+      case MalString _ -> "string";
+      case MalKeyword _ -> "keyword";
+      case MalSymbol _ -> "symbol";
+      case MalList _ -> "list";
+      case MalVector _ -> "vector";
+      case MalSequence _ -> "seq";
+      case MalMap _ -> "map";
+      case MalAtom _ -> "atom";
+      case MalMacro _ -> "macro";
+      case MalFunction _ -> "function";
+      case MalFiber _ -> "fiber";
+      case MalWrapper _ -> "object";
+      case MalError _ -> "error";
+    };
+  }
 
   private static MalList asList(String string) {
     return list(string.chars().mapToObj(Character::toString).map(MalNode::string).toList());
