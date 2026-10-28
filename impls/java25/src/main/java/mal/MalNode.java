@@ -741,6 +741,9 @@ public sealed interface MalNode {
     Map<MalKey, MalNode> map = new LinkedHashMap<>();
     for (var iterator = tokens.iterator(); iterator.hasNext();) {
       var key = (MalKey) iterator.next();
+      if (!iterator.hasNext()) {
+        throw new MalException("missing value for key " + Printer.print(key, true));
+      }
       var value = iterator.next();
       map.put(key, value);
     }
