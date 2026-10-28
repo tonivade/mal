@@ -50,15 +50,11 @@ sealed interface Trampoline<T> {
    * Runs the computation and returns the final result.
    *
    * This implementation is stack-safe (no Java stack growth) because it uses
-   * an explicit loop and an explicit Deque for continuations instead of
-   * recursive calls or per-step lambda chaining. It also reduces heap
-   * allocations compared to the previous chained-lambda approach by
-   * keeping continuations in an ArrayDeque (which grows its internal array,
-   * avoiding one-object-per-step allocations).
+   * an explicit loop and keeps the pending continuations in an ArrayDeque
+   * instead of making recursive calls.
    *
-   * Note: heap usage is still O(n) in the number of pending flatMap
-   * continuations: the Deque stores references to the mappers. This is an
-   * improvement in allocation churn but not in asymptotic retained memory.
+   * Note: heap usage is O(n) in the number of pending flatMap and recover
+   * continuations, because the Deque keeps a reference to each of them.
    *
    * @return the final result of the computation
    */

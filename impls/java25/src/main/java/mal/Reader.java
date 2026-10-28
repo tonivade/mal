@@ -174,7 +174,6 @@ class Reader {
       case Token(var value) when value.startsWith(":") ->
         keyword(value.substring(1));
       case Token(var value) -> symbol(value);
-      default -> null;
     };
   }
 
