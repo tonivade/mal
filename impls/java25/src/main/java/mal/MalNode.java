@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -230,7 +231,15 @@ public sealed interface MalNode {
     }
 
     public MalNode join() {
-      return future.join();
+      try {
+        return future.join();
+      } catch (CompletionException e) {
+        // rethrow what the fiber threw, so catch* gets the original mal error
+        if (e.getCause() instanceof RuntimeException cause) {
+          throw cause;
+        }
+        throw e;
+      }
     }
 
     @Override
