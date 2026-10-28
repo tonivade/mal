@@ -7,11 +7,9 @@ package mal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.function.Supplier;
-
 import org.junit.jupiter.api.Test;
 
 class MalTest {
@@ -472,6 +470,7 @@ class MalTest {
     assertEquals("12", Step6.rep("(swap! a (fn* (a) (* 2 a)))"));
     assertEquals("120", Step6.rep("(swap! a (fn* (a b) (* a b)) 10)"));
     assertEquals("123", Step6.rep("(swap! a + 3)"));
+    assertEquals("false", Step6.rep("(= (atom 1) (atom 1))"));
 
     // Test that do only evals each slot once
     Step6.rep("(def! b (atom 0))");

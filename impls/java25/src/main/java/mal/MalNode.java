@@ -6,7 +6,6 @@ package mal;
 
 import static java.util.Objects.requireNonNull;
 import static mal.Trampoline.done;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -20,7 +19,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import org.pcollections.HashTreePMap;
 import org.pcollections.PMap;
 import org.pcollections.PVector;
@@ -108,20 +106,6 @@ public sealed interface MalNode {
     @Override
     public MalAtom withMeta(MalNode meta) {
       return new MalAtom(value.get(), meta);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(value.get(), meta);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null || !(obj instanceof MalAtom other)) {
-        return false;
-      }
-      return Objects.equals(this.value.get(), other.value.get()) &&
-          Objects.equals(this.meta, other.meta);
     }
 
     @Override
