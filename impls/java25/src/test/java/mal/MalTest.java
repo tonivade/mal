@@ -1027,6 +1027,15 @@ class MalTest {
     StepA.rep("(import java.util.stream.Stream concat 2)");
     assertEquals("(10 11 12 6 7 8)", StepA.rep("(Stream.concat/2 (take 3 (range 10)) (take 3 (drop 1 (range 5))))"));
     assertEquals("\"MalLazy\"", StepA.rep("(type-of (Stream.concat/2 (take 3 (range 10)) (take 3 (drop 1 (range 5)))))"));
+
+    assertEquals("0", StepA.rep("(count (lazy-seq (if false (list 1))))"));
+    assertEquals("true", StepA.rep("(empty? (lazy-seq (if false (list 1))))"));
+
+    StepA.rep("(def! upto (fn* [n m] (lazy-seq (if (< n m) (cons n (upto (+ n 1) m))))))");
+    assertEquals("(0 1 2)", StepA.rep("(upto 0 3)"));
+    assertEquals("3", StepA.rep("(count (upto 0 3))"));
+
+    assertThrows(MalException.class, () -> StepA.rep("(count (lazy-seq (+ 1 2)))"));
   }
 
   @Test

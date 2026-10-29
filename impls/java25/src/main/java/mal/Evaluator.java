@@ -272,7 +272,16 @@ class Evaluator {
     if (!(body instanceof MalSequence)) {
       throw new MalException("invalid lazy-seq");
     }
-    return done(lazy(() -> eval(body, env)));
+    return done(lazy(() -> {
+      var result = eval(body, env);
+      if (result == NIL) {
+        return EMPTY_LIST;
+      }
+      if (!(result instanceof MalSequence)) {
+        throw new MalException("lazy-seq: expected a sequence but got " + print(result, true));
+      }
+      return result;
+    }));
   }
 
   private static Trampoline<MalNode> evalSpawn(MalSequence form, Env env) {
