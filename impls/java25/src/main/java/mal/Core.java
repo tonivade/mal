@@ -73,6 +73,9 @@ interface Core {
   }
 
   static MalNode isEmpty(MalList args) {
+    if (args.get(0) == NIL) {
+      return TRUE;
+    }
     if (args.get(0) instanceof MalString(var value, _)) {
       return bool(value.isEmpty());
     }
@@ -235,6 +238,11 @@ interface Core {
   }
 
   static MalNode concat(MalList args) {
+    // nil is concatenated as an empty sequence
+    if (args.values().contains(NIL)) {
+      return concat(list(args.values().stream().filter(arg -> arg != NIL).toList()));
+    }
+
     if (args.isEmpty()) {
       return EMPTY_LIST;
     }
@@ -406,7 +414,7 @@ interface Core {
 
   static Trampoline<MalNode> map(MalList args) {
     var function = (MalWithLambda) args.get(0);
-    var seq = (MalSequence) args.get(1);
+    var seq = toSeq(args.get(1));
     if (seq instanceof MalCollection col) {
       return traverse(col.values(), current -> function.apply(listOf(current))).map(MalNode::list);
     }
@@ -727,6 +735,16 @@ interface Core {
       case MalFiber _ -> "fiber";
       case MalWrapper _ -> "object";
       case MalError _ -> "error";
+    };
+  }
+
+  // nil, strings and maps can be used where a sequence is expected, like in seq
+  private static MalSequence toSeq(MalNode node) {
+    return switch (node) {
+      case MalConstant _ when node == NIL -> EMPTY_LIST;
+      case MalString(var value, _) -> asList(value);
+      case MalMap(var values, _) -> asList(values);
+      default -> (MalSequence) node;
     };
   }
 

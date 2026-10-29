@@ -58,6 +58,7 @@ class Printer {
         case MalFunction _ -> done("#function");
         case MalMacro _ -> done("#function");
         case MalFiber _ -> done("#fiber");
+        case MalWrapper(var wrapped, _) when !pretty -> done(wrapped.toString());
         case MalWrapper(var wrapped, _) -> done("\"" + escape(wrapped.toString()) + "\"");
         case MalError(var exception, _) when exception instanceof MalException malException -> done(malException.getMessage(pretty));
         case MalError(var exception, _) -> done(message(exception));
