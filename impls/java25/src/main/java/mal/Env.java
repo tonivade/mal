@@ -19,7 +19,8 @@ import mal.MalNode.MalSymbol;
 
 class Env {
 
-  public static final Env DEFAULT = new Env(Core.NS);
+  // the root env, it has no outer env
+  public static final Env DEFAULT = new Env(null, Core.NS);
 
   private final Env outer;
   private final Map<String, MalNode> map;
@@ -28,10 +29,6 @@ class Env {
   // and define into it with eval, while other threads are running
   public Env() {
     this(DEFAULT, new ConcurrentHashMap<>());
-  }
-
-  public Env(Map<String, MalNode> map) {
-    this(DEFAULT, map);
   }
 
   public Env(Env outer) {
