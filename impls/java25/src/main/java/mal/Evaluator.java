@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -73,6 +74,10 @@ class Evaluator {
     entry("lazy-seq", Evaluator::evalLazySeq),
     entry("spawn", Evaluator::evalSpawn)
   );
+
+  static Set<String> specialForms() {
+    return SPECIAL_FORMS.keySet();
+  }
 
   static MalNode eval(MalNode ast, Env env) {
     return safeEval(ast, env).run();

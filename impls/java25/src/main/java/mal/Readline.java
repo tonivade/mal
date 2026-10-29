@@ -8,6 +8,8 @@ import static mal.MalNode.string;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
@@ -25,15 +27,7 @@ class Readline {
     .variable(LineReader.HISTORY_FILE_SIZE, 1000)
     .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
     .history(new DefaultHistory())
-    .completer(new StringsCompleter("println", "prn", "list", "list?", "empty?",
-      "count", "pr-str", "str", "read-string", "slurp", "atom", "atom?", "deref", "reset!",
-      "swap!", "cons", "concat", "vec", "macro?", "nth", "first", "rest", "throw", "apply",
-      "map", "nil", "nil?", "true", "true?", "false", "false?", "symbol?", "keyword?",
-      "vector?", "sequential?", "map?", "contains?", "symbol", "keyword", "vector", "get",
-      "keys", "vals", "hash-map", "assoc", "dissoc", "readline", "time-ms", "meta", "with-meta",
-      "fn?", "string?", "number?", "seq", "conj", "def!", "defmacro!", "let*", "do", "try*",
-      "if", "fn", "quote", "quasiquote", "catch*", "eval", "import", "java-eval", "lazy-seq",
-      "type-of", "spawn", "join", "new"))
+    .completer(new StringsCompleter(completions()))
     .highlighter(new DefaultHighlighter())
     .parser(new DefaultParser().lineCommentDelims(new String[] { ";" }))
     .build();
@@ -46,6 +40,18 @@ class Readline {
         throw new UncheckedIOException(e);
       }
     }));
+  }
+
+  // generated from the core namespace and the special forms, so it can't get out of sync
+  private static List<String> completions() {
+    var names = new ArrayList<String>();
+    names.addAll(Core.NS.keySet());
+    names.addAll(Evaluator.specialForms());
+    // constants, the catch* part of try*, and what the steps define in mal or in their own env
+    names.addAll(List.of("nil", "true", "false", "catch*", "eval", "not", "load-file", "cond",
+      "*ARGV*", "*host-language*"));
+    names.sort(null);
+    return names;
   }
 
   static String readline(String prompt) {
