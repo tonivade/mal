@@ -29,7 +29,7 @@ class Readline {
     .history(new DefaultHistory())
     .completer(new StringsCompleter(completions()))
     .highlighter(new DefaultHighlighter())
-    .parser(new MalParser().lineCommentDelims(new String[] { ";" }))
+    .parser(new MalParser())
     .build();
 
   static {
@@ -51,6 +51,7 @@ class Readline {
     MalParser() {
       // in mal ' is the quote reader macro, only " starts a string
       quoteChars(new char[] { '"' });
+      lineCommentDelims(new String[] { ";" });
     }
 
     @Override
