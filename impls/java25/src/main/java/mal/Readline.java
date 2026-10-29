@@ -6,8 +6,6 @@ package mal;
 
 import static mal.MalNode.string;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Set;
 
@@ -37,16 +35,6 @@ class Readline {
     .highlighter(new DefaultHighlighter())
     .parser(new MalParser())
     .build();
-
-  static {
-    Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().unstarted(() -> {
-      try {
-        reader.getHistory().save();
-      } catch (IOException e) {
-        throw new UncheckedIOException(e);
-      }
-    }));
-  }
 
   // jline only splits words on whitespace, so "(lo" would be completed as a single word;
   // brackets and reader macros are delimiters too, then "(lo" completes "lo"
