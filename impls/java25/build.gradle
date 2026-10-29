@@ -54,6 +54,7 @@ application {
 }
 
 shadowJar {
+  archiveFileName = 'mal.jar'
   manifest {
     attributes(
       'Main-Class': 'mal.App', 

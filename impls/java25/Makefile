@@ -4,7 +4,7 @@
 SHELL := /bin/bash
 GRADLE := ./gradlew
 JAR_NAME := mal.jar
-GRADLE_JAR := build/libs/mal-0.1-SNAPSHOT-all.jar
+GRADLE_JAR := build/libs/mal.jar
 CLASS_DIR := build/classes/java/main
 SOURCES := $(shell find src/main -type f) build.gradle settings.gradle gradle.properties
 
