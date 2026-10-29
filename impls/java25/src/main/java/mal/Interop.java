@@ -5,10 +5,8 @@
 package mal;
 
 import static java.util.Comparator.comparingInt;
-import static java.util.Map.entry;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.FALSE;
 import static mal.MalNode.NIL;
@@ -31,6 +29,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -200,8 +199,7 @@ class Interop {
       case MalSymbol(var value, _) -> value;
       case MalKeyword(var value, _) -> value;
       case MalNumber(var value, _) -> value;
-      case MalMap(var value, _) ->
-        value.entrySet().stream().collect(toUnmodifiableMap(entry -> toJava(entry.getKey()), entry -> toJava(entry.getValue())));
+      case MalMap(var value, _) -> mapToJava(value);
       case MalList(var value, _) -> value.stream().map(Interop::toJava).toList();
       case MalVector(var value, _) -> value.stream().map(Interop::toJava).toList();
       case MalConstant(var value, _) when value.equals("true") -> true;
@@ -379,16 +377,29 @@ class Interop {
     });
   }
 
-  private static MalMap mapToMal(Map<?, ?> map) {
-    return map(map.entrySet().stream()
-        .map(entry -> entry(convertKey(entry.getKey()), toMal(entry.getValue())))
-        .collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)));
+  // mal map keys must be strings, a java map with other keys stays as a java object,
+  // and can still be used with interop, like (.get m 1)
+  private static MalNode mapToMal(Map<?, ?> map) {
+    if (!map.keySet().stream().allMatch(String.class::isInstance)) {
+      return wrap(map);
+    }
+    var result = new LinkedHashMap<MalKey, MalNode>();
+    map.forEach((key, value) -> result.put(string((String) key), toMal(value)));
+    return map(result);
   }
 
-  private static MalKey convertKey(Object value) {
-    return switch (value) {
-      case String s -> string(s);
-      case null, default -> throw new MalException("invalid key" + value);
-    };
+  // a plain loop instead of a collector, so nil values are kept as null entries; keywords
+  // become strings, so :a and "a" would be the same java key
+  private static Map<Object, Object> mapToJava(Map<MalKey, MalNode> map) {
+    var result = new LinkedHashMap<Object, Object>();
+    for (var entry : map.entrySet()) {
+      var key = toJava(entry.getKey());
+      if (result.containsKey(key)) {
+        throw new MalException("map key " + Printer.print(entry.getKey(), true)
+            + " collides with another key, both are \"" + key + "\" in java");
+      }
+      result.put(key, toJava(entry.getValue()));
+    }
+    return result;
   }
 }
