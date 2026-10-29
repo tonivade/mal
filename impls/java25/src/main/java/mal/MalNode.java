@@ -14,8 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -263,10 +265,13 @@ public sealed interface MalNode {
     }
   }
 
-  record MalFiber(CompletableFuture<MalNode> future, MalNode meta) implements MalNode {
+  // the thread is the one running the fiber, null when it has not started or has finished,
+  // it's needed to cancel the fiber because the future can't interrupt it
+  record MalFiber(CompletableFuture<MalNode> future, AtomicReference<Thread> thread, MalNode meta) implements MalNode {
 
     public MalFiber {
       requireNonNull(future);
+      requireNonNull(thread);
     }
 
     // get is used instead of join because it can be interrupted, so ctrl-c in the repl
@@ -282,12 +287,28 @@ public sealed interface MalNode {
           throw cause;
         }
         throw new MalException("error in fiber", e.getCause());
+      } catch (CancellationException e) {
+        throw new MalException("fiber cancelled");
       }
+    }
+
+    // the future is cancelled first, so join returns at once, then the thread is interrupted,
+    // and the fiber stops at the next step of its trampoline; false if it had already finished
+    // or was already cancelled, future.cancel alone returns true for a cancelled future
+    public boolean cancel() {
+      if (future.isDone() || !future.cancel(false)) {
+        return false;
+      }
+      var running = thread.get();
+      if (running != null) {
+        running.interrupt();
+      }
+      return true;
     }
 
     @Override
     public MalNode withMeta(MalNode meta) {
-      return new MalFiber(future, meta);
+      return new MalFiber(future, thread, meta);
     }
   }
 
@@ -687,8 +708,23 @@ public sealed interface MalNode {
     return new MalLazy(thunk, null);
   }
 
-  static MalFiber fork(CompletableFuture<MalNode> future) {
-    return new MalFiber(future, null);
+  static MalFiber fork(Supplier<MalNode> task, Executor executor) {
+    var future = new CompletableFuture<MalNode>();
+    var thread = new AtomicReference<Thread>();
+    executor.execute(() -> {
+      thread.set(Thread.currentThread());
+      try {
+        // checked after the thread is set, a cancel that came before could not interrupt it
+        if (!future.isCancelled()) {
+          future.complete(task.get());
+        }
+      } catch (Throwable e) {
+        future.completeExceptionally(e);
+      } finally {
+        thread.set(null);
+      }
+    });
+    return new MalFiber(future, thread, null);
   }
 
   static MalWrapper wrap(Object o) {

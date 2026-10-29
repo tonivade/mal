@@ -1034,6 +1034,20 @@ class MalTest {
     StepA.rep("(def! task (spawn (fn* [] (do (sleep 1) 1234))))");
     assertEquals("1234", StepA.rep("(join task)"));
 
+    // cancel stops a running fiber, join then fails, and a finished fiber can't be cancelled
+    StepA.rep("(def! counter (atom 0))");
+    StepA.rep("(def! busy (fn* [] (do (swap! counter (fn* [x] (+ x 1))) (busy))))");
+    StepA.rep("(def! forever (spawn (fn* [] (busy))))");
+    assertEquals("true", StepA.rep("(cancel forever)"));
+    assertEquals("\"fiber cancelled\"", StepA.rep("(try* (join forever) (catch* e e))"));
+    assertEquals("false", StepA.rep("(cancel forever)"));
+    StepA.rep("(def! stopped @counter)");
+    StepA.rep("(sleep 1)");
+    assertEquals("true", StepA.rep("(= stopped @counter)"));
+    StepA.rep("(def! finished (spawn (fn* [] 42)))");
+    assertEquals("42", StepA.rep("(join finished)"));
+    assertEquals("false", StepA.rep("(cancel finished)"));
+
     assertEquals("nil", StepA.rep("(get nil)"));
 
     assertEquals("false", StepA.rep("(empty? \"abc\")"));

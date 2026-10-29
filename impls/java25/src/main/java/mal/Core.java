@@ -593,6 +593,11 @@ interface Core {
     return fiber.join();
   }
 
+  static MalNode cancel(MalList args) {
+    var fiber = (MalFiber) args.get(0);
+    return bool(fiber.cancel());
+  }
+
   static MalNode sleep(MalList args) {
     var seconds = (MalNumber) args.get(0);
     try {
@@ -682,6 +687,7 @@ interface Core {
     def("conj", 1, MANY, lambda(Core::conj)),
     def("type-of", 1, 1, lambda(Core::typeOf)),
     def("join", 1, 1, lambda(Core::join)),
+    def("cancel", 1, 1, lambda(Core::cancel)),
     def("sleep", 1, 1, lambda(Core::sleep)),
     def("instance?", 2, 2, lambda(Core::isInstance))
   );

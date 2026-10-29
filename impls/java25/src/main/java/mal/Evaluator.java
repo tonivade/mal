@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.pcollections.PVector;
@@ -280,8 +279,7 @@ class Evaluator {
     arity(form, 1, 1);
     var body = form.get(1);
     var newEnv = new Env(env);
-    return done(fork(CompletableFuture.supplyAsync(
-        () -> ((MalFunction) eval(body, newEnv)).run(EMPTY_LIST), executor)));
+    return done(fork(() -> ((MalFunction) eval(body, newEnv)).run(EMPTY_LIST), executor));
   }
 
   static boolean isTruthy(MalNode node) {

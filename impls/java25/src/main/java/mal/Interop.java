@@ -209,7 +209,7 @@ class Interop {
       case MalConstant(var value, _) when value.equals("nil") -> null;
       case MalWrapper(var value, _) -> value;
       case MalSequence seq -> toStream(seq);
-      case MalFiber(var future, _) -> future.thenApply(Interop::toJava);
+      case MalFiber(var future, _, _) -> future.thenApply(Interop::toJava);
       default -> throw new MalException("not supported " + node);
     };
   }
