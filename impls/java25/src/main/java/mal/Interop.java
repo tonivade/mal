@@ -39,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import mal.MalNode.MalCollection;
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalFiber;
 import mal.MalNode.MalKey;
@@ -129,10 +130,16 @@ class Interop {
     var params = arguments;
     // for instance methods the first argument is the receiver
     if (executable instanceof Method method && !Modifier.isStatic(method.getModifiers())) {
-      if (arguments.length == 0 || !method.getDeclaringClass().isInstance(arguments[0])) {
+      if (arguments.length == 0 || arguments[0] == null) {
         return Optional.empty();
       }
-      target = arguments[0];
+      // the receiver is converted like any argument, so a list or a lazy seq can be the
+      // receiver of a stream method
+      var receiver = convert(method.getDeclaringClass(), arguments[0]);
+      if (receiver.isEmpty()) {
+        return Optional.empty();
+      }
+      target = receiver.get();
       params = Arrays.copyOfRange(arguments, 1, arguments.length);
     }
     var types = executable.getParameterTypes();
@@ -197,7 +204,7 @@ class Interop {
       case MalConstant(var value, _) when value.equals("false") -> false;
       case MalConstant(var value, _) when value.equals("nil") -> null;
       case MalWrapper(var value, _) -> value;
-      case MalSequence seq -> StreamSupport.stream(seq.spliterator(), false).map(Interop::toJava);
+      case MalSequence seq -> toStream(seq);
       case MalFiber(var future, _) -> future.thenApply(Interop::toJava);
       default -> throw new MalException("not supported " + node);
     };
@@ -235,7 +242,13 @@ class Interop {
   private static Object[] toArgs(MalList args) {
     var arguments = new Object[args.size()];
     for (int i = 0; i < args.size(); i++) {
-      arguments[i] = toJava(args.get(i));
+      var node = args.get(i);
+      if (node instanceof MalSequence seq && !(node instanceof MalCollection)) {
+        // a lazy seq is converted later, when the type of the parameter is known
+        arguments[i] = seq;
+      } else {
+        arguments[i] = toJava(node);
+      }
     }
     return arguments;
   }
@@ -254,6 +267,9 @@ class Interop {
   // are longs, so they are converted to the other number types, and a string of one char to a char;
   // the argument is never null, nil is handled by the callers
   private static Optional<Object> convert(Class<?> type, Object arg) {
+    if (arg instanceof MalSequence seq) {
+      return convertSequence(type, seq);
+    }
     var boxed = BOXES.getOrDefault(type, type);
     if (boxed.isInstance(arg)) {
       return Optional.of(arg);
@@ -272,7 +288,33 @@ class Interop {
     if (arg instanceof List<?> list && type.isArray()) {
       return convertArray(type.getComponentType(), list);
     }
+    if (arg instanceof List<?> list && type.isAssignableFrom(Stream.class)) {
+      return Optional.of(list.stream());
+    }
     return Optional.empty();
+  }
+
+  // a lazy seq stays lazy as a stream, unless the parameter needs the whole collection;
+  // a new stream is created for each overload tried, a stream can only be used once
+  private static Optional<Object> convertSequence(Class<?> type, MalSequence seq) {
+    if (type.isArray()) {
+      return convertArray(type.getComponentType(), realize(seq));
+    }
+    if (type == Object.class || type.isAssignableFrom(Stream.class)) {
+      return Optional.of(toStream(seq));
+    }
+    if (type.isAssignableFrom(List.class)) {
+      return Optional.of(realize(seq));
+    }
+    return Optional.empty();
+  }
+
+  private static Stream<Object> toStream(MalSequence seq) {
+    return StreamSupport.stream(seq.spliterator(), false).map(Interop::toJava);
+  }
+
+  private static List<Object> realize(MalSequence seq) {
+    return toStream(seq).toList();
   }
 
   private static Optional<Object> convertNumber(Class<?> boxed, Number n) {
