@@ -14,8 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -265,13 +267,44 @@ public sealed interface MalNode {
     }
   }
 
-  // the thread is the one running the fiber, null when it has not started or has finished,
-  // it's needed to cancel the fiber because the future can't interrupt it
-  record MalFiber(CompletableFuture<MalNode> future, AtomicReference<Thread> thread, MalNode meta) implements MalNode {
+  // a final class instead of a record, the running thread and the children change while the
+  // fiber runs; the thread is null when it has not started or has finished, it's needed to
+  // cancel the fiber because the future can't interrupt it; the children are the fibers
+  // spawned by this one that are still running, they are cancelled with it
+  final class MalFiber implements MalNode {
 
-    public MalFiber {
-      requireNonNull(future);
-      requireNonNull(thread);
+    // the fiber running in the current thread, so spawn knows the parent of the new fiber
+    static final ScopedValue<MalFiber> CURRENT = ScopedValue.newInstance();
+
+    private final CompletableFuture<MalNode> future = new CompletableFuture<>();
+    private final AtomicReference<Thread> thread = new AtomicReference<>();
+    private final Set<MalFiber> children = ConcurrentHashMap.newKeySet();
+
+    CompletableFuture<MalNode> future() {
+      return future;
+    }
+
+    private void execute(Supplier<MalNode> task) {
+      thread.set(Thread.currentThread());
+      try {
+        // checked after the thread is set, a cancel that came before could not interrupt it
+        if (!future.isCancelled()) {
+          future.complete(task.get());
+        }
+      } catch (Throwable e) {
+        future.completeExceptionally(e);
+      } finally {
+        thread.set(null);
+      }
+    }
+
+    private void adopt(MalFiber child) {
+      children.add(child);
+      child.future.whenComplete((_, _) -> children.remove(child));
+      // this fiber may have been cancelled while it was spawning the child
+      if (future.isCancelled()) {
+        child.cancel();
+      }
     }
 
     // get is used instead of join because it can be interrupted, so ctrl-c in the repl
@@ -303,12 +336,19 @@ public sealed interface MalNode {
       if (running != null) {
         running.interrupt();
       }
+      children.forEach(MalFiber::cancel);
       return true;
     }
 
     @Override
-    public MalNode withMeta(MalNode meta) {
-      return new MalFiber(future, thread, meta);
+    public MalNode meta() {
+      return NIL;
+    }
+
+    @Override
+    public MalFiber withMeta(MalNode meta) {
+      // a copy would be a different fiber, not equal to this one, like atoms it's not supported
+      throw new MalException("with-meta: not supported for fibers");
     }
   }
 
@@ -709,22 +749,13 @@ public sealed interface MalNode {
   }
 
   static MalFiber fork(Supplier<MalNode> task, Executor executor) {
-    var future = new CompletableFuture<MalNode>();
-    var thread = new AtomicReference<Thread>();
-    executor.execute(() -> {
-      thread.set(Thread.currentThread());
-      try {
-        // checked after the thread is set, a cancel that came before could not interrupt it
-        if (!future.isCancelled()) {
-          future.complete(task.get());
-        }
-      } catch (Throwable e) {
-        future.completeExceptionally(e);
-      } finally {
-        thread.set(null);
-      }
-    });
-    return new MalFiber(future, thread, null);
+    var fiber = new MalFiber();
+    // a fiber spawned inside another fiber is its child
+    if (MalFiber.CURRENT.isBound()) {
+      MalFiber.CURRENT.get().adopt(fiber);
+    }
+    executor.execute(() -> ScopedValue.where(MalFiber.CURRENT, fiber).run(() -> fiber.execute(task)));
+    return fiber;
   }
 
   static MalWrapper wrap(Object o) {

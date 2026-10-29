@@ -1048,6 +1048,17 @@ class MalTest {
     assertEquals("42", StepA.rep("(join finished)"));
     assertEquals("false", StepA.rep("(cancel finished)"));
 
+    // cancelling a fiber cancels the fibers it spawned, and theirs
+    StepA.rep("(def! nested (atom 0))");
+    StepA.rep("(def! busy-nested (fn* [] (do (swap! nested (fn* [x] (+ x 1))) (busy-nested))))");
+    StepA.rep("(def! wait-forever (fn* [] (do (sleep 3600) (wait-forever))))");
+    StepA.rep("(def! parent (spawn (fn* [] (do (spawn (fn* [] (do (spawn (fn* [] (busy-nested))) (wait-forever)))) (wait-forever)))))");
+    StepA.rep("(sleep 1)");
+    assertEquals("true", StepA.rep("(cancel parent)"));
+    StepA.rep("(def! stopped-nested @nested)");
+    StepA.rep("(sleep 1)");
+    assertEquals("true", StepA.rep("(= stopped-nested @nested)"));
+
     assertEquals("nil", StepA.rep("(get nil)"));
 
     assertEquals("false", StepA.rep("(empty? \"abc\")"));
