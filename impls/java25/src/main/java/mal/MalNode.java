@@ -292,6 +292,10 @@ public sealed interface MalNode {
     MalSequence seq();
 
     default MalNode get(int pos) {
+      // a negative index would walk an infinite lazy-seq forever
+      if (pos < 0) {
+        throw new IndexOutOfBoundsException(pos);
+      }
       for (var current : this) {
         if (pos == 0) {
           return current;
