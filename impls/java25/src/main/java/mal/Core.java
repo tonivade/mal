@@ -330,6 +330,10 @@ interface Core {
     var index = (MalNumber) args.get(1);
     // same error for strings, lists, vectors and lazy seqs, reporting the requested index
     try {
+      // nothing can be that long, and asInt would silently truncate it to a valid index
+      if (index.value() < Integer.MIN_VALUE || index.value() > Integer.MAX_VALUE) {
+        throw new IndexOutOfBoundsException();
+      }
       if (item instanceof MalString(var value, _)) {
         var ch = value.charAt(index.asInt());
         return string(Character.toString(ch));
