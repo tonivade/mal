@@ -25,6 +25,7 @@ import static mal.Trampoline.done;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -98,8 +99,11 @@ class Interop {
         .orElseThrow(() -> new MalException("no matching overload of " + name + " for arguments: " + typeNames(arguments)));
     try {
       return done(result.apply(call.invoke()));
+    } catch (InvocationTargetException e) {
+      // the exception thrown by the java method itself, the reflection wrapper says nothing
+      throw new MalException("error calling " + name + ": " + e.getCause(), e.getCause());
     } catch (ReflectiveOperationException e) {
-      throw new MalException("error calling " + name, e);
+      throw new MalException("error calling " + name + ": " + e, e);
     }
   }
 
