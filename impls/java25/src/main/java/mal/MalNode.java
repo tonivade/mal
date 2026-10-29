@@ -289,12 +289,41 @@ public sealed interface MalNode {
       try {
         // checked after the thread is set, a cancel that came before could not interrupt it
         if (!future.isCancelled()) {
-          future.complete(task.get());
+          var result = task.get();
+          // a fiber finishes when its children finish, so a running fiber always has a parent
+          // that can cancel it
+          awaitChildren();
+          future.complete(result);
         }
       } catch (Throwable e) {
+        // nobody would wait for the children of a failed fiber
+        children.forEach(MalFiber::cancel);
         future.completeExceptionally(e);
       } finally {
         thread.set(null);
+      }
+    }
+
+    private void awaitChildren() {
+      // the children can spawn more children while this waits, so it waits until all are done;
+      // the done ones are skipped, they may still be in the set for a moment
+      while (true) {
+        var running = children.stream()
+            .map(child -> child.future)
+            .filter(childFuture -> !childFuture.isDone())
+            .toArray(CompletableFuture<?>[]::new);
+        if (running.length == 0) {
+          return;
+        }
+        try {
+          // a child that fails or is cancelled is done too
+          CompletableFuture.allOf(running).exceptionally(_ -> null).get();
+        } catch (InterruptedException e) {
+          throw new Trampoline.Interrupted();
+        } catch (ExecutionException e) {
+          // not possible, exceptionally turns any failure into null
+          throw new IllegalStateException(e);
+        }
       }
     }
 

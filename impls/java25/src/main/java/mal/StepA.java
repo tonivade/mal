@@ -23,6 +23,8 @@ import java.util.stream.Stream;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.UserInterruptException;
 
+import mal.MalNode.MalFiber;
+
 class StepA {
 
   private static final Env ENV = new Env();
@@ -76,11 +78,18 @@ class StepA {
       } catch (EndOfFileException e) {
         return;
       }
+      // the fibers spawned by this line are children of a root fiber that never runs,
+      // so ctrl-c can cancel them together with the evaluation
+      var root = new MalFiber();
       try {
         // a ctrl-c pressed after the last evaluation finished must not stop this one
         Thread.interrupted();
-        IO.println(rep(line));
+        var input = line;
+        IO.println(ScopedValue.where(MalFiber.CURRENT, root).call(() -> rep(input)));
       } catch (RuntimeException e) {
+        if (e instanceof Trampoline.Interrupted) {
+          root.cancel();
+        }
         if (ENV.isDebugEval()) {
           e.printStackTrace(System.err);
         } else {

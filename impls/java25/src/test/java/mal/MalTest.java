@@ -1059,6 +1059,11 @@ class MalTest {
     StepA.rep("(sleep 1)");
     assertEquals("true", StepA.rep("(= stopped-nested @nested)"));
 
+    // a fiber finishes when its children finish, so join waits for them too
+    StepA.rep("(def! child-done (atom false))");
+    assertEquals("1", StepA.rep("(join (spawn (fn* [] (do (spawn (fn* [] (do (sleep 1) (reset! child-done true)))) 1))))"));
+    assertEquals("true", StepA.rep("@child-done"));
+
     assertEquals("nil", StepA.rep("(get nil)"));
 
     assertEquals("false", StepA.rep("(empty? \"abc\")"));
