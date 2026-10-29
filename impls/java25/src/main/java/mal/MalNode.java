@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -269,15 +269,19 @@ public sealed interface MalNode {
       requireNonNull(future);
     }
 
+    // get is used instead of join because it can be interrupted, so ctrl-c in the repl
+    // stops waiting for a fiber that never ends; the fiber itself keeps running
     public MalNode join() {
       try {
-        return future.join();
-      } catch (CompletionException e) {
+        return future.get();
+      } catch (InterruptedException e) {
+        throw new Trampoline.Interrupted();
+      } catch (ExecutionException e) {
         // rethrow what the fiber threw, so catch* gets the original mal error
         if (e.getCause() instanceof RuntimeException cause) {
           throw cause;
         }
-        throw e;
+        throw new MalException("error in fiber", e.getCause());
       }
     }
 
