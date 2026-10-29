@@ -11,9 +11,10 @@ SOURCES := $(shell find src/main -type f) build.gradle settings.gradle gradle.pr
 .PHONY: all
 all: $(JAR_NAME)
 
+# only the jar is built here, the unit tests run with `make test`
 # touch the jar so gradle's up-to-date checks don't leave it older than its sources
 $(GRADLE_JAR): $(SOURCES)
-	$(GRADLE) build
+	$(GRADLE) shadowJar
 	touch $@
 
 $(JAR_NAME): $(GRADLE_JAR)
@@ -24,6 +25,10 @@ $(CLASS_DIR)/mal/step%.class: $(JAR_NAME)
 
 .PHONY: dist
 dist: $(JAR_NAME)
+
+.PHONY: test
+test:
+	$(GRADLE) test
 
 .PHONY: clean
 clean:
