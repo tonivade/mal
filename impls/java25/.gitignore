@@ -1,2 +1,8 @@
 mal.jar
 build/
+.gradle/
+.settings/
+.vscode/
+bin/
+.project
+.classpath
