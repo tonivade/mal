@@ -262,7 +262,16 @@ interface Core {
       return list(result);
     }
 
+    // the lazy path would only fail when the bad argument is reached, so check the types first
+    if (!args.values().stream().allMatch(Core::isConcatenable)) {
+      throw invalidArgumentTypes("concat", args, null);
+    }
+
     return lazy(() -> concatStep(args));
+  }
+
+  private static boolean isConcatenable(MalNode node) {
+    return node instanceof MalSequence || node instanceof MalString || node instanceof MalMap;
   }
 
   private static MalNode concatStep(MalList seqs) {
@@ -676,10 +685,14 @@ interface Core {
       try {
         return lambda.apply(args);
       } catch (ClassCastException e) {
-        var types = args.values().stream().map(Core::typeName).collect(joining(", "));
-        throw new MalException(name + ": invalid argument types: " + types, e);
+        throw invalidArgumentTypes(name, args, e);
       }
     }));
+  }
+
+  private static MalException invalidArgumentTypes(String name, MalList args, Throwable cause) {
+    var types = args.values().stream().map(Core::typeName).collect(joining(", "));
+    return new MalException(name + ": invalid argument types: " + types, cause);
   }
 
   private static String expectedArgs(int min, int max) {

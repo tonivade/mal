@@ -10,6 +10,7 @@ import static mal.MalNode.DEBUG_EVAL;
 import static mal.MalNode.EMPTY_LIST;
 import static mal.MalNode.function;
 import static mal.MalNode.list;
+import static mal.MalNode.listOf;
 import static mal.MalNode.string;
 import static mal.MalNode.symbol;
 import static mal.Printer.print;
@@ -52,7 +53,8 @@ class StepA {
     init(arguments);
 
     if (arguments.length > 0) {
-      rep("(load-file \"" + arguments[0] + "\")");
+      // the path is passed as a string node, so quotes or backslashes in it are not parsed as mal code
+      eval(listOf(symbol("load-file"), string(arguments[0])), ENV);
       return;
     }
 
