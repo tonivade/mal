@@ -81,6 +81,9 @@ class Env {
       var bind = (MalSymbol) i.next();
 
       if (bind.name().equals("&")) {
+        if (!i.hasNext()) {
+          throw new MalException("invalid parameters: & must be followed by a symbol");
+        }
         bind = (MalSymbol) i.next();
         List<MalNode> list = new ArrayList<>();
         while (j.hasNext()) {
@@ -91,8 +94,12 @@ class Env {
         var expr = j.next();
         result.put(bind.name(), expr);
       } else {
-        throw new MalException("missing arg: " + bind);
+        throw new MalException("missing arg: " + bind.name());
       }
+    }
+
+    if (j.hasNext()) {
+      throw new MalException("too many args: expected " + binds.size() + " but got " + exprs.size());
     }
 
     return result;

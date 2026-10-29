@@ -165,16 +165,30 @@ class Reader {
       case Token(var value) when value.equals("nil") -> NIL;
       case Token(var value) when value.equals("true") -> TRUE;
       case Token(var value) when value.equals("false") -> FALSE;
-      case Token(var value) when NUMBER_PATTERN.test(value) ->
-        number(Long.parseLong(value));
+      case Token(var value) when NUMBER_PATTERN.test(value) -> readNumber(value);
       case Token(var value) when EOF_PATTERN.test(value) ->
         throw new MalException("EOF");
-      case Token(var value) when STRING_PATTERN.test(value) ->
-        string(unescapeJava(value.substring(1, value.length() - 1)));
+      case Token(var value) when STRING_PATTERN.test(value) -> readString(value);
       case Token(var value) when value.startsWith(":") ->
         keyword(value.substring(1));
       case Token(var value) -> symbol(value);
     };
+  }
+
+  private static MalNode readNumber(String value) {
+    try {
+      return number(Long.parseLong(value));
+    } catch (NumberFormatException e) {
+      throw new MalException("number out of range: " + value, e);
+    }
+  }
+
+  private static MalNode readString(String value) {
+    try {
+      return string(unescapeJava(value.substring(1, value.length() - 1)));
+    } catch (IllegalArgumentException e) {
+      throw new MalException("invalid escape in string: " + value, e);
+    }
   }
 
   private static Reader tokenize(String input) {

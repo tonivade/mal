@@ -27,8 +27,8 @@ import static mal.Trampoline.done;
 import static mal.Trampoline.traverse;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
@@ -177,12 +177,16 @@ interface Core {
   }
 
   static MalNode slurp(MalList args) {
+    var fileName = (MalString) args.get(0);
     try {
-      var fileName = (MalString) args.get(0);
       var content = Files.readString(Paths.get(fileName.value()));
       return string(content);
+    } catch (NoSuchFileException e) {
+      throw new MalException("slurp: file not found: " + fileName.value(), e);
     } catch (IOException e) {
-      throw new UncheckedIOException(e);
+      // some IOExceptions only carry the path as message, then the class name says what went wrong
+      var reason = fileName.value().equals(e.getMessage()) ? e.getClass().getSimpleName() : e.getMessage();
+      throw new MalException("slurp: cannot read " + fileName.value() + ": " + reason, e);
     }
   }
 
@@ -565,7 +569,7 @@ interface Core {
         }
         yield vector(newValues);
       }
-      default -> throw new MalException("invalid definition");
+      default -> throw invalidArgumentTypes("conj", args, null);
     };
   }
 

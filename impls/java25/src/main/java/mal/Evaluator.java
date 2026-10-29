@@ -200,15 +200,16 @@ class Evaluator {
   private static Trampoline<MalNode> evalTry(MalSequence form, Env env) {
     arity(form, 1, 2);
     var body = form.get(1);
+    if (form.size() < 3) {
+      return more(() -> safeEval(body, env));
+    }
+    // the catch* form is checked before running the body, not only when something is thrown
+    var catchForm = sequenceAt(form, 2);
+    if (catchForm.size() != 3 || !catchForm.get(0).equals(symbol("catch*"))) {
+      throw new MalException("try*: expected (catch* symbol form)");
+    }
+    var binding = symbolAt(catchForm, 1);
     return more(() -> safeEval(body, env)).recover(e -> {
-      if (form.size() < 3) {
-        throw e;
-      }
-      var catchForm = sequenceAt(form, 2);
-      if (catchForm.size() != 3 || !catchForm.get(0).equals(symbol("catch*"))) {
-        throw new MalException("try*: expected (catch* symbol form)");
-      }
-      var binding = symbolAt(catchForm, 1);
       MalNode thrown = e instanceof MalException me ? me.getNode() : error(e);
       var newEnv = new Env(env, new HashMap<>(Map.of(binding.name(), thrown)));
       return safeEval(catchForm.get(2), newEnv);
