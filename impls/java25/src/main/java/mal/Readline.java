@@ -29,7 +29,7 @@ class Readline {
     .history(new DefaultHistory())
     .completer(new StringsCompleter(completions()))
     .highlighter(new DefaultHighlighter())
-    .parser(new DefaultParser().lineCommentDelims(new String[] { ";" }))
+    .parser(new MalParser().lineCommentDelims(new String[] { ";" }))
     .build();
 
   static {
@@ -40,6 +40,23 @@ class Readline {
         throw new UncheckedIOException(e);
       }
     }));
+  }
+
+  // jline only splits words on whitespace, so "(lo" would be completed as a single word;
+  // brackets and reader macros are delimiters too, then "(lo" completes "lo"
+  private static final class MalParser extends DefaultParser {
+
+    private static final String DELIMITERS = "()[]{}'`~@^,";
+
+    MalParser() {
+      // in mal ' is the quote reader macro, only " starts a string
+      quoteChars(new char[] { '"' });
+    }
+
+    @Override
+    public boolean isDelimiterChar(CharSequence buffer, int pos) {
+      return DELIMITERS.indexOf(buffer.charAt(pos)) >= 0 || super.isDelimiterChar(buffer, pos);
+    }
   }
 
   // generated from the core namespace and the special forms, so it can't get out of sync
