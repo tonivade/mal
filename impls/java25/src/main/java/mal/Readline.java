@@ -19,6 +19,7 @@ import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultHighlighter;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.history.DefaultHistory;
+import org.jline.terminal.Terminal.Signal;
 
 class Readline {
 
@@ -72,6 +73,12 @@ class Readline {
     // constants and the catch* part of try* are not defined anywhere
     names.addAll(List.of("nil", "true", "false", "catch*"));
     return names;
+  }
+
+  // ctrl-c while reading a line is handled by jline, this handler runs when ctrl-c
+  // is pressed during an evaluation
+  static void onInterrupt(Runnable handler) {
+    reader.getTerminal().handle(Signal.INT, _ -> handler.run());
   }
 
   static void completeFrom(Env env) {

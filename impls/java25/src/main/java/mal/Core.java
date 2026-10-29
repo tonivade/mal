@@ -598,7 +598,7 @@ interface Core {
     try {
       Thread.sleep(Duration.ofSeconds(seconds.asInt()));
     } catch (InterruptedException e) {
-      throw new MalException("interrupted", e);
+      throw new Trampoline.Interrupted();
     }
     return NIL;
   }

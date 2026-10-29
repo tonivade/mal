@@ -22,6 +22,17 @@ sealed interface Trampoline<T> {
   record FlatMap<T, R>(Trampoline<T> current, Function<? super T, ? extends Trampoline<R>> mapper) implements Trampoline<R> {}
   record Recover<T>(Trampoline<T> current, Function<? super RuntimeException, ? extends Trampoline<T>> recover) implements Trampoline<T> {}
 
+  // thrown when the running thread is interrupted, like with ctrl-c in the repl;
+  // recover handlers are skipped, so a try* in mal code can't swallow it
+  final class Interrupted extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    Interrupted() {
+      super("interrupted", null, false, false);
+    }
+  }
+
   static <T> Trampoline<T> done(T value) {
     return new Done<>(value);
   }
@@ -64,6 +75,9 @@ sealed interface Trampoline<T> {
     Deque<Trampoline<?>> stack = new ArrayDeque<>();
 
     while (true) {
+      if (Thread.interrupted()) {
+        throw new Interrupted();
+      }
       try {
         if (current instanceof Done(var value)) {
           boolean resumed = false;
@@ -89,6 +103,9 @@ sealed interface Trampoline<T> {
           current = source;
         }
 
+      } catch (Interrupted e) {
+        // thrown by a nested run, it has to reach the repl
+        throw e;
       } catch (RuntimeException e) {
         boolean resumed = false;
         while (!resumed) {

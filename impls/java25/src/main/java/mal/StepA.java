@@ -62,6 +62,10 @@ class StepA {
 
     Readline.completeFrom(ENV);
 
+    // ctrl-c interrupts the evaluation, the trampoline stops at its next step
+    var main = Thread.currentThread();
+    Readline.onInterrupt(main::interrupt);
+
     while (true) {
       String line = null;
       try {
@@ -73,6 +77,8 @@ class StepA {
         return;
       }
       try {
+        // a ctrl-c pressed after the last evaluation finished must not stop this one
+        Thread.interrupted();
         IO.println(rep(line));
       } catch (RuntimeException e) {
         if (ENV.isDebugEval()) {
