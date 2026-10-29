@@ -103,6 +103,10 @@ class Interop {
       throw new MalException("error calling " + name + ": " + e.getCause(), e.getCause());
     } catch (ReflectiveOperationException e) {
       throw new MalException("error calling " + name + ": " + e, e);
+    } catch (LinkageError e) {
+      // in the native image a class not registered for reflection throws an error, not an
+      // exception, that would end the repl; its message is very long, the class name is enough
+      throw new MalException("error calling " + name + ": " + e.getClass().getSimpleName(), e);
     }
   }
 

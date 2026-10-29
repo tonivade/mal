@@ -11,7 +11,6 @@ plugins {
 group = 'com.github.tonivade'
  
 repositories {
-  mavenLocal()
   mavenCentral()
 }
  
@@ -71,9 +70,7 @@ graalvmNative {
       mainClass = "mal.App"
       buildArgs.add("-O2")
       buildArgs.add('--verbose')
-      buildArgs.add('--report-unsupported-elements-at-runtime')
       buildArgs.add('--no-fallback')
-      buildArgs.add('--allow-incomplete-classpath')
     }
     test {
       buildArgs.add("-O0")
