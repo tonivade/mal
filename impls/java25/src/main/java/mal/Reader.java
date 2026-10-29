@@ -26,10 +26,12 @@ import static mal.Trampoline.more;
 import static mal.Trampoline.zip;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJava;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+
+import org.pcollections.PVector;
+import org.pcollections.TreePVector;
 
 class Reader {
 
@@ -138,10 +140,12 @@ class Reader {
       throw new MalException("expected '" + start + "'");
     }
 
-    return readElements(reader, end, new ArrayList<>());
+    return readElements(reader, end, TreePVector.empty());
   }
 
-  private static Trampoline<List<MalNode>> readElements(Reader reader, char end, ArrayList<MalNode> acc) {
+  // the elements are accumulated in a persistent vector, so each step returns a new one
+  // instead of mutating a list shared by all the steps
+  private static Trampoline<List<MalNode>> readElements(Reader reader, char end, PVector<MalNode> acc) {
     Token peek = reader.peek();
     if (peek == null) {
       throw new MalException("EOF");
@@ -151,12 +155,9 @@ class Reader {
       return done(acc);
     }
 
-    // parse next element lazily, then append to acc and continue
+    // parse next element lazily, then continue with it appended to acc
     return more(() -> parse(reader))
-      .flatMap(elem -> {
-        acc.add(elem);
-        return readElements(reader, end, acc);
-      });
+      .flatMap(elem -> readElements(reader, end, acc.plus(elem)));
   }
 
   private static MalNode readAtom(Reader reader) {

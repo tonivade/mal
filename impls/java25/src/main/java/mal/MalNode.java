@@ -709,7 +709,7 @@ public sealed interface MalNode {
     if (tokens.isEmpty()) {
       return EMPTY_VECTOR;
     }
-    return new MalVector(TreePVector.from(tokens), null);
+    return new MalVector(persistent(tokens), null);
   }
 
   static MalList listOf(MalNode...tokens) {
@@ -730,7 +730,7 @@ public sealed interface MalNode {
     if (tokens.isEmpty()) {
       return EMPTY_LIST;
     }
-    return new MalList(TreePVector.from(tokens), null);
+    return new MalList(persistent(tokens), null);
   }
 
   static MalConstant bool(boolean value) {
@@ -802,6 +802,16 @@ public sealed interface MalNode {
     var values = new ArrayList<MalNode>();
     tokens.forEach(values::add);
     return values;
+  }
+  
+  // a persistent vector is immutable, so it can be shared instead of copied; the cast is safe
+  // because a vector of a subtype of MalNode can only be read as MalNodes or copied by plus
+  @SuppressWarnings("unchecked")
+  private static PVector<MalNode> persistent(Collection<? extends MalNode> tokens) {
+    if (tokens instanceof PVector<?> vector) {
+      return (PVector<MalNode>) vector;
+    }
+    return TreePVector.from(tokens);
   }
 
   private static Map<MalKey, MalNode> toMap(Iterable<MalNode> tokens) {
