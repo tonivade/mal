@@ -729,7 +729,7 @@ interface Core {
 
   private static String typeName(MalNode node) {
     return switch (node) {
-      case MalConstant(var name, _) when name.equals("nil") -> "nil";
+      case MalConstant(var name) when name.equals("nil") -> "nil";
       case MalConstant _ -> "boolean";
       case MalNumber _ -> "number";
       case MalString _ -> "string";

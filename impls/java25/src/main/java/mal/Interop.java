@@ -226,9 +226,9 @@ class Interop {
       case MalMap(var value, _) -> mapToJava(value);
       case MalList(var value, _) -> value.stream().map(Interop::toJava).toList();
       case MalVector(var value, _) -> value.stream().map(Interop::toJava).toList();
-      case MalConstant(var value, _) when value.equals("true") -> true;
-      case MalConstant(var value, _) when value.equals("false") -> false;
-      case MalConstant(var value, _) when value.equals("nil") -> null;
+      case MalConstant(var value) when value.equals("true") -> true;
+      case MalConstant(var value) when value.equals("false") -> false;
+      case MalConstant(var value) when value.equals("nil") -> null;
       case MalWrapper(var value, _) -> value;
       case MalSequence seq -> toStream(seq);
       case MalFiber fiber -> fiber.future().thenApply(Interop::toJava);

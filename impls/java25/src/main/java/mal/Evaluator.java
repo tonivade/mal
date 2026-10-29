@@ -283,7 +283,7 @@ class Evaluator {
   }
 
   static boolean isTruthy(MalNode node) {
-    return !(node instanceof MalConstant(var name, _)
+    return !(node instanceof MalConstant(var name)
       && (name.equals("nil") || name.equals("false")));
   }
 

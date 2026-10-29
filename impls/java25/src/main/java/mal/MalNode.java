@@ -47,9 +47,9 @@ public sealed interface MalNode {
   MalSymbol CONS = symbol("cons");
   MalSymbol VEC = symbol("vec");
 
-  MalConstant NIL = new MalConstant("nil", null);
-  MalConstant TRUE = new MalConstant("true", null);
-  MalConstant FALSE = new MalConstant("false", null);
+  MalConstant NIL = new MalConstant("nil");
+  MalConstant TRUE = new MalConstant("true");
+  MalConstant FALSE = new MalConstant("false");
 
   MalNumber ZERO = number(0);
   MalNumber ONE = number(1);
@@ -58,26 +58,21 @@ public sealed interface MalNode {
   MalVector EMPTY_VECTOR = new MalVector(TreePVector.empty(), null);
   MalMap EMPTY_MAP = new MalMap(HashTreePMap.empty(), null);
 
-  record MalConstant(String name, MalNode meta) implements MalNode {
+  record MalConstant(String name) implements MalNode {
 
     public MalConstant {
       requireNonNull(name);
     }
 
     @Override
+    public MalNode meta() {
+      return NIL;
+    }
+
+    @Override
     public MalConstant withMeta(MalNode meta) {
-      return new MalConstant(name, meta);
-    }
-
-    // metadata doesn't take part in equality
-    @Override
-    public boolean equals(Object obj) {
-      return obj instanceof MalConstant(var other, _) && name.equals(other);
-    }
-
-    @Override
-    public int hashCode() {
-      return name.hashCode();
+      // a copy would be a different atom with its own state, like clojure atoms don't support it
+      throw new MalException("with-meta: not supported for constants");
     }
   }
 
@@ -903,7 +898,7 @@ public sealed interface MalNode {
     tokens.forEach(values::add);
     return values;
   }
-  
+
   // a persistent vector is immutable, so it can be shared instead of copied; the cast is safe
   // because a vector of a subtype of MalNode can only be read as MalNodes or copied by plus
   @SuppressWarnings("unchecked")

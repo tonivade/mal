@@ -15,7 +15,7 @@ public class MalException extends RuntimeException {
   private final MalNode node;
 
   public MalException(MalNode node, Throwable cause) {
-    super(cause);
+    super(null, cause, false, false);
     this.node = requireNonNull(node);
   }
 

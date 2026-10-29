@@ -35,7 +35,7 @@ class Printer {
   static Trampoline<String> safePrint(MalNode val, boolean pretty) {
     return more(() -> {
       return switch (val) {
-        case MalConstant(var name, _) -> done(name);
+        case MalConstant(var name) -> done(name);
         case MalSymbol(var name, _) -> done(name);
         case MalString(var value, _) when !pretty -> done(value);
         case MalString(var value, _) -> done("\"" + escape(value) + "\"");
