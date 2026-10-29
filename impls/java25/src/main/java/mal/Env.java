@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import mal.MalNode.MalSequence;
@@ -65,6 +67,15 @@ class Env {
       }
     }
     return null;
+  }
+
+  // the names defined in this env and its outer envs, used by the repl completion
+  public Set<String> names() {
+    var names = new TreeSet<String>();
+    for (var env = this; env != null; env = env.outer) {
+      names.addAll(env.map.keySet());
+    }
+    return names;
   }
 
   public void set(MalSymbol key, MalNode value) {

@@ -60,6 +60,8 @@ class StepA {
 
     rep("(println (str \"Mal [\" *host-language* \"]\"))");
 
+    Readline.completeFrom(ENV);
+
     while (true) {
       String line = null;
       try {

@@ -8,26 +8,31 @@ import static mal.MalNode.string;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import org.jline.reader.Candidate;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultHighlighter;
 import org.jline.reader.impl.DefaultParser;
-import org.jline.reader.impl.completer.StringsCompleter;
 import org.jline.reader.impl.history.DefaultHistory;
 
 class Readline {
+
+  // the env whose definitions are offered by tab completion, the core namespace until the
+  // repl sets its global env
+  private static Env env = Env.DEFAULT;
 
   private static final LineReader reader = LineReaderBuilder.builder()
     .variable(LineReader.HISTORY_FILE, System.getProperty("user.home") + "/.malhistory")
     .variable(LineReader.HISTORY_FILE_SIZE, 1000)
     .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
     .history(new DefaultHistory())
-    .completer(new StringsCompleter(completions()))
+    // the names are read on every tab, so new definitions are completed too
+    .completer((_, _, candidates) -> completions().forEach(name -> candidates.add(new Candidate(name))))
     .highlighter(new DefaultHighlighter())
     .parser(new MalParser())
     .build();
@@ -60,16 +65,17 @@ class Readline {
     }
   }
 
-  // generated from the core namespace and the special forms, so it can't get out of sync
-  private static List<String> completions() {
-    var names = new ArrayList<String>();
-    names.addAll(Core.NS.keySet());
+  // everything defined in the env, including the core namespace, plus the special forms
+  private static Set<String> completions() {
+    var names = env.names();
     names.addAll(Evaluator.specialForms());
-    // constants, the catch* part of try*, and what the steps define in mal or in their own env
-    names.addAll(List.of("nil", "true", "false", "catch*", "eval", "not", "load-file", "cond",
-      "*ARGV*", "*host-language*"));
-    names.sort(null);
+    // constants and the catch* part of try* are not defined anywhere
+    names.addAll(List.of("nil", "true", "false", "catch*"));
     return names;
+  }
+
+  static void completeFrom(Env env) {
+    Readline.env = env;
   }
 
   static String readline(String prompt) {
