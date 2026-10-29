@@ -91,7 +91,7 @@ class Interop {
   }
 
   // the overload is chosen when it's called, using the arguments: among the methods that
-  // accept them, the one that needs the fewest conversions, the first one if there is a tie
+  // accept them, the one whose conversions lose the least, see select
   private static Trampoline<MalNode> invoke(String name, List<? extends Executable> candidates, Object[] arguments,
       Function<Object, MalNode> result) {
     var call = select(candidates, arguments)
@@ -111,13 +111,15 @@ class Interop {
     if (candidates.size() == 1) {
       return prepare(candidates.getFirst(), arguments);
     }
+    // the cheapest conversion wins, see cost; a tie is broken by the signature, because the
+    // order of getDeclaredMethods is not specified and the choice must not depend on the jvm
     return candidates.stream()
         .map(candidate -> prepare(candidate, arguments))
         .flatMap(Optional::stream)
-        .min(comparingInt(Call::conversions));
+        .min(comparingInt(Call::cost).thenComparing(call -> call.executable().toString()));
   }
 
-  private record Call(Executable executable, Object target, Object[] arguments, int conversions) {
+  private record Call(Executable executable, Object target, Object[] arguments, int cost) {
 
     Object invoke() throws ReflectiveOperationException {
       if (executable instanceof Constructor<?> constructor) {
@@ -150,7 +152,7 @@ class Interop {
       return Optional.empty();
     }
     var converted = new Object[params.length];
-    int conversions = 0;
+    int cost = 0;
     for (int i = 0; i < params.length; i++) {
       // nil is passed as null, which no primitive parameter accepts
       if (params[i] == null) {
@@ -163,12 +165,30 @@ class Interop {
       if (value.isEmpty()) {
         return Optional.empty();
       }
-      if (value.get() != params[i]) {
-        conversions++;
-      }
+      cost += cost(types[i], params[i], value.get());
       converted[i] = value.get();
     }
-    return Optional.of(new Call(executable, target, converted, conversions));
+    return Optional.of(new Call(executable, target, converted, cost));
+  }
+
+  // how much a conversion loses, close to the java rules: nothing when the value is passed as
+  // it is, double before the smaller integer types and float last, because they can lose digits,
+  // and an array or varargs last, like java tries varargs methods after the others
+  private static int cost(Class<?> type, Object arg, Object converted) {
+    if (converted == arg) {
+      return 0;
+    }
+    if (type.isArray()) {
+      return 2;
+    }
+    var boxed = BOXES.getOrDefault(type, type);
+    if (boxed == Integer.class || boxed == Short.class || boxed == Byte.class) {
+      return 2;
+    }
+    if (boxed == Float.class) {
+      return 3;
+    }
+    return 1;
   }
 
   static MalNode toMal(Object value) {
