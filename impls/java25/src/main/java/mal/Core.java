@@ -59,12 +59,18 @@ import mal.MalNode.MalWrapper;
 interface Core {
 
   static MalNode prn(MalList args) {
-    IO.println(args.values().stream().map(m -> print(m, true)).collect(joining(" ")));
+    var str = args.values().stream()
+        .map(m -> print(m, true))
+        .collect(joining(" "));
+    IO.println(str);
     return NIL;
   }
 
   static MalNode println(MalList args) {
-    IO.println(args.values().stream().map(m -> print(m, false)).collect(joining(" ")));
+    var str = args.values().stream()
+        .map(m -> print(m, false))
+        .collect(joining(" "));
+    IO.println(str);
     return NIL;
   }
 
@@ -159,19 +165,17 @@ interface Core {
   }
 
   static MalNode prStr(MalList args) {
-    var result = new StringBuilder();
-    for (var m : args) {
-      result.append(print(m, true)).append(" ");
-    }
-    return string(result.toString().trim());
+    var str = args.values().stream()
+        .map(m -> print(m, true))
+        .collect(joining(" "));
+    return string(str);
   }
 
   static MalNode str(MalList args) {
-    var result = new StringBuilder();
-    for (var m : args) {
-      result.append(print(m, false));
-    }
-    return string(result.toString());
+    var str = args.values().stream()
+        .map(m -> print(m, false))
+        .collect(joining());
+    return string(str);
   }
 
   static MalNode readString(MalList args) {
