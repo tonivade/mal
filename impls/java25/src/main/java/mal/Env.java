@@ -22,6 +22,10 @@ class Env {
   // the root env, it has no outer env
   public static final Env DEFAULT = new Env(null, Core.NS);
 
+  // isDebugEval runs on every eval step, so the lookup is skipped until DEBUG-EVAL is
+  // defined somewhere; once set it stays set, even if DEBUG-EVAL is later false
+  private static volatile boolean debugEvalDefined;
+
   private final Env outer;
   private final Map<String, MalNode> map;
 
@@ -42,9 +46,16 @@ class Env {
   public Env(Env outer, Map<String, MalNode> map) {
     this.outer = outer;
     this.map = map;
+    // function params and catch* bindings come in the map
+    if (map.containsKey(MalNode.DEBUG_EVAL.name())) {
+      debugEvalDefined = true;
+    }
   }
 
   public boolean isDebugEval() {
+    if (!debugEvalDefined) {
+      return false;
+    }
     // looked up through the outer envs, so tracing also works inside function bodies,
     // but DEFAULT is skipped because the core namespace never defines DEBUG-EVAL
     for (var env = this; env != null && env != DEFAULT; env = env.outer) {
@@ -76,6 +87,9 @@ class Env {
   }
 
   public void set(MalSymbol key, MalNode value) {
+    if (key.name().equals(MalNode.DEBUG_EVAL.name())) {
+      debugEvalDefined = true;
+    }
     map.put(key.name(), value);
   }
 

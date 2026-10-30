@@ -7,13 +7,13 @@ package mal;
 import static java.util.function.Function.identity;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Iterator;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import org.pcollections.PVector;
-import org.pcollections.TreePVector;
 
 sealed interface Trampoline<T> {
 
@@ -75,7 +75,10 @@ sealed interface Trampoline<T> {
     Deque<Trampoline<?>> stack = new ArrayDeque<>();
 
     while (true) {
-      if (Thread.interrupted()) {
+      // isInterrupted is a plain read, interrupted takes a lock in a virtual thread to clear
+      // the flag, so the flag is cleared only when the evaluation stops
+      if (Thread.currentThread().isInterrupted()) {
+        Thread.interrupted();
         throw new Interrupted();
       }
       try {
@@ -128,15 +131,25 @@ sealed interface Trampoline<T> {
     return ta.flatMap(a -> tb.map(b -> mapper.apply(a, b)));
   }
 
-  static <T, R> Trampoline<PVector<R>> traverse(Iterable<? extends T> list, Function<? super T, ? extends Trampoline<R>> mapper) {
-    Trampoline<PVector<R>> acc = done(TreePVector.<R>empty());
-    for (T current : list) {
-      acc = zip(acc, mapper.apply(current), PVector::plus);
-    }
-    return acc;
+  static <T, R> Trampoline<List<R>> traverse(Iterable<? extends T> list, Function<? super T, ? extends Trampoline<R>> mapper) {
+    // the list and the iterator are created on every run, so the trampoline can be run again
+    return more(() -> traverse(list.iterator(), mapper, new ArrayList<>()));
   }
 
-  static <T> Trampoline<PVector<T>> sequence(Iterable<? extends Trampoline<T>> list) {
+  // one flatMap per element, each element is evaluated after the previous one, so the results
+  // can be added to a mutable list instead of copying a persistent vector
+  private static <T, R> Trampoline<List<R>> traverse(Iterator<? extends T> iterator,
+      Function<? super T, ? extends Trampoline<R>> mapper, List<R> result) {
+    if (!iterator.hasNext()) {
+      return done(result);
+    }
+    return mapper.apply(iterator.next()).flatMap(value -> {
+      result.add(value);
+      return traverse(iterator, mapper, result);
+    });
+  }
+
+  static <T> Trampoline<List<T>> sequence(Iterable<? extends Trampoline<T>> list) {
     return traverse(list, identity());
   }
 }

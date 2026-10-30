@@ -130,18 +130,27 @@ class Evaluator {
       case MalMacro(var lambda, _) ->
         lambda.apply(toList(form.tail())).flatMap(next -> safeEval(next, env));
       case MalFunction(var lambda, _) ->
-        traverse(form.tail(), m -> safeEval(m, env)).flatMap(args -> lambda.apply(list(args)));
+        traverse(arguments(form), m -> safeEval(m, env)).flatMap(args -> lambda.apply(list(args)));
       default -> throw new MalException("not a function: " + print(callable, true));
     });
   }
 
+  // the elements of a call after the function, form.tail() would copy the whole form
+  private static Iterable<MalNode> arguments(MalSequence form) {
+    return () -> {
+      var iterator = form.iterator();
+      iterator.next();
+      return iterator;
+    };
+  }
+
   private static Trampoline<MalNode> evalMethodCall(String method, MalSequence form, Env env) {
-    return traverse(form.tail(), m -> safeEval(m, env))
+    return traverse(arguments(form), m -> safeEval(m, env))
       .flatMap(args -> {
         if (args.isEmpty() || !(args.get(0) instanceof MalValue<?> value)) {
           throw new MalException("expected an object to call method: " + method);
         }
-        return value.call(method, list(args.minus(0)));
+        return value.call(method, list(args.subList(1, args.size())));
       });
   }
 
