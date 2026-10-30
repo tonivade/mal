@@ -31,7 +31,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.pcollections.PVector;
-import org.pcollections.TreePVector;
 
 class Reader {
 
@@ -140,7 +139,7 @@ class Reader {
       throw new MalException("expected '" + start + "'");
     }
 
-    return readElements(reader, end, TreePVector.empty());
+    return readElements(reader, end, ArrayPVector.empty());
   }
 
   // the elements are accumulated in a persistent vector, so each step returns a new one

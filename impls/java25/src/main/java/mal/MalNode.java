@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 import org.pcollections.HashTreePMap;
 import org.pcollections.PMap;
 import org.pcollections.PVector;
-import org.pcollections.TreePVector;
 
 public sealed interface MalNode {
 
@@ -56,8 +55,8 @@ public sealed interface MalNode {
   MalNumber ZERO = number(0);
   MalNumber ONE = number(1);
 
-  MalList EMPTY_LIST = new MalList(TreePVector.empty(), null);
-  MalVector EMPTY_VECTOR = new MalVector(TreePVector.empty(), null);
+  MalList EMPTY_LIST = new MalList(ArrayPVector.empty(), null);
+  MalVector EMPTY_VECTOR = new MalVector(ArrayPVector.empty(), null);
   MalMap EMPTY_MAP = new MalMap(HashTreePMap.empty(), null);
 
   record MalConstant(String name) implements MalNode {
@@ -905,7 +904,7 @@ public sealed interface MalNode {
     if (tokens instanceof PVector<?> vector) {
       return (PVector<MalNode>) vector;
     }
-    return TreePVector.from(tokens);
+    return ArrayPVector.from(tokens);
   }
 
   private static Map<MalKey, MalNode> toMap(Iterable<MalNode> tokens) {

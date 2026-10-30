@@ -403,7 +403,7 @@ interface Core {
   static Trampoline<MalNode> apply(MalList args) {
     var function = (MalWithLambda) args.get(0);
     var remaining = args.tail();
-    var arguments = TreePVector.<MalNode>empty();
+    PVector<MalNode> arguments = ArrayPVector.empty();
 
     for (var i = 0; i < remaining.size() - 1; i++) {
       arguments = arguments.plus(remaining.get(i));
