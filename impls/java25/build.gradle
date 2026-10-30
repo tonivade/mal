@@ -62,6 +62,13 @@ shadowJar {
 graalvmNative {
   toolchainDetection = true
   binaries {
+    all {
+      // native-image comes from a graalvm jdk found by gradle, not from GRAALVM_HOME
+      javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+        nativeImageCapable = true
+      })
+    }
     main {
       imageName = "mal"
       mainClass = "mal.App"
