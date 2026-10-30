@@ -9,7 +9,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-@Command(name = "mal", version = "0.1-SNAPSHOT", description = "mal language repl")
+@Command(name = "mal", version = "0.1-SNAPSHOT", description = "mal language repl", mixinStandardHelpOptions = true)
 public class App implements Runnable {
 
   @Option(names = "--step", description = "step to execute", defaultValue = "stepA_mal")

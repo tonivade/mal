@@ -24,6 +24,8 @@ tasks.withType(JavaCompile) {
   options.compilerArgs << '-Xlint:unchecked'
   options.compilerArgs << '-Xlint:rawtypes'
   options.compilerArgs << "-Aproject=${project.group}/${project.name}"
+  // the generated proxy-config.json is empty and graalvm warns that the format is deprecated
+  options.compilerArgs << '-Adisable.proxy.config=true'
   options.release = 25
 }
  
