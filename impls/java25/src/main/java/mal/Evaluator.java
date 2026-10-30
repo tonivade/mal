@@ -55,6 +55,8 @@ class Evaluator {
 
   private static final String DOT = ".";
 
+  private static final MacroCache MACROS = new MacroCache();
+
   private static final Executor executor = Executors.newVirtualThreadPerTaskExecutor();
 
   @FunctionalInterface
@@ -133,11 +135,21 @@ class Evaluator {
 
   private static Trampoline<MalNode> evalApply(MalSequence form, Env env) {
     return safeEval(form.get(0), env).<MalNode>flatMap(callable -> switch (callable) {
-      case MalMacro(var lambda, _) ->
-        lambda.apply(toList(form.tail())).flatMap(next -> safeEval(next, env));
+      case MalMacro macro -> expand(macro, form).flatMap(next -> safeEval(next, env));
       case MalFunction(var lambda, _) ->
         traverse(arguments(form), m -> safeEval(m, env)).flatMap(args -> lambda.apply(list(args)));
       default -> throw new MalException("not a function: " + print(callable, true));
+    });
+  }
+
+  private static Trampoline<MalNode> expand(MalMacro macro, MalSequence form) {
+    var cached = MACROS.get(form, macro);
+    if (cached != null) {
+      return done(cached);
+    }
+    return macro.lambda().apply(toList(form.tail())).map(expansion -> {
+      MACROS.put(form, macro, expansion);
+      return expansion;
     });
   }
 
