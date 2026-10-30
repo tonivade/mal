@@ -29,7 +29,6 @@ import static mal.Trampoline.sequence;
 import static mal.Trampoline.traverse;
 import static mal.Trampoline.zip;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -182,7 +181,7 @@ class Evaluator {
     if (bindings.size() % 2 != 0) {
       throw new MalException("let*: odd number of binding forms");
     }
-    var newEnv = new Env(env);
+    var newEnv = Env.local(env);
     List<Trampoline<MalNode>> later = new ArrayList<>();
     for (var iterator = bindings.iterator(); iterator.hasNext();) {
       var next = iterator.next();
@@ -224,7 +223,8 @@ class Evaluator {
     var binding = symbolAt(catchForm, 1);
     return more(() -> safeEval(body, env)).recover(e -> {
       MalNode thrown = e instanceof MalException me ? me.getNode() : error(e);
-      var newEnv = new Env(env, new HashMap<>(Map.of(binding.name(), thrown)));
+      var newEnv = Env.local(env);
+      newEnv.set(binding, thrown);
       return safeEval(catchForm.get(2), newEnv);
     });
   }
@@ -243,7 +243,7 @@ class Evaluator {
     arity(form, 2, 2);
     var params = sequenceAt(form, 1);
     var body = form.get(2);
-    return done(function(args -> safeEval(body, new Env(env, params, args))));
+    return done(function(args -> safeEval(body, Env.local(env, params, args))));
   }
 
   private static Trampoline<MalNode> evalQuote(MalSequence form, Env env) {
@@ -296,7 +296,7 @@ class Evaluator {
   private static Trampoline<MalNode> evalSpawn(MalSequence form, Env env) {
     arity(form, 1, 1);
     var body = form.get(1);
-    var newEnv = new Env(env);
+    var newEnv = Env.local(env);
     return done(fork(() -> ((MalFunction) eval(body, newEnv)).run(EMPTY_LIST), executor));
   }
 

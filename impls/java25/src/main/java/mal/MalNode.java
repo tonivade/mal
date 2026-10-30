@@ -243,7 +243,9 @@ public sealed interface MalNode {
   record MalSymbol(String name, MalNode meta) implements MalKey {
 
     public MalSymbol {
-      requireNonNull(name);
+      // interned, so an env can compare the names with == and String.equals takes
+      // its shortcut when two symbols have the same name
+      name = name.intern();
     }
 
     @Override

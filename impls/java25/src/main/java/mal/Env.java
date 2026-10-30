@@ -7,7 +7,8 @@ package mal;
 import static mal.MalNode.list;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,39 +18,38 @@ import java.util.concurrent.ConcurrentHashMap;
 import mal.MalNode.MalSequence;
 import mal.MalNode.MalSymbol;
 
-class Env {
+// the global env and the core namespace keep their definitions in a map compared by equals,
+// the envs of functions, let*, catch* and spawn in an identity map, because their names
+// always come from symbols
+sealed abstract class Env {
 
   // the root env, it has no outer env
-  public static final Env DEFAULT = new Env(null, Core.NS);
+  public static final Env DEFAULT = new MapEnv(null, Core.NS);
 
   // isDebugEval runs on every eval step, so the lookup is skipped until DEBUG-EVAL is
   // defined somewhere; once set it stays set, even if DEBUG-EVAL is later false
   private static volatile boolean debugEvalDefined;
 
   private final Env outer;
-  private final Map<String, MalNode> map;
+
+  private Env(Env outer) {
+    this.outer = outer;
+  }
 
   // the global env is concurrent because fibers created with spawn can read it,
   // and define into it with eval, while other threads are running
-  public Env() {
-    this(DEFAULT, new ConcurrentHashMap<>());
+  static Env global() {
+    return new MapEnv(DEFAULT, new ConcurrentHashMap<>());
   }
 
-  public Env(Env outer) {
-    this(outer, new HashMap<>());
+  static Env local(Env outer) {
+    return new LocalEnv(outer, 4);
   }
 
-  public Env(Env outer, MalSequence binds, MalSequence exprs) {
-    this(outer, toMap(binds, exprs));
-  }
-
-  public Env(Env outer, Map<String, MalNode> map) {
-    this.outer = outer;
-    this.map = map;
-    // function params and catch* bindings come in the map
-    if (map.containsKey(MalNode.DEBUG_EVAL.name())) {
-      debugEvalDefined = true;
-    }
+  static Env local(Env outer, MalSequence binds, MalSequence exprs) {
+    var env = new LocalEnv(outer, binds.size());
+    env.bind(binds, exprs);
+    return env;
   }
 
   public boolean isDebugEval() {
@@ -59,7 +59,7 @@ class Env {
     // looked up through the outer envs, so tracing also works inside function bodies,
     // but DEFAULT is skipped because the core namespace never defines DEBUG-EVAL
     for (var env = this; env != null && env != DEFAULT; env = env.outer) {
-      var debugEval = env.map.get(MalNode.DEBUG_EVAL.name());
+      var debugEval = env.find(MalNode.DEBUG_EVAL.name());
       if (debugEval != null) {
         return Evaluator.isTruthy(debugEval);
       }
@@ -67,9 +67,10 @@ class Env {
     return false;
   }
 
+  // the key must be the name of a symbol, local envs compare the interned names with ==
   public MalNode get(String key) {
     for (var env = this; env != null; env = env.outer) {
-      var value = env.map.get(key);
+      var value = env.find(key);
       if (value != null) {
         return value;
       }
@@ -81,49 +82,102 @@ class Env {
   public Set<String> names() {
     var names = new TreeSet<String>();
     for (var env = this; env != null; env = env.outer) {
-      names.addAll(env.map.keySet());
+      env.addNames(names);
     }
     return names;
   }
 
   public void set(MalSymbol key, MalNode value) {
-    if (key.name().equals(MalNode.DEBUG_EVAL.name())) {
+    if (key.name() == MalNode.DEBUG_EVAL.name()) {
       debugEvalDefined = true;
     }
-    map.put(key.name(), value);
+    put(key.name(), value);
   }
 
-  private static Map<String, MalNode> toMap(MalSequence binds, MalSequence exprs) {
-    var i = binds.iterator();
-    var j = exprs.iterator();
+  // the value of a name defined in this env, without looking in the outer envs
+  abstract MalNode find(String key);
 
-    Map<String, MalNode> result = new HashMap<>();
+  abstract void put(String key, MalNode value);
 
-    while (i.hasNext()) {
-      var bind = (MalSymbol) i.next();
+  abstract void addNames(Collection<String> names);
 
-      if (bind.name().equals("&")) {
-        if (!i.hasNext()) {
-          throw new MalException("invalid parameters: & must be followed by a symbol");
+  private static final class MapEnv extends Env {
+
+    private final Map<String, MalNode> map;
+
+    private MapEnv(Env outer, Map<String, MalNode> map) {
+      super(outer);
+      this.map = map;
+    }
+
+    @Override
+    MalNode find(String key) {
+      return map.get(key);
+    }
+
+    @Override
+    void put(String key, MalNode value) {
+      map.put(key, value);
+    }
+
+    @Override
+    void addNames(Collection<String> names) {
+      names.addAll(map.keySet());
+    }
+  }
+
+  // the names come from symbols, that are interned, so they are compared with ==
+  private static final class LocalEnv extends Env {
+
+    private final IdentityHashMap<String, MalNode> map;
+
+    private LocalEnv(Env outer, int capacity) {
+      super(outer);
+      this.map = new IdentityHashMap<>(capacity);
+    }
+
+    @Override
+    MalNode find(String key) {
+      return map.get(key);
+    }
+
+    @Override
+    void put(String key, MalNode value) {
+      map.put(key, value);
+    }
+
+    @Override
+    void addNames(Collection<String> names) {
+      names.addAll(map.keySet());
+    }
+
+    private void bind(MalSequence binds, MalSequence exprs) {
+      var i = binds.iterator();
+      var j = exprs.iterator();
+
+      while (i.hasNext()) {
+        var bind = (MalSymbol) i.next();
+
+        if (bind.name().equals("&")) {
+          if (!i.hasNext()) {
+            throw new MalException("invalid parameters: & must be followed by a symbol");
+          }
+          bind = (MalSymbol) i.next();
+          List<MalNode> list = new ArrayList<>();
+          while (j.hasNext()) {
+            list.add(j.next());
+          }
+          set(bind, list(list));
+        } else if (j.hasNext()) {
+          set(bind, j.next());
+        } else {
+          throw new MalException("missing arg: " + bind.name());
         }
-        bind = (MalSymbol) i.next();
-        List<MalNode> list = new ArrayList<>();
-        while (j.hasNext()) {
-          list.add(j.next());
-        }
-        result.put(bind.name(), list(list));
-      } else if (j.hasNext()) {
-        var expr = j.next();
-        result.put(bind.name(), expr);
-      } else {
-        throw new MalException("missing arg: " + bind.name());
+      }
+
+      if (j.hasNext()) {
+        throw new MalException("too many args: expected " + binds.size() + " but got " + exprs.size());
       }
     }
-
-    if (j.hasNext()) {
-      throw new MalException("too many args: expected " + binds.size() + " but got " + exprs.size());
-    }
-
-    return result;
   }
 }

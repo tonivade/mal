@@ -15,7 +15,7 @@ import org.jline.reader.UserInterruptException;
 
 class Step4 {
 
-  private static final Env ENV = new Env();
+  private static final Env ENV = Env.global();
 
   static String rep(String input) {
     return print(eval(read(input), ENV), true);

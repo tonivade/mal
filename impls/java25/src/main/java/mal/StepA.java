@@ -27,7 +27,7 @@ import mal.MalNode.MalFiber;
 
 class StepA {
 
-  private static final Env ENV = new Env();
+  private static final Env ENV = Env.global();
 
   static void setDebug(boolean debug) {
     if (debug) {

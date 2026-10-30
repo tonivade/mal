@@ -16,7 +16,7 @@ import org.jline.reader.UserInterruptException;
 class Step2 {
 
   static String rep(String input) {
-    return print(eval(read(input), new Env()), true);
+    return print(eval(read(input), Env.global()), true);
   }
 
   static void main(String... args) {
