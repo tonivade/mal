@@ -6,6 +6,7 @@ package mal;
 
 import static java.util.Objects.requireNonNull;
 import static mal.Trampoline.done;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 import org.pcollections.HashTreePMap;
 import org.pcollections.PMap;
 import org.pcollections.PVector;
@@ -71,7 +73,7 @@ public sealed interface MalNode {
 
     @Override
     public MalConstant withMeta(MalNode meta) {
-      // a copy would be a different atom with its own state, like clojure atoms don't support it
+      // nil, true and false must stay single values, they are compared by name
       throw new MalException("with-meta: not supported for constants");
     }
   }
