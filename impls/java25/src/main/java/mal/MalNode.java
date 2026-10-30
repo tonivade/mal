@@ -125,70 +125,71 @@ public sealed interface MalNode {
     }
   }
 
-  record MalNumber(Long value, MalNode meta) implements MalValue<Long> {
+  record MalNumber(long val, MalNode meta) implements MalValue<Long> {
 
-    public MalNumber {
-      requireNonNull(value);
+    @Override
+    public Long value() {
+      return val;
     }
 
     public MalNumber sum(MalNumber other) {
-      return new MalNumber(this.value + other.value, null);
+      return new MalNumber(this.val + other.val, null);
     }
 
     public MalNumber sub(MalNumber other) {
-      return new MalNumber(this.value - other.value, null);
+      return new MalNumber(this.val - other.val, null);
     }
 
     public MalNumber mul(MalNumber other) {
-      return new MalNumber(this.value * other.value, null);
+      return new MalNumber(this.val * other.val, null);
     }
 
     public MalNumber div(MalNumber other) {
-      return new MalNumber(this.value / other.value, null);
+      return new MalNumber(this.val / other.val, null);
     }
 
     public MalNumber mod(MalNumber other) {
-      return new MalNumber(this.value % other.value, null);
+      return new MalNumber(this.val % other.val, null);
     }
 
     public boolean gt(MalNumber other) {
-      return this.value > other.value;
+      return this.val > other.val;
     }
 
     public boolean gte(MalNumber other) {
-      return this.value >= other.value;
+      return this.val >= other.val;
     }
 
     public boolean lt(MalNumber other) {
-      return this.value < other.value;
+      return this.val < other.val;
     }
 
     public boolean lte(MalNumber other) {
-      return this.value <= other.value;
+      return this.val <= other.val;
     }
 
     public long asLong() {
-      return value;
+      return val;
     }
 
     public int asInt() {
-      return value.intValue();
+      return (int) val;
     }
 
     @Override
     public MalNumber withMeta(MalNode meta) {
-      return new MalNumber(value, meta);
+      return new MalNumber(val, meta);
     }
 
     // metadata doesn't take part in equality
     @Override
     public boolean equals(Object obj) {
-      return obj instanceof MalNumber(var other, _) && value.equals(other);
+      return obj instanceof MalNumber(var other, _) && val == other;
     }
 
     @Override
     public int hashCode() {
-      return value.hashCode();
+      return Long.hashCode(val);
     }
   }
 
