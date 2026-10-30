@@ -4,6 +4,7 @@
  */
 package mal;
 
+import static java.util.Collections.unmodifiableSet;
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static mal.MalNode.CONCAT;
@@ -28,13 +29,17 @@ import static mal.Trampoline.more;
 import static mal.Trampoline.sequence;
 import static mal.Trampoline.traverse;
 import static mal.Trampoline.zip;
+
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
 import org.pcollections.PVector;
+
 import mal.MalNode.MalConstant;
 import mal.MalNode.MalFunction;
 import mal.MalNode.MalKey;
@@ -57,7 +62,9 @@ class Evaluator {
     Trampoline<MalNode> eval(MalSequence form, Env env);
   }
 
-  private static final Map<String, SpecialForm> SPECIAL_FORMS = Map.ofEntries(
+  // symbol names are interned, and so are these literals, so the special forms are found
+  // by identity, without hashing or comparing the characters of the name
+  private static final IdentityHashMap<String, SpecialForm> SPECIAL_FORMS = new IdentityHashMap<>(Map.ofEntries(
     entry("def!", Evaluator::evalDef),
     entry("defmacro!", Evaluator::evalDefMacro),
     entry("let*", Evaluator::evalLet),
@@ -71,10 +78,10 @@ class Evaluator {
     entry("new", Evaluator::evalNew),
     entry("lazy-seq", Evaluator::evalLazySeq),
     entry("spawn", Evaluator::evalSpawn)
-  );
+  ));
 
   static Set<String> specialForms() {
-    return SPECIAL_FORMS.keySet();
+    return unmodifiableSet(SPECIAL_FORMS.keySet());
   }
 
   static MalNode eval(MalNode ast, Env env) {
