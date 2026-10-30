@@ -560,16 +560,9 @@ public sealed interface MalNode {
     @Override
     public MalSequence seq() {
       if (!unwrapped) {
-        lock.lock();
-        try {
-          if (!unwrapped) {
-            // only when seq is called the lazy-seq is unwrapped completely
-            sequence = unwrap(realize()).seq();
-            unwrapped = true;
-          }
-        } finally {
-          lock.unlock();
-        }
+        // only when seq is called the lazy-seq is unwrapped completely
+        sequence = unwrap(realize()).seq();
+        unwrapped = true;
       }
       return sequence;
     }
@@ -601,18 +594,22 @@ public sealed interface MalNode {
     }
 
     private MalSequence realize() {
-      if (!realized) {
-        lock.lock();
-        try {
-          if (!realized) {
-            // it realizes the lazy-seq but without unwrapping nested lazies
-            value = thunk.get();
-            thunk = null;
-            realized = true;
-          }
-        } finally {
-          lock.unlock();
+      if (realized) {
+        return (MalSequence) value;
+      }
+      if (lock.isHeldByCurrentThread()) {
+        throw new MalException("re-entrant lazy-seq");
+      }
+      lock.lock();
+      try {
+        if (!realized) {
+          // it realizes the lazy-seq but without unwrapping nested lazies
+          value = thunk.get();
+          thunk = null;
+          realized = true;
         }
+      } finally {
+        lock.unlock();
       }
       return (MalSequence) value;
     }

@@ -1036,6 +1036,7 @@ class MalTest {
     assertEquals("3", StepA.rep("(count (upto 0 3))"));
 
     assertThrows(MalException.class, () -> StepA.rep("(count (lazy-seq (+ 1 2)))"));
+    assertThrows(MalException.class, () -> StepA.rep("(def! x (lazy-seq (first x)))"));
   }
 
   @Test
