@@ -73,6 +73,8 @@ graalvmNative {
       // jline's ffm terminal calls restricted methods, the jar enables it in the manifest
       // but native-image builds from the classpath and ignores it
       buildArgs.add('--enable-native-access=ALL-UNNAMED')
+      buildArgs.add('-J-Xms2G')
+      buildArgs.add('-J-Xmx2G')
     }
     main {
       imageName = "mal"
