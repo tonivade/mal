@@ -1101,6 +1101,10 @@ class MalTest {
     assertEquals("()", StepA.rep("(concat \"\" \"\")"));
     assertEquals("(\"a\" \"b\" \"c\")", StepA.rep("(concat \"abc\")"));
 
+    assertEquals("(\"a\" \"b\" 1)", StepA.rep("(concat \"ab\" [1])"));
+    assertEquals("(1 2)", StepA.rep("(concat nil [1 2])"));
+    assertThrows(MalException.class, () -> StepA.rep("(concat 1)"));
+
     assertEquals("()", StepA.rep("(concat {})"));
     assertEquals("()", StepA.rep("(concat {} {})"));
     assertEquals("([:a \"A\"] [:b \"B\"])", StepA.rep("(concat {:a \"A\" :b \"B\"})"));
