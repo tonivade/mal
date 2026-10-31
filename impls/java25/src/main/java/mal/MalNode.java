@@ -320,7 +320,7 @@ public sealed interface MalNode {
           awaitChildren();
           future.complete(result);
         }
-      } catch (Throwable e) {
+      } catch (RuntimeException e) {
         // nobody would wait for the children of a failed fiber
         children.forEach(MalFiber::cancel);
         future.completeExceptionally(e);
