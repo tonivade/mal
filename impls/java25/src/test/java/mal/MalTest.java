@@ -1062,6 +1062,23 @@ class MalTest {
     assertEquals("\"fiber error\"", StepA.rep(
         "(try* (join (spawn (fn* [] (throw \"fiber error\")))) (catch* e e))"));
 
+    // a child failure does not fail the parent, but the parent waits for it
+    StepA.rep("(def! child-finished (atom false))");
+    assertEquals("42", StepA.rep("""
+        (join
+          (spawn
+            (fn* []
+              (do
+                (spawn
+                  (fn* []
+                    (do
+                      (sleep 1)
+                      (reset! child-finished true)
+                      (throw "child error"))))
+                42))))
+        """));
+    assertEquals("true", StepA.rep("@child-finished"));
+
     // cancelling a fiber cancels the fibers it spawned, and theirs
     StepA.rep("(def! nested (atom 0))");
     StepA.rep("(def! busy-nested (fn* [] (do (swap! nested (fn* [x] (+ x 1))) (busy-nested))))");
