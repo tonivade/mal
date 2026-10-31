@@ -127,10 +127,18 @@ public sealed interface MalNode {
 
   final class MalNumber implements MalValue<Long> {
 
+    private static final MalNumber[] CACHE = new MalNumber[256];
+
+    static {
+      for (int i = -128; i < 128; i++) {
+        CACHE[i + 128] = new MalNumber(i, null);
+      }
+    }
+
     private final long value;
     private final MalNode meta;
 
-    public MalNumber(long value, MalNode meta) {
+    private MalNumber(long value, MalNode meta) {
       this.value = value;
       this.meta = meta;
     }
@@ -146,23 +154,23 @@ public sealed interface MalNode {
     }
 
     public MalNumber sum(MalNumber other) {
-      return new MalNumber(this.value + other.value, null);
+      return number(this.value + other.value);
     }
 
     public MalNumber sub(MalNumber other) {
-      return new MalNumber(this.value - other.value, null);
+      return number(this.value - other.value);
     }
 
     public MalNumber mul(MalNumber other) {
-      return new MalNumber(this.value * other.value, null);
+      return number(this.value * other.value);
     }
 
     public MalNumber div(MalNumber other) {
-      return new MalNumber(this.value / other.value, null);
+      return number(this.value / other.value);
     }
 
     public MalNumber mod(MalNumber other) {
-      return new MalNumber(this.value % other.value, null);
+      return number(this.value % other.value);
     }
 
     public boolean gt(MalNumber other) {
@@ -852,6 +860,9 @@ public sealed interface MalNode {
   }
 
   static MalNumber number(long value) {
+    if (value >= -128 && value < 128) {
+      return MalNumber.CACHE[(int) value + 128];
+    }
     return new MalNumber(value, null);
   }
 
