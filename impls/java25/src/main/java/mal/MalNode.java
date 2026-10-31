@@ -121,75 +121,93 @@ public sealed interface MalNode {
 
     @Override
     public String toString() {
-      return "MalAtom[value=" + value.get() + "]";
+      return "MalAtom[value=%s]".formatted(value.get());
     }
   }
 
-  record MalNumber(long val, MalNode meta) implements MalValue<Long> {
+  final class MalNumber implements MalValue<Long> {
+
+    private final long value;
+    private final MalNode meta;
+
+    public MalNumber(long value, MalNode meta) {
+      this.value = value;
+      this.meta = meta;
+    }
 
     @Override
     public Long value() {
-      return val;
+      return value;
+    }
+
+    @Override
+    public MalNode meta() {
+      return meta;
     }
 
     public MalNumber sum(MalNumber other) {
-      return new MalNumber(this.val + other.val, null);
+      return new MalNumber(this.value + other.value, null);
     }
 
     public MalNumber sub(MalNumber other) {
-      return new MalNumber(this.val - other.val, null);
+      return new MalNumber(this.value - other.value, null);
     }
 
     public MalNumber mul(MalNumber other) {
-      return new MalNumber(this.val * other.val, null);
+      return new MalNumber(this.value * other.value, null);
     }
 
     public MalNumber div(MalNumber other) {
-      return new MalNumber(this.val / other.val, null);
+      return new MalNumber(this.value / other.value, null);
     }
 
     public MalNumber mod(MalNumber other) {
-      return new MalNumber(this.val % other.val, null);
+      return new MalNumber(this.value % other.value, null);
     }
 
     public boolean gt(MalNumber other) {
-      return this.val > other.val;
+      return this.value > other.value;
     }
 
     public boolean gte(MalNumber other) {
-      return this.val >= other.val;
+      return this.value >= other.value;
     }
 
     public boolean lt(MalNumber other) {
-      return this.val < other.val;
+      return this.value < other.value;
     }
 
     public boolean lte(MalNumber other) {
-      return this.val <= other.val;
+      return this.value <= other.value;
     }
 
     public long asLong() {
-      return val;
+      return value;
     }
 
     public int asInt() {
-      return (int) val;
+      return (int) value;
     }
 
     @Override
     public MalNumber withMeta(MalNode meta) {
-      return new MalNumber(val, meta);
+      return new MalNumber(value, meta);
     }
 
     // metadata doesn't take part in equality
     @Override
     public boolean equals(Object obj) {
-      return obj instanceof MalNumber(var other, _) && val == other;
+      return obj instanceof MalNumber other && value == other.value;
     }
 
     @Override
     public int hashCode() {
-      return Long.hashCode(val);
+      return Long.hashCode(value);
+    }
+
+    @Override
+    public String toString() {
+      return "MalNumber[value=%s,meta=%s]".formatted(value, meta);
     }
   }
 

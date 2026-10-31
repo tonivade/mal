@@ -222,7 +222,7 @@ class Interop {
       case MalString(var value, _) -> value;
       case MalSymbol(var value, _) -> value;
       case MalKeyword(var value, _) -> value;
-      case MalNumber(var value, _) -> value;
+      case MalNumber number -> number.asLong();
       case MalMap(var value, _) -> mapToJava(value);
       case MalList(var value, _) -> value.stream().map(Interop::toJava).toList();
       case MalVector(var value, _) -> value.stream().map(Interop::toJava).toList();
