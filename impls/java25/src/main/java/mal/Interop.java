@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -67,7 +68,8 @@ class Interop {
   }
 
   private static MalLambda methodNonCached(String clazz, String name, int numberOfArgs) {
-    var methods = getClass(clazz).map(c -> getMethods(c, name, numberOfArgs)).orElse(List.of());
+    var methods = resolve(clazz + "." + name,
+        () -> getClass(clazz).map(c -> getMethods(c, name, numberOfArgs)).orElse(List.of()));
     if (methods.isEmpty()) {
       throw new MalException("method not found " + clazz + "." + name);
     }
@@ -82,7 +84,8 @@ class Interop {
   }
 
   private static MalLambda constructorNonCached(String clazz, int numberOfArgs) {
-    var constructors = getClass(clazz).map(c -> getConstructors(c, numberOfArgs)).orElse(List.of());
+    var constructors = resolve(clazz + ".<init>",
+        ()  -> getClass(clazz).map(c -> getConstructors(c, numberOfArgs)).orElse(List.of()));
     if (constructors.isEmpty()) {
       throw new MalException("constructor not found for class " + clazz);
     }
@@ -90,13 +93,23 @@ class Interop {
     return args -> invoke(clazz + ".<init>", constructors, toArgs(args), MalNode::wrap);
   }
 
+  private static <T> T resolve(String name, Supplier<T> resolver) {
+    try {
+      return resolver.get();
+    } catch (LinkageError e) {
+      throw new MalException(
+          "error resolving " + name + ": " + e.getClass().getSimpleName(), e);
+    }
+  }
+
   // the overload is chosen when it's called, using the arguments: among the methods that
   // accept them, the one whose conversions lose the least, see select
   private static Trampoline<MalNode> invoke(String name, List<? extends Executable> candidates, Object[] arguments,
       Function<Object, MalNode> result) {
-    var call = select(candidates, arguments)
-        .orElseThrow(() -> new MalException("no matching overload of " + name + " for arguments: " + typeNames(arguments)));
     try {
+      var call = select(candidates, arguments)
+          .orElseThrow(
+              () -> new MalException("no matching overload of " + name + " for arguments: " + typeNames(arguments)));
       return done(result.apply(call.invoke()));
     } catch (InvocationTargetException e) {
       // the exception thrown by the java method itself, the reflection wrapper says nothing
