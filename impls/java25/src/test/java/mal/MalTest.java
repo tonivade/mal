@@ -1058,6 +1058,10 @@ class MalTest {
     assertEquals("42", StepA.rep("(join finished)"));
     assertEquals("false", StepA.rep("(cancel finished)"));
 
+    // an exception raised inside a fiber is propagated by join and can be caught by try*
+    assertEquals("\"fiber error\"", StepA.rep(
+        "(try* (join (spawn (fn* [] (throw \"fiber error\")))) (catch* e e))"));
+
     // cancelling a fiber cancels the fibers it spawned, and theirs
     StepA.rep("(def! nested (atom 0))");
     StepA.rep("(def! busy-nested (fn* [] (do (swap! nested (fn* [x] (+ x 1))) (busy-nested))))");
