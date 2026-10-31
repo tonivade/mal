@@ -35,8 +35,6 @@ import java.util.Map;
 
 import org.pcollections.PMap;
 import org.pcollections.PVector;
-import org.pcollections.TreePVector;
-
 import mal.MalNode.MalAtom;
 import mal.MalNode.MalCollection;
 import mal.MalNode.MalConstant;
@@ -243,52 +241,17 @@ interface Core {
   }
 
   static MalNode concat(MalList args) {
-    // nil is concatenated as an empty sequence
-    if (args.values().contains(NIL)) {
-      return concat(list(args.values().stream().filter(arg -> arg != NIL).toList()));
-    }
-
-    if (args.isEmpty()) {
+    var seqs = args.values().stream().map(Core::toSeq).toList();
+    if (seqs.isEmpty()) {
       return EMPTY_LIST;
     }
-
-    if (args.values().stream().allMatch(MalCollection.class::isInstance)) {
-      var result = args.values().stream()
-          .map(MalCollection.class::cast)
-          .map(MalCollection::values)
+    if (seqs.stream().allMatch(MalCollection.class::isInstance)) {
+      return list(seqs.stream()
+          .map(s -> ((MalCollection) s).values())
           .reduce(PVector::plusAll)
-          .orElseThrow();
-      return list(result);
+          .orElseThrow());
     }
-
-    if (args.values().stream().allMatch(MalString.class::isInstance)) {
-      var result = args.values().stream()
-          .map(MalString.class::cast)
-          .map(MalString::value)
-          .reduce(String::concat)
-          .orElseThrow();
-      return asList(result);
-    }
-
-    if (args.values().stream().allMatch(MalMap.class::isInstance)) {
-      var result = args.values().stream()
-          .map(MalMap.class::cast)
-          .map(MalMap::map)
-          .map(Map::entrySet)
-          .reduce(TreePVector.<MalVector>empty(), (acc, entries) -> acc.plusAll(entries.stream().map(Core::entryToVector).toList()), TreePVector::plusAll);
-      return list(result);
-    }
-
-    // the lazy path would only fail when the bad argument is reached, so check the types first
-    if (!args.values().stream().allMatch(Core::isConcatenable)) {
-      throw invalidArgumentTypes("concat", args, null);
-    }
-
-    return lazy(() -> concatStep(args));
-  }
-
-  private static boolean isConcatenable(MalNode node) {
-    return node instanceof MalSequence || node instanceof MalString || node instanceof MalMap;
+    return lazy(() -> concatStep(list(seqs)));
   }
 
   private static MalNode concatStep(MalList seqs) {
