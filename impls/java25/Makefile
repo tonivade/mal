@@ -4,7 +4,7 @@
 SHELL := /bin/bash
 GRADLE := ./gradlew
 JAR_NAME := mal.jar
-BIN_NAME := mal
+BIN_NAME := mal-native
 GRADLE_JAR := build/libs/mal.jar
 GRADLE_BIN := build/native/nativeCompile/mal
 CLASS_DIR := build/classes/java/main

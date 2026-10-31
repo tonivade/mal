@@ -1,5 +1,5 @@
 mal.jar
-mal
+mal-native
 build/
 .gradle/
 .settings/
