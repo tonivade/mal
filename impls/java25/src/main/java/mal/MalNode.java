@@ -170,7 +170,7 @@ public sealed interface MalNode {
     }
 
     public MalNumber mod(MalNumber other) {
-      return number(this.value % other.value);
+      return number(Math.floorMod(this.value, other.value));
     }
 
     public boolean gt(MalNumber other) {
