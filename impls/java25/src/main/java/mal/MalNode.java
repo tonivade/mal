@@ -154,19 +154,19 @@ public sealed interface MalNode {
     }
 
     public MalNumber sum(MalNumber other) {
-      return number(this.value + other.value);
+      return number(Math.addExact(this.value, other.value));
     }
 
     public MalNumber sub(MalNumber other) {
-      return number(this.value - other.value);
+      return number(Math.subtractExact(this.value, other.value));
     }
 
     public MalNumber mul(MalNumber other) {
-      return number(this.value * other.value);
+      return number(Math.multiplyExact(this.value, other.value));
     }
 
     public MalNumber div(MalNumber other) {
-      return number(this.value / other.value);
+      return number(Math.divideExact(this.value, other.value));
     }
 
     public MalNumber mod(MalNumber other) {
@@ -194,7 +194,7 @@ public sealed interface MalNode {
     }
 
     public int asInt() {
-      return (int) value;
+      return Math.toIntExact(value);
     }
 
     @Override
