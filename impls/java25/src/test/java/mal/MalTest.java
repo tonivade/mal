@@ -1132,6 +1132,11 @@ class MalTest {
     assertEquals("([:a \"A\"] [:b \"B\"] [:c \"C\"])", StepA.rep("(concat {:a \"A\" :b \"B\"} {:c \"C\"})"));
 
     assertThrows(ArithmeticException.class, () -> StepA.rep("(+ 9223372036854775807 1)"));
+    assertThrows(ArithmeticException.class, () -> StepA.rep("(- -9223372036854775808 1)"));
+    assertThrows(ArithmeticException.class, () -> StepA.rep("(* 9223372036854775807 2)"));
+    assertThrows(ArithmeticException.class, () -> StepA.rep("(/ -9223372036854775808 -1)"));
+
+    assertEquals("\"boom\"", StepA.rep("(try* (/ -9223372036854775808 -1) (catch* e \"boom\"))"));
   }
 
   /**
